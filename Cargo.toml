@@ -51,7 +51,7 @@ pretty_assertions = "1.4.1"
 qrcode = "0.14.1"
 rand = "0.8.5"
 regex = "1.11.1"
-reqwest = { version = "0.12.9", features = ["json", "native-tls-vendored"] }
+reqwest = { version = "0.12.12", features = ["json", "native-tls-vendored"] }
 reqwest_octorust = { package = "reqwest", version = "0.11.14", default-features = false, features = ["json", "multipart"] }
 reqwest-middleware = "0.2.5"
 rust-embed = "8.5.0"
