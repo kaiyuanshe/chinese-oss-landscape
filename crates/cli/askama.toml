@@ -1,6 +1,0 @@
-[general]
-dirs = [
-    "templates",
-    "../../ui/embed-item/dist",
-    "../../ui/webapp/dist"
-]
