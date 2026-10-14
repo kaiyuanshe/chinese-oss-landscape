@@ -8,7 +8,7 @@ export interface BaseItem {
   description?: string;
   featured?: Featured;
   maturity?: string;
-  tag?: string;
+  tag?: string[];
   additional_categories?: AdditionalCategory[];
 }
 
@@ -23,6 +23,7 @@ export interface Item extends BaseItem {
   homepage_url?: string;
   artwork_url?: string;
   blog_url?: string;
+  bluesky_url?: string;
   chat_channel?: string;
   clomonitor_name?: string;
   clomonitor_report_summary?: string;
@@ -34,6 +35,7 @@ export interface Item extends BaseItem {
   docker_url?: string;
   documentation_url?: string;
   enduser?: boolean;
+  funding_url?: string;
   github_discussions_url?: string;
   graduated_at?: string;
   incubating_at?: string;
@@ -112,6 +114,7 @@ export interface Organization {
 
 export interface Repository {
   url: string;
+  license?: string;
   branch?: string;
   github_data?: GithubRepository;
   primary: boolean;
@@ -165,6 +168,7 @@ export enum SVGIconKind {
   ArrowTop,
   Artwork,
   Blog,
+  Bluesky,
   Book,
   Calendar,
   CaretDown,

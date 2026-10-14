@@ -1,12 +1,13 @@
 //! This module defines the functionality to generate the `projects.md` and
 //! `projects.csv` files from the information available in the landscape.
 
+use std::fs::File;
+
 use anyhow::Result;
 use askama::Template;
 use chrono::NaiveDate;
-use landscape2_core::data::{LandscapeData, DATE_FORMAT};
+use landscape2_core::data::{DATE_FORMAT, LandscapeData};
 use serde::{Deserialize, Serialize};
-use std::fs::File;
 
 /// Project information used to generate the projects.md and projects.csv files.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
@@ -39,9 +40,8 @@ pub(crate) fn collect_projects(landscape_data: &LandscapeData) -> Vec<Project> {
         .iter()
         .cloned()
         .filter_map(|item| {
-            // Prepare maturity and tag
+            // Prepare maturity (projects must have it)
             let maturity = item.maturity?;
-            let tag = item.tag?;
 
             // Prepare sandbox date
             let sandbox_at = if item.accepted_at == item.incubating_at {
@@ -61,12 +61,12 @@ pub(crate) fn collect_projects(landscape_data: &LandscapeData) -> Vec<Project> {
                 graduated_at: fmt_date(&item.graduated_at),
                 homepage_url: item.homepage_url,
                 incubating_at: fmt_date(&item.incubating_at),
-                maturity: maturity.to_string(),
+                maturity,
                 name: item.name.to_lowercase(),
                 num_security_audits: num_security_audits.unwrap_or_default().to_string(),
                 last_security_audit: fmt_date(&last_security_audit),
                 sandbox_at: fmt_date(&sandbox_at),
-                tag: tag.to_string(),
+                tag: item.tag.unwrap_or_default().join(","),
             };
             Some(project)
         })

@@ -9,7 +9,9 @@ import { css } from 'solid-styled-components';
 import { AdditionalCategory, Item, Repository, SecurityAudit, SVGIconKind } from '../types/types';
 import { cutString, getItemDescription } from '../utils';
 import { formatProfitLabel } from '../utils/formatProfitLabel';
+import { formatSummaryField } from '../utils/formatSummaryField';
 import { formatTAGName } from '../utils/formatTAGName';
+import { getMainTag } from '../utils/getMainTag';
 import { prettifyNumber } from '../utils/prettifyNumber';
 import { AcquisitionsTable } from './AcquisitionsTable';
 import { Badge } from './Badge';
@@ -30,6 +32,7 @@ interface Props {
   item?: Item | null;
   parentInfo?: Item | null;
   foundation: string;
+  hideOrganizationSection?: boolean;
   basePath?: string;
   onClose?: () => void;
 }
@@ -76,7 +79,7 @@ const OtherLink = css`
   font-size: 0.75rem;
   color: var(--color4);
   max-width: calc(50% - 2rem - 15px);
-  line-height: 24px;
+  line-height: 1;
 `;
 
 const BadgeOutlineDark = css`
@@ -272,9 +275,9 @@ export const ItemModalContent = (props: Props) => {
                   <FoundationBadge foundation={props.foundation} />
                   <MaturityBadge level={itemInfo()!.maturity!} class="mx-2" />
 
-                  <Show when={!isUndefined(itemInfo()!.tag)}>
+                  <Show when={!isUndefined(itemInfo()!.tag) && itemInfo()!.tag!.length > 0}>
                     <div class={`badge text-uppercase rounded-0 me-2 ${BadgeOutlineDark} ${TagBadge}`}>
-                      TAG {formatTAGName(itemInfo()!.tag!)}
+                      TAG {formatTAGName(getMainTag(itemInfo()!.tag!))}
                     </div>
                   </Show>
 
@@ -448,6 +451,12 @@ export const ItemModalContent = (props: Props) => {
                       <SVGIcon kind={SVGIconKind.Reddit} />
                     </ExternalLink>
                   </Show>
+
+                  <Show when={!isUndefined(itemInfo()!.bluesky_url)}>
+                    <ExternalLink title="Bluesky" class={`ms-3 ${Link}`} href={itemInfo()!.bluesky_url!}>
+                      <SVGIcon kind={SVGIconKind.Bluesky} />
+                    </ExternalLink>
+                  </Show>
                 </div>
               </div>
             </div>
@@ -494,6 +503,24 @@ export const ItemModalContent = (props: Props) => {
             </For>
           </div>
         </Show>
+        {/* Additional tags */}
+        <Show when={!isUndefined(itemInfo()!.tag) && itemInfo()!.tag!.length > 1}>
+          <div class={`fw-bold text-uppercase mt-4 mb-3 ${TitleInSection}`}>Additional tags</div>
+          <div class="d-flex flex-row flex-wrap align-items-center mb-2">
+            <For each={itemInfo()!.tag!}>
+              {(tag, index) => {
+                return (
+                  // Do not show the first tag as it is already displayed in the main section
+                  <Show when={index() > 0}>
+                    <div class={`badge rounded-0 me-2 mb-2 text-truncate text-uppercase ${BadgeOutlineDark}`}>
+                      TAG {formatTAGName(tag)}
+                    </div>
+                  </Show>
+                );
+              }}
+            </For>
+          </div>
+        </Show>
         <Show when={!isNull(props.parentInfo)}>
           {/* Parent project */}
           <ParentProject
@@ -510,6 +537,7 @@ export const ItemModalContent = (props: Props) => {
         <RepositoriesSection
           repositories={itemInfo()!.repositories}
           class={`border ${Fieldset}`}
+          projectMaturity={itemInfo()!.maturity}
           titleClass={`position-absolute px-2 bg-white fw-semibold ${FieldsetTitle}`}
         />
         {/* Security audits */}
@@ -564,7 +592,7 @@ export const ItemModalContent = (props: Props) => {
           </div>
         </Show>
         {/* Organization */}
-        <Show when={!isUndefined(itemInfo()!.crunchbase_data)}>
+        <Show when={!props.hideOrganizationSection && !isUndefined(itemInfo()!.crunchbase_data)}>
           <div class={`position-relative border ${Fieldset}`}>
             <div class={`position-absolute px-2 bg-white fw-semibold ${FieldsetTitle}`}>Organization</div>
             <div class="d-flex flex-row align-items-center">
@@ -685,8 +713,22 @@ export const ItemModalContent = (props: Props) => {
             </div>
 
             {/* Funding rounds */}
+            <Show when={!isUndefined(itemInfo()!.funding_url) && !isEmpty(itemInfo()!.funding_url)}>
+              <div class={`fw-bold text-uppercase mt-3 mt-lg-4 mb-2 mb-lg-3 ${TitleInSection}`}>Funding rounds</div>
+              <div class="d-flex align-items-baseline w-100 my-3">
+                <small class="text-muted lh-1 me-2">For more financial details, see:</small>
+                <ExternalLink
+                  class="text-muted d-inline-block text-truncate mw-100 lh-1 small"
+                  href={itemInfo()!.funding_url!}
+                >
+                  {itemInfo()!.funding_url!}
+                </ExternalLink>
+              </div>
+            </Show>
             <Show
               when={
+                (isUndefined(itemInfo()!.funding_url) || isEmpty(itemInfo()!.funding_url)) &&
+                !isUndefined(itemInfo()!.crunchbase_data) &&
                 !isUndefined(itemInfo()!.crunchbase_data!.funding_rounds) &&
                 !isEmpty(itemInfo()!.crunchbase_data!.funding_rounds!)
               }
@@ -719,7 +761,12 @@ export const ItemModalContent = (props: Props) => {
               <Show when={!isUndefined(itemInfo()!.summary!.intro_url) && !isEmpty(itemInfo()!.summary!.intro_url)}>
                 <div class="summaryBlock">
                   <div class={`fw-bold text-uppercase ${TitleInSection}`}>Introduction</div>
-                  <div class={`mt-2 ${SummaryContent}`}>{itemInfo()!.summary!.intro_url!}</div>
+                  {/* eslint-disable solid/no-innerhtml */}
+                  <div
+                    class={`mt-2 ${SummaryContent}`}
+                    innerHTML={formatSummaryField(itemInfo()!.summary!.intro_url!)}
+                  />
+                  {/* eslint-enable solid/no-innerhtml */}
                 </div>
               </Show>
 

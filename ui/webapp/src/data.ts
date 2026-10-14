@@ -1,3 +1,4 @@
+import { DEFAULT_HIDE_ORGANIZATION_SECTION } from '../../embed/src/types';
 import {
   Breakpoint,
   ClassifyOption,
@@ -24,7 +25,8 @@ export const GUIDE_PATH = `${BASE_PATH}/guide`;
 export const FINANCES_PATH = `${BASE_PATH}/finances`;
 export const FUNDING_PATH = `${BASE_PATH}/funding`;
 export const ACQUISITIONS_PATH = `${BASE_PATH}/acquisitions`;
-export const PROJECTS_PATH = `${BASE_PATH}/projects`;
+export const PROJECTS_PATH = `${BASE_PATH}/projects-summary`;
+export const SUMMARY_PATH = `${BASE_PATH}/summary`;
 export const GAMES_PATH = `${BASE_PATH}/games`;
 export const LOGOS_PREVIEW_PATH = `${BASE_PATH}/logos-preview`;
 export const SCREENSHOTS_PATH = '/screenshot';
@@ -78,6 +80,9 @@ export const DEFAULT_SORT_DIRECTION = SortDirection.Asc;
 export const ALL_OPTION = 'all';
 
 export let FOUNDATION = window.baseDS ? window.baseDS.foundation : '';
+export let HIDE_ORGANIZATION_SECTION_IN_PROJECTS = window.baseDS
+  ? window.baseDS.hide_organization_section_in_projects || DEFAULT_HIDE_ORGANIZATION_SECTION
+  : DEFAULT_HIDE_ORGANIZATION_SECTION;
 export let GRID_SIZE = window.baseDS
   ? window.baseDS.grid_items_size || DEFAULT_GRID_ITEMS_SIZE
   : DEFAULT_GRID_ITEMS_SIZE;
@@ -231,6 +236,9 @@ export const overrideSettings = (values: SettingsValue) => {
   FOUNDATION = values.foundationName;
   GRID_SIZE = values.gridSize;
   DEFAULT_VIEW_MODE = values.viewMode;
+  HIDE_ORGANIZATION_SECTION_IN_PROJECTS = window.baseDS
+    ? (window.baseDS.hide_organization_section_in_projects ?? DEFAULT_HIDE_ORGANIZATION_SECTION)
+    : DEFAULT_HIDE_ORGANIZATION_SECTION;
   ZOOM_LEVELS = ZOOM_LEVELS_PER_SIZE[values.gridSize];
   FILTERS = [
     {

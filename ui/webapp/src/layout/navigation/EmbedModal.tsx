@@ -1,12 +1,25 @@
 import { useLocation, useNavigate } from '@solidjs/router';
-import { capitalizeFirstLetter, CodeBlock, Modal, SVGIcon, SVGIconKind, useBreakpointDetect } from 'common';
+import {
+  capitalizeFirstLetter,
+  CodeBlock,
+  formatTAGName,
+  Modal,
+  SVGIcon,
+  SVGIconKind,
+  useBreakpointDetect,
+  useOutsideClick,
+} from 'common';
 import isUndefined from 'lodash/isUndefined';
 import sortBy from 'lodash/sortBy';
-import { batch, createEffect, createMemo, createSignal, For, on, onMount, Show } from 'solid-js';
+import { batch, createEffect, createMemo, createSignal, For, Match, on, onMount, Show, Switch } from 'solid-js';
 
 import {
   Alignment,
   BASE_PATH_PARAM,
+  CATEGORIES_PARAM,
+  CLASSIFY_BY_PARAM,
+  ClassifyType,
+  DEFAULT_CLASSIFY_TYPE,
   DEFAULT_DISPLAY_CATEGORY_HEADER,
   DEFAULT_DISPLAY_CATEGORY_IN_SUBCATEGORY,
   DEFAULT_DISPLAY_HEADER,
@@ -29,6 +42,7 @@ import {
   DISPLAY_ITEM_MODAL_PARAM,
   DISPLAY_ITEM_NAME_PARAM,
   FontFamily,
+  HIDE_ORGANIZATION_SECTION_PARAM,
   ITEM_NAME_SIZE_PARAM,
   ITEMS_ALIGNMENT_PARAM,
   ITEMS_SIZE_PARAM,
@@ -37,6 +51,7 @@ import {
   KEY_PARAM,
   Size,
   Style,
+  SUBCATEGORIES_PARAM,
   TITLE_ALIGNMENT_PARAM,
   TITLE_BGCOLOR_PARAM,
   TITLE_FGCOLOR_PARAM,
@@ -44,7 +59,14 @@ import {
   TITLE_SIZE_PARAM,
   UPPERCASE_TITLE_PARAM,
 } from '../../../../embed/src/types';
-import { BASE_PATH, EMBED_SETUP_PATH, SMALL_DEVICES_BREAKPOINTS } from '../../data';
+import {
+  BANNER_ID,
+  BASE_PATH,
+  EMBED_SETUP_PATH,
+  HIDE_ORGANIZATION_SECTION_IN_PROJECTS,
+  REGEX_UNDERSCORE,
+  SMALL_DEVICES_BREAKPOINTS,
+} from '../../data';
 import { Category, Subcategory } from '../../types';
 import isExploreSection from '../../utils/isExploreSection';
 import itemsDataGetter from '../../utils/itemsDataGetter';
@@ -85,6 +107,14 @@ enum SpacingType {
   Custom = 'custom',
 }
 
+const formatOptionValue = (value: string) => {
+  return value.replace(REGEX_UNDERSCORE, '-');
+};
+
+const getCategoryKey = (category: string, subcategory?: string) => {
+  return subcategory ? `${category}--${subcategory}` : category;
+};
+
 const EmbedModal = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -97,17 +127,66 @@ const EmbedModal = () => {
   const isVisible = createMemo(() => isExploreSection(location.pathname));
   const isEmbedSetupActive = () => location.pathname === EMBED_SETUP_PATH;
   const [visibleModal, setVisibleModal] = createSignal<boolean>(isEmbedSetupActive());
-  const categoriesList = () => sortBy(itemsDataGetter.getCategoriesAndSubcategoriesList(), ['name']);
-  const [subcategoriesList, setSubcategoriesList] = createSignal<Subcategory[]>(
-    sortBy(categoriesList()[0].subcategories, ['name'])
+  const categoriesList = () => sortBy(itemsDataGetter.getCategoriesAndSubcategoriesWithItems(), ['name']);
+  const getInitialSubcategories = () => {
+    const firstCategory = categoriesList()[0];
+    return firstCategory ? sortBy(firstCategory.subcategories, ['name']) : [];
+  };
+  const initialSubcategories = getInitialSubcategories();
+  const [subcategoriesList, setSubcategoriesList] = createSignal<Subcategory[]>(initialSubcategories);
+  const initialCategory = categoriesList()[0];
+  const initialCategoryName = initialCategory ? initialCategory.normalized_name : '';
+  const initialSubcategoryName = initialSubcategories[0]?.normalized_name;
+  const [key, setKey] = createSignal<string>(getCategoryKey(initialCategoryName, initialSubcategoryName));
+  const [selectedClassifyBy, setSelectedClassifyBy] = createSignal<string>(DEFAULT_CLASSIFY_TYPE);
+  const initialCategoriesSelection = initialCategoryName ? [initialCategoryName] : [];
+  const [selectedCategories, setSelectedCategories] = createSignal<string[]>(initialCategoriesSelection);
+  const [selectedSubcategories, setSelectedSubcategories] = createSignal<string[]>(
+    initialSubcategoryName ? [initialSubcategoryName] : []
   );
-  const [key, setKey] = createSignal<string>(
-    // eslint-disable-next-line solid/reactivity
-    `${categoriesList()[0].normalized_name}--${subcategoriesList()[0].normalized_name}`
+  const [subcategoriesDropdownVisible, setSubcategoriesDropdownVisible] = createSignal<boolean>(false);
+  const [subcategoriesDropdownRef, setSubcategoriesDropdownRef] = createSignal<HTMLDivElement>();
+  const [categoriesDropdownVisible, setCategoriesDropdownVisible] = createSignal<boolean>(false);
+  const [categoriesDropdownRef, setCategoriesDropdownRef] = createSignal<HTMLDivElement>();
+  useOutsideClick([categoriesDropdownRef], [BANNER_ID], categoriesDropdownVisible, () =>
+    setCategoriesDropdownVisible(false)
   );
-  const [selectedCategory, setSelectedCategory] = createSignal<string>(categoriesList()[0].normalized_name);
-  // eslint-disable-next-line solid/reactivity
-  const [selectedSubcategory, setSelectedSubcategory] = createSignal<string>(subcategoriesList()[0].normalized_name);
+  useOutsideClick([subcategoriesDropdownRef], [BANNER_ID], subcategoriesDropdownVisible, () =>
+    setSubcategoriesDropdownVisible(false)
+  );
+  const multipleCategoriesSelected = createMemo(() => selectedCategories().length > 1);
+  const selectedCategoriesLabel = createMemo(() => {
+    if (selectedCategories().length === 0) {
+      return 'Select categories';
+    }
+    const categoriesMap = new Map(
+      categoriesList().map((category) => [category.normalized_name, category.name] as [string, string])
+    );
+    const labels = selectedCategories()
+      .map((value) => categoriesMap.get(value))
+      .filter((name): name is string => Boolean(name));
+
+    if (labels.length === 0) {
+      return 'Select categories';
+    }
+
+    return labels.join(', ');
+  });
+  const selectedSubcategoriesLabel = createMemo(() => {
+    if (multipleCategoriesSelected()) {
+      return 'All subcategories';
+    }
+    if (selectedSubcategories().includes('all') || selectedSubcategories().length === 0) {
+      return 'All subcategories';
+    }
+    const selectedNames = selectedSubcategories()
+      .map((value) => {
+        const match = subcategoriesList().find((subcategory) => subcategory.normalized_name === value);
+        return match ? match.name : undefined;
+      })
+      .filter((name): name is string => Boolean(name));
+    return selectedNames.length > 0 ? selectedNames.join(', ') : 'Select subcategories';
+  });
   const [selectedStyle, setSelectedStyle] = createSignal<Style>(DEFAULT_ITEMS_STYLE_VIEW);
   const [selectedSize, setSelectedSize] = createSignal<Size>(DEFAULT_ITEMS_SIZE);
   const [displayHeader, setDisplayHeader] = createSignal<boolean>(DEFAULT_DISPLAY_HEADER);
@@ -127,12 +206,21 @@ const EmbedModal = () => {
   const [displayItemName, setDisplayItemName] = createSignal<boolean>(DEFAULT_DISPLAY_ITEM_NAME);
   const [itemNameSize, setItemNameSize] = createSignal<number>(DEFAULT_ITEM_NAME_SIZE);
   const [displayItemModal, setDisplayItemModal] = createSignal<boolean>(DEFAULT_DISPLAY_ITEM_MODAL);
+  const [hideOrganizationSection] = createSignal<boolean>(HIDE_ORGANIZATION_SECTION_IN_PROJECTS);
   const [url, setUrl] = createSignal<string>();
   const [prevHash, setPrevHash] = createSignal<string>('');
   const [prevSearch, setPrevSearch] = createSignal<string>('');
   const [embedScriptLoaded, setEmbedScriptLoaded] = createSignal<boolean>(false);
   const embedOrigin = () =>
     `${import.meta.env.MODE === 'development' ? 'http://localhost:8000' : window.location.origin}${BASE_PATH}/embed`;
+  const maturityOptions = itemsDataGetter.getMaturityOptions().sort();
+  const TAGOptions = itemsDataGetter.getTagOptions().sort();
+  const [selectedMaturity, setSelectedMaturity] = createSignal<string>(
+    maturityOptions.length > 0 ? formatOptionValue(maturityOptions[0]) : 'all'
+  );
+  const [selectedTag, setSelectedTag] = createSignal<string>(
+    TAGOptions.length > 0 ? formatOptionValue(TAGOptions[0]) : 'all'
+  );
 
   const getIFrameUrl = () => {
     const embedUrl = new URL(`${embedOrigin()}/embed.html`);
@@ -142,7 +230,25 @@ const EmbedModal = () => {
       embedParams.append(BASE_PATH_PARAM, BASE_PATH);
     }
 
-    embedParams.append(KEY_PARAM, key() || categoriesList()[0].normalized_name);
+    embedParams.append(CLASSIFY_BY_PARAM, selectedClassifyBy());
+    if (selectedClassifyBy() === ClassifyType.Category) {
+      const fallbackCategory = categoriesList()[0]?.normalized_name || '';
+      const categoriesSelection = selectedCategories();
+      if (categoriesSelection.length > 1) {
+        embedParams.append(CATEGORIES_PARAM, categoriesSelection.join(','));
+      } else {
+        const singleCategory = categoriesSelection[0] || fallbackCategory;
+        embedParams.append(KEY_PARAM, key() || singleCategory);
+        const selectedSubcategoriesParam = selectedSubcategories().filter((value) => value !== 'all');
+        if (selectedSubcategoriesParam.length > 1) {
+          embedParams.append(SUBCATEGORIES_PARAM, selectedSubcategoriesParam.join(','));
+        }
+      }
+    } else if (selectedClassifyBy() === ClassifyType.Maturity) {
+      embedParams.append(KEY_PARAM, selectedMaturity());
+    } else if (selectedClassifyBy() === ClassifyType.TAG) {
+      embedParams.append(KEY_PARAM, selectedTag());
+    }
     embedParams.append(DISPLAY_HEADER_PARAM, displayHeader() ? 'true' : 'false');
     embedParams.append(DISPLAY_HEADER_CATEGORY_PARAM, displayCategoryTitle() ? 'true' : 'false');
     embedParams.append(DISPLAY_CATEGORY_IN_SUBCATEGORY_PARAM, displayCategoryInSubcategory() ? 'true' : 'false');
@@ -154,6 +260,10 @@ const EmbedModal = () => {
     embedParams.append(TITLE_BGCOLOR_PARAM, bgColor());
     embedParams.append(TITLE_FGCOLOR_PARAM, fgColor());
     embedParams.append(DISPLAY_ITEM_MODAL_PARAM, displayItemModal() ? 'true' : 'false');
+    embedParams.append(
+      HIDE_ORGANIZATION_SECTION_PARAM,
+      displayItemModal() && hideOrganizationSection() ? 'true' : 'false'
+    );
 
     if (selectedStyle() !== Style.Card) {
       embedParams.append(DISPLAY_ITEM_NAME_PARAM, displayItemName() ? 'true' : 'false');
@@ -241,19 +351,129 @@ const EmbedModal = () => {
     }
   };
 
-  const updateCategory = (category: string) => {
+  const applySingleCategorySelection = (category: string) => {
     const selectedCat = categoriesList().find((cat: Category) => cat.normalized_name === category);
-    if (selectedCat) {
-      const subcategories = sortBy(selectedCat.subcategories, ['name']);
-      const firstSubcategory = subcategories[0].normalized_name;
-
-      batch(() => {
-        setSubcategoriesList(subcategories);
-        setSelectedCategory(category);
-        setSelectedSubcategory(firstSubcategory);
-        setKey(`${selectedCategory()}--${firstSubcategory}`);
-      });
+    if (!selectedCat) {
+      return;
     }
+    const subcategories = sortBy(selectedCat.subcategories, ['name']);
+    const firstSubcategory = subcategories[0]?.normalized_name;
+
+    batch(() => {
+      setSubcategoriesList(subcategories);
+      setSubcategoriesDropdownVisible(false);
+      if (firstSubcategory) {
+        setSelectedSubcategories([firstSubcategory]);
+        setKey(getCategoryKey(category, firstSubcategory));
+      } else {
+        setSelectedSubcategories([]);
+        setKey(category);
+      }
+    });
+  };
+
+  const updateCategoriesSelection = (values: string[]) => {
+    const categoriesOrder = new Map(
+      categoriesList().map((category, index) => [category.normalized_name, index] as [string, number])
+    );
+    const unique = Array.from(new Set(values.filter((value) => categoriesOrder.has(value))));
+    if (unique.length === 0) {
+      return;
+    }
+    unique.sort((a, b) => categoriesOrder.get(a)! - categoriesOrder.get(b)!);
+    setSelectedCategories(unique);
+
+    if (unique.length === 1) {
+      applySingleCategorySelection(unique[0]);
+      return;
+    }
+
+    const first = unique[0];
+    const firstCategory = categoriesList().find((category) => category.normalized_name === first);
+    const subcategories = firstCategory ? sortBy(firstCategory.subcategories, ['name']) : [];
+
+    batch(() => {
+      setSubcategoriesList(subcategories);
+      setSubcategoriesDropdownVisible(false);
+      setSelectedSubcategories(['all']);
+      setKey(first);
+    });
+  };
+
+  const toggleCategory = (value: string, checked: boolean) => {
+    const previousValues = selectedCategories();
+
+    if (checked) {
+      if (previousValues.includes(value)) {
+        return;
+      }
+      updateCategoriesSelection([...previousValues, value]);
+      return;
+    }
+
+    const nextValues = previousValues.filter((item) => item !== value);
+    if (nextValues.length === 0) {
+      return;
+    }
+    updateCategoriesSelection(nextValues);
+  };
+
+  const updateSelectionsKey = (values: string[], category: string) => {
+    if (values.length === 1) {
+      setKey(getCategoryKey(category, values[0]));
+    } else {
+      setKey(category);
+    }
+  };
+
+  const selectAllSubcategories = () => {
+    const currentCategory = selectedCategories()[0];
+    if (!currentCategory) {
+      return;
+    }
+    batch(() => {
+      setSelectedSubcategories(['all']);
+      setKey(currentCategory);
+    });
+  };
+
+  const toggleSubcategory = (value: string, checked: boolean) => {
+    if (multipleCategoriesSelected()) {
+      return;
+    }
+    const currentCategory = selectedCategories()[0];
+    if (!currentCategory) {
+      return;
+    }
+
+    if (value === 'all') {
+      selectAllSubcategories();
+      return;
+    }
+
+    const previousValues = selectedSubcategories().filter((item) => item !== 'all');
+
+    if (checked) {
+      const alreadySelected = previousValues.includes(value);
+      const nextValues = alreadySelected ? previousValues : [...previousValues, value];
+      batch(() => {
+        setSelectedSubcategories(nextValues);
+        updateSelectionsKey(nextValues, currentCategory);
+      });
+      return;
+    }
+
+    const nextValues = previousValues.filter((item) => item !== value);
+
+    if (nextValues.length === 0) {
+      selectAllSubcategories();
+      return;
+    }
+
+    batch(() => {
+      setSelectedSubcategories(nextValues);
+      updateSelectionsKey(nextValues, currentCategory);
+    });
   };
 
   const onClose = () => {
@@ -264,11 +484,18 @@ const EmbedModal = () => {
 
     // Reset settings
     batch(() => {
-      const subcategories = sortBy(categoriesList()[0].subcategories, ['name']);
+      const firstCategory = categoriesList()[0];
+      const subcategories = sortBy(firstCategory.subcategories, ['name']);
+      const firstSubcategory = subcategories[0]?.normalized_name;
       setSubcategoriesList(subcategories);
-      setSelectedCategory(categoriesList()[0].normalized_name);
-      setSelectedSubcategory(subcategories[0].normalized_name);
-      setKey(`${categoriesList()[0].normalized_name}--${subcategories[0].normalized_name}`);
+      setSelectedCategories([firstCategory.normalized_name]);
+      setCategoriesDropdownVisible(false);
+      setSelectedSubcategories(firstSubcategory ? [firstSubcategory] : []);
+      setSubcategoriesDropdownVisible(false);
+      setSelectedMaturity(maturityOptions[0] || 'all');
+      setSelectedTag(TAGOptions[0] || 'all');
+      setSelectedClassifyBy(DEFAULT_CLASSIFY_TYPE);
+      setKey(getCategoryKey(firstCategory.normalized_name, firstSubcategory));
       setSelectedSize(DEFAULT_ITEMS_SIZE);
       setSelectedStyle(DEFAULT_ITEMS_STYLE_VIEW);
       setTitleAlignment(DEFAULT_TITLE_ALIGNMENT);
@@ -316,9 +543,18 @@ const EmbedModal = () => {
   );
 
   createEffect(
+    on(selectedClassifyBy, () => {
+      if (selectedClassifyBy() !== ClassifyType.Category) {
+        setCategoriesDropdownVisible(false);
+        setSubcategoriesDropdownVisible(false);
+      }
+    })
+  );
+
+  createEffect(
     on(displayItemModal, () => {
       if (displayItemModal()) {
-        import(`${embedOrigin()}/embed-item.js`).then(() => {
+        import(/* @vite-ignore */ `${embedOrigin()}/embed-item.js`).then(() => {
           setEmbedScriptLoaded(true);
         });
       }
@@ -375,46 +611,188 @@ const EmbedModal = () => {
                   <div class="col-4 col-xxl-3 overflow-auto h-100 visibleScroll">
                     <div class={`p-4 ${styles.configWrapper}`}>
                       <div>
-                        <div class={`text-uppercase text-muted fw-semibold mb-1 ${styles.labelSelect}`}>Category</div>
+                        <div class={`text-uppercase text-muted fw-semibold mb-1 ${styles.labelSelect}`}>Classify</div>
                         <select
-                          id="categories"
+                          id="classifyEmbed"
                           class={`form-select form-select-md border-0 rounded-0 ${styles.select}`}
-                          value={selectedCategory()}
-                          aria-label="Categories list"
+                          value={selectedClassifyBy()}
+                          aria-label="Classification options"
                           onChange={(e) => {
-                            updateCategory(e.currentTarget.value);
+                            setSelectedClassifyBy(e.currentTarget.value);
                           }}
                         >
-                          <For each={categoriesList()}>
-                            {(cat: Category) => {
-                              return <option value={cat.normalized_name}>{cat.name}</option>;
-                            }}
-                          </For>
+                          <option value={ClassifyType.Category}>Category</option>
+                          <Show when={maturityOptions.length > 0}>
+                            <option value={ClassifyType.Maturity}>Maturity</option>
+                          </Show>
+                          <Show when={TAGOptions.length > 0}>
+                            <option value={ClassifyType.TAG}>TAG</option>
+                          </Show>
                         </select>
                       </div>
-                      <div class="mt-4">
-                        <div class={`text-uppercase text-muted fw-semibold mb-1 ${styles.labelSelect}`}>
-                          Subcategory
-                        </div>
-                        <select
-                          id="subcategories"
-                          class={`form-select form-select-md border-0 rounded-0 ${styles.select}`}
-                          value={selectedSubcategory() || subcategoriesList()[0].normalized_name}
-                          aria-label="Subcategories list"
-                          onChange={(e) => {
-                            const value = e.currentTarget.value;
-                            setSelectedSubcategory(value);
-                            setKey(`${selectedCategory()}${value !== 'all' ? `--${value}` : ''}`);
-                          }}
-                        >
-                          <option value="all">All</option>
-                          <For each={sortBy(subcategoriesList(), ['name'])}>
-                            {(subcat: Subcategory) => {
-                              return <option value={subcat.normalized_name}>{subcat.name}</option>;
-                            }}
-                          </For>
-                        </select>
-                      </div>
+                      <Switch>
+                        <Match when={selectedClassifyBy() === ClassifyType.Category}>
+                          <div class="mt-4">
+                            <div class={`text-uppercase text-muted fw-semibold mb-1 ${styles.labelSelect}`}>
+                              Category
+                            </div>
+                            <div ref={setCategoriesDropdownRef} class={`position-relative ${styles.dropdownWrapper}`}>
+                              <button
+                                type="button"
+                                id="categories"
+                                class={`btn btn-sm text-start w-100 rounded-0 ${styles.dropdownButton}`}
+                                onClick={() => setCategoriesDropdownVisible(!categoriesDropdownVisible())}
+                                aria-label="Categories list"
+                                aria-expanded={categoriesDropdownVisible()}
+                              >
+                                <span class={styles.dropdownButtonLabel}>{selectedCategoriesLabel()}</span>
+                                <SVGIcon kind={SVGIconKind.CaretDown} class={styles.dropdownButtonIcon} />
+                              </button>
+                              <div
+                                role="menu"
+                                class={`dropdown-menu rounded-0 shadow-none w-100 ${styles.dropdownMenu}`}
+                                classList={{ show: categoriesDropdownVisible() }}
+                              >
+                                <div class="px-3 py-2">
+                                  <For each={categoriesList()}>
+                                    {(cat: Category) => {
+                                      return (
+                                        <CheckBox
+                                          name="category"
+                                          value={cat.normalized_name}
+                                          label={cat.name}
+                                          checked={selectedCategories().includes(cat.normalized_name)}
+                                          onChange={(value, checked) => {
+                                            toggleCategory(value, checked);
+                                          }}
+                                          labelClass={`mw-100 text-muted ${styles.optionLabel}`}
+                                          class={styles.dropdownOption}
+                                        />
+                                      );
+                                    }}
+                                  </For>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="mt-4">
+                            <div class={`text-uppercase text-muted fw-semibold mb-1 ${styles.labelSelect}`}>
+                              Subcategory
+                            </div>
+                            <div
+                              ref={setSubcategoriesDropdownRef}
+                              class={`position-relative ${styles.dropdownWrapper}`}
+                            >
+                              <button
+                                type="button"
+                                id="subcategories"
+                                class={`btn btn-sm text-start w-100 rounded-0 ${styles.dropdownButton} ${
+                                  multipleCategoriesSelected() ? styles.dropdownButtonDisabled : ''
+                                }`}
+                                disabled={multipleCategoriesSelected()}
+                                aria-disabled={multipleCategoriesSelected()}
+                                onClick={() => {
+                                  if (multipleCategoriesSelected()) {
+                                    return;
+                                  }
+                                  setSubcategoriesDropdownVisible(!subcategoriesDropdownVisible());
+                                }}
+                                aria-label="Subcategories list"
+                                aria-expanded={subcategoriesDropdownVisible()}
+                              >
+                                <span class={styles.dropdownButtonLabel}>{selectedSubcategoriesLabel()}</span>
+                                <SVGIcon kind={SVGIconKind.CaretDown} class={styles.dropdownButtonIcon} />
+                              </button>
+                              <div
+                                role="menu"
+                                class={`dropdown-menu rounded-0 shadow-none w-100 ${styles.dropdownMenu}`}
+                                classList={{ show: subcategoriesDropdownVisible() }}
+                              >
+                                <div class="px-3 py-2">
+                                  <CheckBox
+                                    name="subcategory"
+                                    value="all"
+                                    label="All"
+                                    checked={selectedSubcategories().includes('all')}
+                                    onChange={(value, checked) => {
+                                      toggleSubcategory(value, checked);
+                                    }}
+                                    labelClass={`mw-100 text-muted ${styles.optionLabel}`}
+                                    class={styles.dropdownOption}
+                                  />
+                                  <For each={sortBy(subcategoriesList(), ['name'])}>
+                                    {(subcat: Subcategory) => {
+                                      return (
+                                        <CheckBox
+                                          name="subcategory"
+                                          value={subcat.normalized_name}
+                                          label={subcat.name}
+                                          checked={selectedSubcategories().includes(subcat.normalized_name)}
+                                          onChange={(value, checked) => {
+                                            toggleSubcategory(value, checked);
+                                          }}
+                                          labelClass={`mw-100 text-muted ${styles.optionLabel}`}
+                                          class={styles.dropdownOption}
+                                        />
+                                      );
+                                    }}
+                                  </For>
+                                </div>
+                              </div>
+                            </div>
+                            <Show when={multipleCategoriesSelected()}>
+                              <div class={`mt-2 ${styles.dropdownHint}`}>
+                                Select only one category to filter specific subcategories.
+                              </div>
+                            </Show>
+                          </div>
+                        </Match>
+                        <Match when={selectedClassifyBy() === ClassifyType.Maturity}>
+                          <div class="mt-4">
+                            <div class={`text-uppercase text-muted fw-semibold mb-1 ${styles.labelSelect}`}>
+                              Maturity
+                            </div>
+                            <select
+                              id="maturity"
+                              class={`form-select form-select-md border-0 rounded-0 ${styles.select}`}
+                              value={selectedMaturity()}
+                              aria-label="Maturity options"
+                              onChange={(e) => {
+                                setSelectedMaturity(e.currentTarget.value);
+                              }}
+                            >
+                              <option value="all">All</option>
+                              <For each={maturityOptions}>
+                                {(m: string) => {
+                                  return <option value={formatOptionValue(m)}>{capitalizeFirstLetter(m)}</option>;
+                                }}
+                              </For>
+                            </select>
+                          </div>
+                        </Match>
+                        <Match when={selectedClassifyBy() === ClassifyType.TAG}>
+                          <div class="mt-4">
+                            <div class={`text-uppercase text-muted fw-semibold mb-1 ${styles.labelSelect}`}>TAG</div>
+                            <select
+                              id="tag"
+                              class={`form-select form-select-md border-0 rounded-0 ${styles.select}`}
+                              value={selectedTag()}
+                              aria-label="TAG options"
+                              onChange={(e) => {
+                                setSelectedTag(e.currentTarget.value);
+                              }}
+                            >
+                              <option value="all">All</option>
+                              <For each={TAGOptions}>
+                                {(t: string) => {
+                                  return <option value={formatOptionValue(t)}>{formatTAGName(t)}</option>;
+                                }}
+                              </For>
+                            </select>
+                          </div>
+                        </Match>
+                      </Switch>
+
                       <div class="mt-4">
                         <div class={`text-uppercase text-muted fw-semibold mb-1 ${styles.labelSelect}`}>Header</div>
                         <div class="form-check">
@@ -430,32 +808,34 @@ const EmbedModal = () => {
                             }
                           />
                         </div>
-                        <div class="form-check">
-                          <CheckBox
-                            name={InputType.DisplayCategoryTitle}
-                            value="true"
-                            class="ps-0 my-2"
-                            labelClass={`mw-100 text-muted ${styles.label}`}
-                            label="Include category header"
-                            checked={displayCategoryTitle()}
-                            onChange={(value: string, checked: boolean) =>
-                              onChange(InputType.DisplayCategoryTitle, value, checked)
-                            }
-                          />
-                        </div>
-                        <div class="form-check">
-                          <CheckBox
-                            name={InputType.DisplayCategoryInSubcategory}
-                            value="true"
-                            class="ps-0 my-2"
-                            labelClass={`mw-100 text-muted ${styles.label}`}
-                            label="Include category in subcategory header"
-                            checked={displayCategoryInSubcategory()}
-                            onChange={(value: string, checked: boolean) =>
-                              onChange(InputType.DisplayCategoryInSubcategory, value, checked)
-                            }
-                          />
-                        </div>
+                        <Show when={selectedClassifyBy() === ClassifyType.Category}>
+                          <div class="form-check">
+                            <CheckBox
+                              name={InputType.DisplayCategoryTitle}
+                              value="true"
+                              class="ps-0 my-2"
+                              labelClass={`mw-100 text-muted ${styles.label}`}
+                              label="Include category header"
+                              checked={displayCategoryTitle()}
+                              onChange={(value: string, checked: boolean) =>
+                                onChange(InputType.DisplayCategoryTitle, value, checked)
+                              }
+                            />
+                          </div>
+                          <div class="form-check">
+                            <CheckBox
+                              name={InputType.DisplayCategoryInSubcategory}
+                              value="true"
+                              class="ps-0 my-2"
+                              labelClass={`mw-100 text-muted ${styles.label}`}
+                              label="Include category in subcategory header"
+                              checked={displayCategoryInSubcategory()}
+                              onChange={(value: string, checked: boolean) =>
+                                onChange(InputType.DisplayCategoryInSubcategory, value, checked)
+                              }
+                            />
+                          </div>
+                        </Show>
                         <div class="form-check">
                           <CheckBox
                             name={InputType.UppercaseTitle}

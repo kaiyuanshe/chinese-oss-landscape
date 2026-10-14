@@ -35,8 +35,8 @@ import {
   ViewMode,
 } from '../../types';
 import getFoundationNameLabel from '../../utils/getFoundationNameLabel';
-import getNormalizedName from '../../utils/getNormalizedName';
 import itemsDataGetter, { ClassifyAndSortOptions, GroupData } from '../../utils/itemsDataGetter';
+import buildNormalizedId from '../../utils/normalizeId';
 import scrollToTop from '../../utils/scrollToTop';
 import ActiveFiltersList from '../common/ActiveFiltersList';
 import Footer from '../navigation/Footer';
@@ -189,7 +189,7 @@ const Explore = (props: Props) => {
         const title = Object.keys(selectedGroupMenu)[0];
         if (title) {
           const subtitle = selectedGroupMenu[title][0];
-          hash = `#${getNormalizedName({ title: title, subtitle: subtitle, grouped: true })}`;
+          hash = `#${buildNormalizedId({ title: title, subtitle: subtitle, grouped: true })}`;
         }
       }
     }
@@ -197,11 +197,11 @@ const Explore = (props: Props) => {
   };
 
   const checkIfAvaibleClassificationInGroup = (group: string): boolean => {
-    return classifyAndSortOptions()[group].classify.includes(classify());
+    return classifyAndSortOptions()[group]?.classify?.includes(classify()) ?? false;
   };
 
   const checkIfAvaibleSortOptionInGroup = (group: string): boolean => {
-    return classifyAndSortOptions()[group].sort.includes(sorted());
+    return classifyAndSortOptions()[group]?.sort?.includes(sorted()) ?? false;
   };
 
   const closeMenuStatus = () => {
@@ -957,7 +957,8 @@ const Explore = (props: Props) => {
                     '--card-size-width': `${ZOOM_LEVELS[zoom()][0]}px`,
                     '--card-size-height': `${ZOOM_LEVELS[zoom()][1]}px`,
                   }}
-                  class={`d-flex flex-column flex-grow-1 w-100 ${styles.container} zoom-${zoom()}`}
+                  // On Windows, we add a class to prevent flattening the items of the grid
+                  class={`d-flex flex-column flex-grow-1 w-100 ${styles.container} zoom-${zoom()} ${navigator.userAgent.indexOf('Win') != -1 ? styles.containerWindows : ''}`}
                 >
                   <Show when={readyData()}>
                     <Show
@@ -998,7 +999,6 @@ const Explore = (props: Props) => {
                           initialIsVisible={viewMode() === ViewMode.Card && selectedGroup() === ALL_OPTION}
                           data={!isUndefined(cardData()) ? cardData()![ALL_OPTION] : undefined}
                           menu={!isUndefined(cardMenu()) ? cardMenu()![ALL_OPTION] : undefined}
-                          group={ALL_OPTION}
                           classify={classify()}
                           sorted={sorted()}
                           direction={sortDirection()}

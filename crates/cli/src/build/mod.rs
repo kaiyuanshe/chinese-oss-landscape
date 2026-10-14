@@ -1,40 +1,5 @@
 //! This module defines the functionality of the build CLI subcommand.
 
-use self::{
-    cache::Cache,
-    crunchbase::collect_crunchbase_data,
-    export::generate_items_csv,
-    github::collect_github_data,
-    logos::{prepare_logo, LogosSource},
-    projects::{generate_projects_csv, ProjectsMd},
-};
-use crate::{
-    build::{
-        api::{Api, ApiSources},
-        projects::collect_projects,
-    },
-    serve::{self, serve},
-};
-use anyhow::{bail, Context, Result};
-use askama::Template;
-use base64::{engine::general_purpose::STANDARD as b64, Engine as _};
-use futures::stream::{self, StreamExt};
-use headless_chrome::{
-    browser,
-    protocol::cdp::Page::{self, CaptureScreenshotFormatOption},
-    types::PrintToPdfOptions,
-    Browser, LaunchOptions,
-};
-use landscape2_core::{
-    data::{self, CrunchbaseData, DataSource, GithubData, Item, LandscapeData},
-    datasets::{embed::EmbedView, full::Full, Datasets, NewDatasetsInput},
-    games::{GamesSource, LandscapeGames},
-    guide::{GuideSource, LandscapeGuide},
-    settings::{self, Analytics, Colors, LandscapeSettings, LogosViewbox, Osano, SettingsSource},
-};
-use qrcode::render::svg;
-use reqwest::StatusCode;
-use rust_embed::{EmbeddedFile, RustEmbed};
 use std::{
     collections::{BTreeMap, HashMap},
     ffi::OsStr,
@@ -45,9 +10,46 @@ use std::{
     sync::Arc,
     time::{Duration, Instant},
 };
+
+use anyhow::{Context, Result, bail};
+use askama::Template;
+use base64::{Engine as _, engine::general_purpose::STANDARD as b64};
+use futures::stream::{self, StreamExt};
+use headless_chrome::{
+    Browser, LaunchOptions, browser,
+    protocol::cdp::Page::{self, CaptureScreenshotFormatOption},
+    types::PrintToPdfOptions,
+};
+use landscape2_core::{
+    data::{self, CrunchbaseData, DataSource, GithubData, Item, LandscapeData},
+    datasets::{Datasets, NewDatasetsInput, embed::EmbedView, full::Full},
+    games::{GamesSource, LandscapeGames},
+    guide::{GuideSource, LandscapeGuide},
+    settings::{self, Analytics, Colors, LandscapeSettings, LogosViewbox, Osano, SettingsSource},
+};
+use qrcode::render::svg;
+use reqwest::StatusCode;
+use rust_embed::{EmbeddedFile, RustEmbed};
 use tokio::sync::Mutex;
 use tracing::{debug, error, info, instrument, trace, warn};
 use url::Url;
+
+use crate::{
+    build::{
+        api::{Api, ApiSources},
+        projects::collect_projects,
+    },
+    serve::{self, serve},
+};
+
+use self::{
+    cache::Cache,
+    crunchbase::collect_crunchbase_data,
+    export::generate_items_csv,
+    github::collect_github_data,
+    logos::{LogosSource, prepare_logo},
+    projects::{ProjectsMd, generate_projects_csv},
+};
 
 mod api;
 mod cache;
@@ -136,6 +138,10 @@ pub struct BuildArgs {
 }
 
 /// Build landscape website.
+///
+/// # Errors
+/// Returns an error if required assets are missing, inputs are invalid, or any
+/// data processing step fails.
 #[instrument(skip_all)]
 pub async fn build(args: &BuildArgs) -> Result<()> {
     info!("building landscape website..");
@@ -218,7 +224,8 @@ pub async fn build(args: &BuildArgs) -> Result<()> {
         &args.output_dir,
     )?;
 
-    // Render index and embed-item html files and write them to the output dir
+    // Render index, embed-item, and kiosk html files and write them to the
+    // output dir
     render_index_html(
         settings.analytics.as_ref(),
         &datasets,
@@ -226,6 +233,12 @@ pub async fn build(args: &BuildArgs) -> Result<()> {
         &args.output_dir,
     )?;
     render_embed_item_html(settings.colors.as_ref(), &args.output_dir)?;
+    render_kiosk_html(
+        &settings.foundation,
+        &settings.url,
+        settings.colors.as_ref(),
+        &args.output_dir,
+    )?;
 
     // Copy embed and web application assets files to the output directory
     copy_embed_assets(&args.output_dir)?;
@@ -310,7 +323,7 @@ async fn collect_clomonitor_reports(
             if let Err(err) = file.write_all(&report_summary) {
                 error!(?err, ?file_name, "error writing report summary to file");
                 return;
-            };
+            }
 
             // Track report summary to include it later in the item
             let mut reports_summaries = reports_summaries.lock().await;
@@ -659,7 +672,7 @@ async fn prepare_items_logos(
             };
             if let Err(err) = file.write_all(&logo.data) {
                 error!(?err, ?file_name, "error writing logo to file in output dir");
-            };
+            }
 
             (item.id.clone(), Some(format!("{LOGOS_PATH}/{file_name}")))
         })
@@ -710,7 +723,7 @@ async fn prepare_screenshot(width: u32, output_dir: &Path) -> Result<()> {
     });
 
     // Setup headless browser and navigate to screenshot url
-    const TIMEOUT: Duration = Duration::from_secs(300);
+    const TIMEOUT: Duration = Duration::from_mins(10);
     let options = LaunchOptions {
         args: vec![
             OsStr::new("--force-device-scale-factor=2"),
@@ -737,6 +750,7 @@ async fn prepare_screenshot(width: u32, output_dir: &Path) -> Result<()> {
             clip: None,
             from_surface: None,
             capture_beyond_viewport: Some(true),
+            optimize_for_speed: None,
         })
         .context("error generating screenshot in png format")?
         .data;
@@ -778,23 +792,39 @@ async fn prepare_screenshot(width: u32, output_dir: &Path) -> Result<()> {
 #[instrument(skip_all, err)]
 async fn prepare_settings_images(settings: &mut LandscapeSettings, output_dir: &Path) -> Result<()> {
     // Helper function to process the image provided
-    async fn process_image(url: Option<&String>, output_dir: &Path) -> Result<Option<String>> {
-        let Some(url) = url else {
+    async fn process_image(location: Option<&String>, output_dir: &Path) -> Result<Option<String>> {
+        let Some(location) = location else {
             return Ok(None);
         };
 
-        // Fetch image from url
-        let resp = reqwest::get(url).await?;
-        if resp.status() != StatusCode::OK {
-            bail!("unexpected status ({}) code getting logo {url}", resp.status());
+        // Fetch image from url or local path
+        let img: Vec<u8>;
+        let file_name: String;
+        if let Ok(url) = Url::parse(location) {
+            // From url
+            let resp = reqwest::get(location).await?;
+            if resp.status() != StatusCode::OK {
+                bail!(
+                    "unexpected status ({}) code getting image {location}",
+                    resp.status()
+                );
+            }
+            img = resp.bytes().await?.to_vec();
+            let Some(file_name_str) = url.path_segments().and_then(Iterator::last) else {
+                bail!("invalid image url: {location}");
+            };
+            file_name = file_name_str.to_string();
+        } else {
+            // From local path
+            let path = Path::new(location);
+            img = fs::read(path).context(format!("failed to read image from path: {location}"))?;
+            let Some(file_name_str) = path.file_name().and_then(OsStr::to_str) else {
+                bail!("invalid image file path: {location}");
+            };
+            file_name = file_name_str.to_string();
         }
-        let img = resp.bytes().await?.to_vec();
 
         // Write image to output dir
-        let url = Url::parse(url).context("invalid image url")?;
-        let Some(file_name) = url.path_segments().and_then(Iterator::last) else {
-            bail!("invalid image url: {url}");
-        };
         let img_path = Path::new(IMAGES_PATH).join(file_name);
         File::create(output_dir.join(&img_path))?.write_all(&img)?;
 
@@ -806,17 +836,17 @@ async fn prepare_settings_images(settings: &mut LandscapeSettings, output_dir: &
     // Header
     if let Some(header) = &mut settings.header {
         header.logo = process_image(header.logo.as_ref(), output_dir).await?;
-    };
+    }
 
     // Footer
     if let Some(footer) = &mut settings.footer {
         footer.logo = process_image(footer.logo.as_ref(), output_dir).await?;
-    };
+    }
 
     // Other images
     if let Some(images) = &mut settings.images {
         images.favicon = process_image(images.favicon.as_ref(), output_dir).await?;
-    };
+    }
 
     Ok(())
 }
@@ -914,6 +944,32 @@ fn render_embed_item_html(colors: Option<&Colors>, output_dir: &Path) -> Result<
     Ok(())
 }
 
+/// Template for the kiosk html document.
+#[derive(Debug, Clone, Template)]
+#[template(path = "kiosk.html", escape = "none")]
+struct KioskHtml<'a> {
+    foundation: &'a str,
+    url: &'a str,
+
+    colors: Option<&'a Colors>,
+}
+
+/// Render kiosk html file and write it to the output directory.
+#[instrument(skip_all, err)]
+fn render_kiosk_html(foundation: &str, url: &str, colors: Option<&Colors>, output_dir: &Path) -> Result<()> {
+    debug!("rendering kiosk.html file");
+
+    let html = KioskHtml {
+        foundation,
+        url,
+        colors,
+    }
+    .render()?;
+    File::create(output_dir.join("kiosk.html"))?.write_all(html.as_bytes())?;
+
+    Ok(())
+}
+
 /// Setup output directory, creating it as well as any of the other required
 /// paths inside it when needed.
 #[instrument(err)]
@@ -948,29 +1004,23 @@ fn find_available_port() -> Option<u16> {
     (9000..10000).find(|port| TcpListener::bind(("127.0.0.1", *port)).is_ok())
 }
 
+#[allow(
+    clippy::inline_always,
+    clippy::ref_option_ref,
+    clippy::trivially_copy_pass_by_ref,
+    clippy::unnecessary_wraps,
+    clippy::unused_self
+)]
 mod filters {
     use super::settings::Analytics;
-    use askama_escape::JsonEscapeBuffer;
-    use serde::Serialize;
 
     /// Filter to get the Google Tag Manager container ID from the analytics
     /// instance provided.
-    #[allow(
-        clippy::unnecessary_wraps,
-        clippy::trivially_copy_pass_by_ref,
-        clippy::ref_option_ref
-    )]
-    pub(crate) fn get_gtm_container_id(analytics: &Option<&Analytics>) -> askama::Result<Option<String>> {
+    #[askama::filter_fn]
+    pub(crate) fn get_gtm_container_id(
+        analytics: &Option<&Analytics>,
+        _: &dyn askama::Values,
+    ) -> askama::Result<Option<String>> {
         Ok(analytics.as_ref().and_then(|a| a.gtm.as_ref()).and_then(|gtm| gtm.container_id.clone()))
-    }
-
-    /// Serialize to JSON.
-    ///
-    /// Based on the `json` built-in filter except the output is not pretty
-    /// printed.
-    pub(crate) fn json_compact<S: Serialize>(s: S) -> askama::Result<String> {
-        let mut writer = JsonEscapeBuffer::new();
-        serde_json::to_writer(&mut writer, &s)?;
-        Ok(writer.finish())
     }
 }

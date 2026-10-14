@@ -1,15 +1,18 @@
 //! This module defines some types used to represent the some landscape stats,
 //! as well as the functionality used to prepare them.
 
+use std::collections::{BTreeMap, HashSet};
+
+use chrono::{Datelike, Utc};
+use itertools::Itertools;
+use serde::{Deserialize, Serialize};
+
+use crate::data::LandscapeData;
+
 use super::{
     data::{CategoryName, SubcategoryName},
     settings::{LandscapeSettings, TagName},
 };
-use crate::data::LandscapeData;
-use chrono::{Datelike, Utc};
-use itertools::Itertools;
-use serde::{Deserialize, Serialize};
-use std::collections::{BTreeMap, HashSet};
 
 /// Format used to represent a date as year-month.
 pub const YEAR_MONTH_FORMAT: &str = "%Y-%m";
@@ -81,20 +84,20 @@ impl MembersStats {
 
         // Collect stats from landscape items
         for item in &landscape_data.items {
-            if let Some(members_category) = &settings.members_category {
-                if &item.category == members_category {
-                    // Total number of members
-                    stats.members += 1;
+            if let Some(members_category) = &settings.members_category
+                && &item.category == members_category
+            {
+                // Total number of members
+                stats.members += 1;
 
-                    // Number of members joined per year-month
-                    if let Some(joined_at) = &item.joined_at {
-                        let year_month = joined_at.format(YEAR_MONTH_FORMAT).to_string();
-                        increment(&mut stats.joined_at, &year_month, 1);
-                    }
-
-                    // Number of members per subcategory
-                    increment(&mut stats.subcategories, &item.subcategory, 1);
+                // Number of members joined per year-month
+                if let Some(joined_at) = &item.joined_at {
+                    let year_month = joined_at.format(YEAR_MONTH_FORMAT).to_string();
+                    increment(&mut stats.joined_at, &year_month, 1);
                 }
+
+                // Number of members per subcategory
+                increment(&mut stats.subcategories, &item.subcategory, 1);
             }
         }
         stats.joined_at_rt = calculate_running_total(&stats.joined_at);
@@ -285,13 +288,12 @@ impl ProjectsStats {
                 increment(&mut stats.maturity, maturity, 1);
 
                 // Promotions from sandbox to incubating
-                if let Some(incubating_at) = &item.incubating_at {
-                    if let Some(accepted_at) = &item.accepted_at {
-                        if incubating_at != accepted_at {
-                            let year_month = incubating_at.format(YEAR_MONTH_FORMAT).to_string();
-                            increment(&mut stats.sandbox_to_incubating, &year_month, 1);
-                        }
-                    }
+                if let Some(incubating_at) = &item.incubating_at
+                    && let Some(accepted_at) = &item.accepted_at
+                    && incubating_at != accepted_at
+                {
+                    let year_month = incubating_at.format(YEAR_MONTH_FORMAT).to_string();
+                    increment(&mut stats.sandbox_to_incubating, &year_month, 1);
                 }
 
                 // Promotions from incubating to graduated
@@ -301,8 +303,10 @@ impl ProjectsStats {
                 }
 
                 // Number of projects per TAG
-                if let Some(tag) = &item.tag {
-                    increment(&mut stats.tag, tag, 1);
+                if let Some(tags) = &item.tag {
+                    for tag in tags {
+                        increment(&mut stats.tag, tag, 1);
+                    }
                 }
             }
         }
@@ -380,6 +384,13 @@ impl RepositoriesStats {
                     // Number of repositories
                     stats.repositories += 1;
 
+                    // Licenses
+                    let mut license_overriden = false;
+                    if let Some(license) = &repo.license {
+                        license_overriden = true;
+                        increment(&mut stats.licenses, license, 1);
+                    }
+
                     if let Some(gh_data) = &repo.github_data {
                         // Contributors
                         stats.contributors += gh_data.contributors.count as u64;
@@ -399,7 +410,7 @@ impl RepositoriesStats {
                         }
 
                         // Licenses
-                        if let Some(license) = &gh_data.license {
+                        if !license_overriden && let Some(license) = &gh_data.license {
                             increment(&mut stats.licenses, license, 1);
                         }
 
@@ -486,12 +497,14 @@ fn calculate_running_total(map: &BTreeMap<YearMonth, u64>) -> BTreeMap<YearMonth
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use chrono::NaiveDate;
+
     use crate::data::{
         Acquisition, Contributors, FundingRound, Item, ItemAudit, Organization, Repository,
         RepositoryGithubData,
     };
-    use chrono::NaiveDate;
+
+    use super::*;
 
     #[test]
     fn stats_new() {
@@ -646,7 +659,7 @@ mod tests {
                     accepted_at: NaiveDate::from_ymd_opt(2024, 4, 2),
                     incubating_at: NaiveDate::from_ymd_opt(2024, 4, 2),
                     graduated_at: NaiveDate::from_ymd_opt(2024, 4, 2),
-                    tag: Some("tag1".to_string()),
+                    tag: Some(vec!["tag1".to_string()]),
                     audits: Some(vec![ItemAudit {
                         date: NaiveDate::from_ymd_opt(2024, 4, 2).unwrap(),
                         ..Default::default()
@@ -661,7 +674,7 @@ mod tests {
                     homepage_url: "https://project2.com".to_string(),
                     accepted_at: NaiveDate::from_ymd_opt(2024, 5, 1),
                     incubating_at: NaiveDate::from_ymd_opt(2024, 5, 2),
-                    tag: Some("tag1".to_string()),
+                    tag: Some(vec!["tag1".to_string()]),
                     audits: Some(vec![ItemAudit {
                         date: NaiveDate::from_ymd_opt(2024, 5, 2).unwrap(),
                         ..Default::default()
@@ -755,6 +768,7 @@ mod tests {
                     name: "Project 2".to_string(),
                     repositories: Some(vec![
                         Repository {
+                            license: Some("MIT".to_string()),
                             url: "https://repository2.url".to_string(),
                             github_data: Some(RepositoryGithubData {
                                 contributors: Contributors {
@@ -777,7 +791,7 @@ mod tests {
                                     .into_iter()
                                     .collect(),
                                 ),
-                                license: Some("MIT".to_string()),
+                                license: Some("Apache-2.0".to_string()),
                                 participation_stats: vec![4, 5, 6],
                                 stars: 20,
                                 ..Default::default()

@@ -1,3 +1,5 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/cncf/landscape2/refs/heads/main/docs/config/schema/settings.schema.json
+
 # Landscape2 settings
 #
 # This settings file allows customizing some aspects of the landscape.
@@ -101,6 +103,15 @@ colors:
   color6: "rgba(0, 42, 81, 0.7)"
   color7: "rgba(180, 219, 255, 1)"
 
+# Description (optional)
+#
+# Text describing the landscape. Aim for ~150 characters so search engines may
+# use this content as the site's description in results pages.
+#
+# description: <LANDSCAPE_DESCRIPTION>
+#
+description: The CNCF Landscape showcases cloud native projects and members.
+
 # End user (optional)
 #
 # This section allows defining what items should be marked as `end user` based
@@ -134,11 +145,19 @@ enduser:
 # considered a featured item. For each option, it is possible to also define an
 # order (which item would be displayed first) and a label for the item.
 #
+# It is also possible to exclude the featured highlight from being applied in
+# certain groups by using the `exclude` option. The `exclude` option contains a
+# `groups` field that allows providing a list of groups where the featured
+# highlight should not be applied.
+#
 # featured_items:
 #   - field: subcategory
 #     options:
 #       - value: <SUBCATEGORY1_NAME>
 #       - value: <SUBCATEGORY2_NAME>
+#     exclude:
+#       groups:
+#         - <GROUP_NAME>
 #
 featured_items:
   - field: maturity
@@ -149,6 +168,9 @@ featured_items:
       - value: incubating
         order: 2
         label: CNCF Incubating
+    exclude:
+      groups:
+        - Certified partners and providers
   - field: subcategory
     options:
       - value: Platinum
@@ -172,7 +194,7 @@ featured_items:
 #     twitter: <TWITTER_URL>
 #     wechat: <WECHAT_URL>
 #     youtube: <YOUTUBE_URL>
-#   logo: <LOGO_URL>  # Foundation logo featured on the footer
+#   logo: <LOGO_URL or LOGO_PATH>  # Foundation logo featured on the footer
 #   text: <TEXT>      # Copyright notice, for example
 #
 footer:
@@ -190,7 +212,7 @@ footer:
     youtube: "https://www.youtube.com/c/cloudnativefdn"
   logo: "https://raw.githubusercontent.com/cncf/artwork/master/other/cncf/horizontal/white/cncf-white.svg"
   text: |
-    Copyright © 2024 The Linux Foundation®. All rights reserved. The Linux Foundation has registered trademarks and uses trademarks. For a list of trademarks of The Linux Foundation, please see our [Trademark Usage page](https://www.linuxfoundation.org/trademark-usage). Linux is a registered trademark of Linus Torvalds. [Privacy Policy](https://www.linuxfoundation.org/privacy) and [Terms of Use](https://www.linuxfoundation.org/terms). This website contains data received from Crunchbase. This data is not licensed pursuant to the Apache License. It is subject to Crunchbase's Data Access Terms, available at <https://data.crunchbase.com/docs/terms>, and is only permitted to be used with Linux Foundation landscape projects.
+    Copyright © 2026 The Linux Foundation®. All rights reserved. The Linux Foundation has registered trademarks and uses trademarks. For a list of trademarks of The Linux Foundation, please see our [Trademark Usage page](https://www.linuxfoundation.org/trademark-usage). Linux is a registered trademark of Linus Torvalds. [Privacy Policy](https://www.linuxfoundation.org/privacy) and [Terms of Use](https://www.linuxfoundation.org/terms). This website contains data received from Crunchbase. This data is not licensed pursuant to the Apache License. It is subject to Crunchbase's Data Access Terms, available at <https://data.crunchbase.com/docs/terms>, and is only permitted to be used with Linux Foundation landscape projects.
 
 # Grid items size (optional)
 #
@@ -217,12 +239,14 @@ grid_items_size: small
 #
 # groups:
 #   - name: <GROUP_NAME>
+#     alias: <GROUP_ALIAS>  # Optional alias enabling cleaner URLs (e.g. /projects)
 #     categories:
 #       - <CATEGORY1_NAME>
 #       - <CATEGORY2_NAME>
 #
 groups:
   - name: Projects and products
+    alias: projects
     categories:
       - App Definition and Development
       - Orchestration & Management
@@ -250,12 +274,22 @@ groups:
 # header:
 #   links:
 #     github: <GITHUB_URL>
-#   logo: <LOGO_URL>  # Foundation logo featured on the header
+#   logo: <LOGO_URL or LOGO_PATH>  # Foundation logo featured on the header
+#   motd: <MOTD_TEXT>  # Message of the day displayed at the top of the header (supports markdown)
 #
 header:
   links:
     github: "https://github.com/cncf/landscape"
   logo: "https://raw.githubusercontent.com/cncf/artwork/master/other/cncf-landscape/horizontal/color/cncf-landscape-horizontal-color.svg"
+  motd: |
+    "Welcome to the CNCF Landscape!"
+
+# Hide organization section in projects (optional)
+#
+# When set to true, the organization section won't be displayed in the item
+# modal for project items.
+#
+hide_organization_section_in_projects: false
 
 # Images (optional)
 #
@@ -326,7 +360,7 @@ screenshot_width: 3000
 
 # TAGs (optional)
 #
-# Projects items can specify which TAG owns them in the `landscape.yml` file
+# Projects items can specify which TAGs owns them in the `landscape.yml` file
 # (by using the `tag` field in the `extra` item's section). However, sometimes
 # this information is not available at the item level. This configuration
 # section provides a mechanism to automatically asign a TAG to projects items

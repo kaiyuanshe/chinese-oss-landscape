@@ -12,11 +12,11 @@ jobs:
       labels: ubuntu-latest-8-cores
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: 1.78.0
+          toolchain: 1.96.1
           components: clippy, rustfmt
       - name: Install wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
@@ -34,14 +34,7 @@ jobs:
       NODE_OPTIONS: --max_old_space_size=4096
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Cache node modules
-        uses: actions/cache@v4
-        with:
-          path: ./ui/webapp/node_modules
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-yarn-
+        uses: actions/checkout@v5
       - name: Install dependencies
         working-directory: ./ui/webapp
         run: yarn install --network-concurrency 1
@@ -51,6 +44,27 @@ jobs:
       - name: Run eslint
         working-directory: ./ui/webapp
         run: yarn lint
+      - name: Run tests
+        working-directory: ./ui/webapp
+        run: yarn test
+
+  lint-common:
+    runs-on:
+      labels: ubuntu-latest-8-cores
+    env:
+      NODE_OPTIONS: --max_old_space_size=4096
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+      - name: Install dependencies
+        working-directory: ./ui/common
+        run: yarn install --network-concurrency 1
+      - name: Run prettier
+        working-directory: ./ui/common
+        run: yarn format:diff
+      - name: Run eslint
+        working-directory: ./ui/common
+        run: yarn lint
 
   lint-and-test-embed:
     runs-on:
@@ -59,14 +73,7 @@ jobs:
       NODE_OPTIONS: --max_old_space_size=4096
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Cache node modules
-        uses: actions/cache@v4
-        with:
-          path: ./ui/embed/node_modules
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-yarn-
+        uses: actions/checkout@v5
       - name: Install dependencies
         working-directory: ./ui/embed
         run: yarn install --network-concurrency 1
@@ -75,4 +82,22 @@ jobs:
         run: yarn format:diff
       - name: Run eslint
         working-directory: ./ui/embed
+        run: yarn lint
+
+  lint-embed-item:
+    runs-on:
+      labels: ubuntu-latest-8-cores
+    env:
+      NODE_OPTIONS: --max_old_space_size=4096
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+      - name: Install dependencies
+        working-directory: ./ui/embed-item
+        run: yarn install --network-concurrency 1
+      - name: Run prettier
+        working-directory: ./ui/embed-item
+        run: yarn format:diff
+      - name: Run eslint
+        working-directory: ./ui/embed-item
         run: yarn lint

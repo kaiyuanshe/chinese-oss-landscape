@@ -1,4 +1,4 @@
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 use std::{
     path::{Path, PathBuf},
     process::Command,
@@ -15,6 +15,7 @@ fn main() -> Result<()> {
     println!("cargo:rerun-if-changed=../../ui/embed-item/public/embed-item.js");
     println!("cargo:rerun-if-changed=../../ui/embed-item/src");
     println!("cargo:rerun-if-changed=../../ui/embed-item/embed-item.html");
+    println!("cargo:rerun-if-changed=../../ui/kiosk/kiosk.html");
     println!("cargo:rerun-if-changed=../../ui/webapp/src");
     println!("cargo:rerun-if-changed=../../ui/webapp/static");
     println!("cargo:rerun-if-changed=../../ui/webapp/index.html");
@@ -30,14 +31,16 @@ fn main() -> Result<()> {
         bail!("yarn not found in PATH (required to build the web application)");
     }
 
-    // Build overlay wasm module
+    // Prepare wasm profile and target directory
     let mut wasm_profile = "--dev";
-    if let Ok(profile) = std::env::var("PROFILE") {
-        if profile == "release" {
-            wasm_profile = "--release";
-        }
+    if let Ok(profile) = std::env::var("PROFILE")
+        && profile == "release"
+    {
+        wasm_profile = "--release";
     };
     let wasm_target_dir = workspace_dir()?.join("target-wasm").to_string_lossy().to_string();
+
+    // Build overlay wasm module
     run(
         "wasm-pack",
         &[

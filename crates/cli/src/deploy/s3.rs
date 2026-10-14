@@ -1,17 +1,20 @@
 //! This module defines the functionality of the deploy CLI subcommand for the
 //! AWS S3 provider.
 
-use anyhow::{bail, format_err, Context, Result};
+use std::{
+    collections::HashMap,
+    env,
+    fmt::Write,
+    fs,
+    path::{Path, PathBuf},
+    time::Instant,
+};
+
+use anyhow::{Context, Result, bail, format_err};
 use aws_sdk_s3::primitives::ByteStream;
 use futures::stream::{self, StreamExt};
 use md5::{Digest, Md5};
 use mime_guess::mime;
-use std::{
-    collections::HashMap,
-    env, fs,
-    path::{Path, PathBuf},
-    time::Instant,
-};
 use tracing::{debug, info, instrument};
 use walkdir::WalkDir;
 
@@ -40,6 +43,10 @@ pub struct Args {
 }
 
 /// Deploy landscape website to AWS S3.
+///
+/// # Errors
+/// Returns an error if required environment variables are missing, uploads fail,
+/// or the source files cannot be read.
 #[instrument(skip_all, err)]
 pub async fn deploy(args: &Args) -> Result<()> {
     info!("deploying landscape website..");
@@ -161,10 +168,10 @@ async fn upload_objects(
             if deployed_objects.contains_key(&key) {
                 // Skip any other objects that haven't changed
                 let checksum = md5sum(file)?;
-                if let Some(remote_checksum) = deployed_objects.get(&key).expect("object to be present") {
-                    if checksum == *remote_checksum {
-                        return Ok(());
-                    }
+                if let Some(remote_checksum) = deployed_objects.get(&key).expect("object to be present")
+                    && checksum == *remote_checksum
+                {
+                    return Ok(());
                 }
             }
 
@@ -181,7 +188,7 @@ async fn upload_objects(
                 .content_type(content_type.essence_str())
                 .send()
                 .await
-                .context(format_err!("error uploading file {}", key))?;
+                .context(format_err!("error uploading file {key}"))?;
 
             debug!(?key, "file uploaded");
             Ok(())
@@ -196,7 +203,7 @@ async fn upload_objects(
     for result in results {
         if let Err(err) = result {
             errors_found = true;
-            errors.push_str(&format!("- {err:?}\n"));
+            let _ = writeln!(errors, "- {err:?}");
         }
     }
     if errors_found {
@@ -222,10 +229,10 @@ async fn upload_index_document(
     let content_type = mime::TEXT_HTML.essence_str();
 
     // Check if the remote copy is up to date
-    if let Some(remote_checksum) = remote_checksum {
-        if checksum == *remote_checksum {
-            return Ok(());
-        }
+    if let Some(remote_checksum) = remote_checksum
+        && checksum == *remote_checksum
+    {
+        return Ok(());
     }
 
     // Upload file
@@ -249,5 +256,47 @@ fn md5sum(path: &Path) -> Result<String> {
     hasher.update(fs::read(path)?);
     let result = hasher.finalize();
 
-    Ok(format!("{result:x}"))
+    let mut checksum = String::with_capacity(result.len() * 2);
+    for byte in result {
+        write!(&mut checksum, "{byte:02x}")?;
+    }
+
+    Ok(checksum)
+}
+
+#[cfg(test)]
+mod tests {
+    use std::{
+        env,
+        time::{SystemTime, UNIX_EPOCH},
+    };
+
+    use super::*;
+
+    #[test]
+    fn md5sum_changes_with_file_contents() -> Result<()> {
+        // Setup a temporary file with known content
+        let timestamp = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("system time to be after unix epoch")
+            .as_nanos();
+        let path = env::temp_dir().join(format!("landscape2-md5sum-{timestamp}.txt"));
+        std::fs::write(&path, b"hello world")?;
+
+        // Run the checksum calculation
+        let checksum = md5sum(&path)?;
+
+        // Check the digest matches the known value
+        assert_eq!(checksum, "5eb63bbbe01eeed093cb22bb8f5acdc3");
+
+        // Change the file contents and calculate the checksum again
+        std::fs::write(&path, b"hello landscape2")?;
+        let changed_checksum = md5sum(&path)?;
+        std::fs::remove_file(&path)?;
+
+        // Check content changes produce a different digest
+        assert_ne!(checksum, changed_checksum);
+
+        Ok(())
+    }
 }

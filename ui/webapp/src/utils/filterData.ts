@@ -1,3 +1,4 @@
+import intersection from 'lodash/intersection';
 import isUndefined from 'lodash/isUndefined';
 
 import { ActiveFilters, FilterCategory, Item, Repository } from '../types';
@@ -22,9 +23,15 @@ const filterData = (items: Item[], activeFilters: ActiveFilters): Item[] => {
 
       // Filter Category
       if (activeFilters[FilterCategory.Category]) {
+        const additional_categories = item.additional_categories
+          ? item.additional_categories.map((c) => c.category)
+          : [];
         if (isUndefined(item.category)) {
           return false;
-        } else if (!activeFilters[FilterCategory.Category].includes(item.category)) {
+        } else if (
+          !activeFilters[FilterCategory.Category].includes(item.category) &&
+          !activeFilters[FilterCategory.Category].some((c) => additional_categories.includes(c))
+        ) {
           return false;
         }
       }
@@ -69,7 +76,9 @@ const filterData = (items: Item[], activeFilters: ActiveFilters): Item[] => {
             } else {
               const licenses: string[] = [];
               item.repositories.forEach((repo: Repository) => {
-                if (repo.github_data && repo.github_data.license) {
+                if (repo.license) {
+                  licenses.push(repo.license);
+                } else if (repo.github_data && repo.github_data.license) {
                   licenses.push(repo.github_data.license);
                 }
               });
@@ -94,7 +103,7 @@ const filterData = (items: Item[], activeFilters: ActiveFilters): Item[] => {
       if (activeFilters[FilterCategory.TAG]) {
         if (isUndefined(item.tag)) {
           return false;
-        } else if (!activeFilters[FilterCategory.TAG].includes(item.tag)) {
+        } else if (intersection(activeFilters[FilterCategory.TAG], item.tag).length === 0) {
           return false;
         }
       }

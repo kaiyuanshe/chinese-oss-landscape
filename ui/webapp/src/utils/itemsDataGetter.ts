@@ -1,11 +1,12 @@
 import { capitalizeFirstLetter } from 'common';
-import { uniqBy } from 'lodash';
+import { flatten, uniqBy } from 'lodash';
 import compact from 'lodash/compact';
 import groupBy from 'lodash/groupBy';
 import intersection from 'lodash/intersection';
 import isEmpty from 'lodash/isEmpty';
 import isEqual from 'lodash/isEqual';
 import isUndefined from 'lodash/isUndefined';
+import reduce from 'lodash/reduce';
 import some from 'lodash/some';
 import uniq from 'lodash/uniq';
 import uniqWith from 'lodash/uniqWith';
@@ -32,11 +33,14 @@ import {
 import checkIfCategoryInGroup from './checkIfCategoryInGroup';
 import filterData from './filterData';
 import search from './search';
+import sortCategoriesByGroupOrder from './sortCategoriesByGroupOrder';
 import sortMenuOptions from './sortMenuOptions';
 
 export interface ItemsDataStatus {
-  updateStatus(status: boolean): void;
+  updateStatus(status: ItemsDataLoadStatus): void;
 }
+
+export type ItemsDataLoadStatus = 'error' | 'loading' | 'ready';
 
 export interface LogosOptionsGroup {
   id: LogosPreviewOptions;
@@ -79,7 +83,8 @@ export interface ClassifyAndSortOptions {
 
 export class ItemsDataGetter {
   private updateStatus?: ItemsDataStatus;
-  private ready = false;
+  private status: ItemsDataLoadStatus = 'loading';
+  private pendingRequest?: Promise<void>;
   private groups: string[] | undefined;
   private landscapeData?: LandscapeData;
   private classifyAndSortOptions: { [key: string]: ClassifyAndSortOptions } | undefined;
@@ -90,19 +95,44 @@ export class ItemsDataGetter {
     this.updateStatus = updateStatus;
   }
 
+  private get ready(): boolean {
+    return this.status === 'ready';
+  }
+
+  private setStatus(status: ItemsDataLoadStatus) {
+    this.status = status;
+    this.updateStatus?.updateStatus(status);
+  }
+
   // Initialize the data
   public init(landscapeData?: LandscapeData) {
-    if (!this.ready) {
-      if (landscapeData) {
-        this.prepareGroups();
-        this.initialDataPreparation(landscapeData);
-      } else {
-        fetch(import.meta.env.MODE === 'development' ? '../../static/data/full.json' : './data/full.json')
-          .then((res) => res.json())
-          .then((data: LandscapeData) => {
-            this.initialDataPreparation(data);
-          });
+    if (this.status === 'ready' || this.pendingRequest) return;
+
+    this.setStatus('loading');
+    if (landscapeData) {
+      this.prepareGroups();
+      this.initialDataPreparation(landscapeData);
+      return;
+    }
+
+    this.pendingRequest = this.loadData().finally(() => {
+      this.pendingRequest = undefined;
+    });
+  }
+
+  private async loadData(): Promise<void> {
+    try {
+      const response = await fetch(
+        import.meta.env.MODE === 'development' ? '../../static/data/full.json' : './data/full.json'
+      );
+      if (!response.ok) {
+        throw new Error(`Unable to load full data: ${response.status}`);
       }
+
+      const data = (await response.json()) as LandscapeData;
+      this.initialDataPreparation(data);
+    } catch {
+      this.setStatus('error');
     }
   }
 
@@ -137,20 +167,22 @@ export class ItemsDataGetter {
       ...data,
       items: extendedItems,
     };
-    this.ready = true;
-    if (this.updateStatus) {
-      this.updateStatus.updateStatus(true);
-    }
+    this.setStatus('ready');
     this.saveData();
   }
 
   public isReady(): boolean {
-    return this.ready;
+    return this.status === 'ready';
+  }
+
+  /** Return the current full-data loading status. */
+  public getStatus(): ItemsDataLoadStatus {
+    return this.status;
   }
 
   // Get all items
   public getAll(): Item[] {
-    if (this.ready && this.landscapeData && this.landscapeData.items) {
+    if (this.isReady() && this.landscapeData && this.landscapeData.items) {
       return this.landscapeData.items;
     }
     return [];
@@ -158,36 +190,56 @@ export class ItemsDataGetter {
 
   // Get crunchbase data
   public getCrunchbaseData(): CrunchbaseData | undefined {
-    if (this.ready && this.landscapeData && this.landscapeData.crunchbase_data) {
+    if (this.isReady() && this.landscapeData && this.landscapeData.crunchbase_data) {
       return this.landscapeData.crunchbase_data;
     }
     return undefined;
   }
 
   // Get categories and subcategories list with items
-  public getCategoriesAndSubcategoriesList(): Category[] {
-    const list: { [key: string]: string[] } = {};
+  public getCategoriesAndSubcategoriesWithItems(): Category[] {
+    const categoriesToKeep: { [key: string]: string[] } = {};
     window.baseDS.items.forEach((i: Item) => {
-      if (list[i.category]) {
-        list[i.category].push(i.subcategory);
+      if (categoriesToKeep[i.category]) {
+        if (!categoriesToKeep[i.category].includes(i.subcategory)) {
+          categoriesToKeep[i.category].push(i.subcategory);
+        }
       } else {
-        list[i.category] = [i.subcategory];
+        categoriesToKeep[i.category] = [i.subcategory];
       }
-    });
-    const categories: Category[] = [];
-    window.baseDS.categories.forEach((c: Category) => {
-      if (list[c.name]) {
-        const subcategories: Subcategory[] = [];
-        c.subcategories.forEach((s: Subcategory) => {
-          if (list[c.name].includes(s.name)) {
-            subcategories.push(s);
+      // Add additional categories
+      if (i.additional_categories) {
+        i.additional_categories.forEach((ac: AdditionalCategory) => {
+          if (categoriesToKeep[ac.category]) {
+            if (!categoriesToKeep[ac.category].includes(ac.subcategory)) {
+              categoriesToKeep[ac.category].push(ac.subcategory);
+            }
+          } else {
+            categoriesToKeep[ac.category] = [ac.subcategory];
           }
         });
-        categories.push({ ...c, subcategories: subcategories });
       }
     });
 
-    return categories;
+    const categoriesWithItems: Category[] = [];
+    window.baseDS.categories.forEach((c: Category) => {
+      // Check if the category is in the list of valid categories
+      // and if it has subcategories
+      if (categoriesToKeep[c.name] && c.subcategories.length > 0) {
+        const subcategoriesWithItems: Subcategory[] = [];
+        c.subcategories.forEach((s: Subcategory) => {
+          if (categoriesToKeep[c.name].includes(s.name)) {
+            subcategoriesWithItems.push(s);
+          }
+        });
+        // Check if the category has subcategories with items
+        if (subcategoriesWithItems.length > 0) {
+          categoriesWithItems.push({ ...c, subcategories: subcategoriesWithItems });
+        }
+      }
+    });
+
+    return categoriesWithItems;
   }
 
   // Extend items with crunchbase and github data
@@ -274,8 +326,8 @@ export class ItemsDataGetter {
     if (some(items, (i: Item) => !isUndefined(i.maturity))) {
       classify.push(ClassifyOption.Maturity);
     }
-    if (some(items, (i: Item) => !isUndefined(i.tag))) {
-      classify.push(ClassifyOption.Tag);
+    if (some(items, (i: Item) => !isUndefined(i.tag) && i.tag.length > 0)) {
+      classify.push(ClassifyOption.TAG);
     }
 
     if (some(items, (i: Item) => !isUndefined(i.repositories))) {
@@ -322,14 +374,15 @@ export class ItemsDataGetter {
 
     if (items && items.length > 0) {
       const addItem = (category: string, subcategory: string, item: BaseItem | Item) => {
+        const preparedItem = this.prepareItemForCategory(item, category, subcategory, activeCategoryFilters);
         if (groupedItems[category]) {
           if (groupedItems[category][subcategory]) {
-            groupedItems[category][subcategory].push(item);
+            groupedItems[category][subcategory].push(preparedItem);
           } else {
-            groupedItems[category][subcategory] = [item];
+            groupedItems[category][subcategory] = [preparedItem];
           }
         } else {
-          groupedItems[category] = { [subcategory]: [item] };
+          groupedItems[category] = { [subcategory]: [preparedItem] };
         }
       };
 
@@ -358,6 +411,63 @@ export class ItemsDataGetter {
     return groupedItems;
   }
 
+  // Align item metadata with the category view consuming this entry
+  private prepareItemForCategory(
+    item: BaseItem | Item,
+    category: string,
+    subcategory: string,
+    activeCategoryFilters?: string[]
+  ): BaseItem | Item {
+    const shouldFilterAdditionalCategories = !isUndefined(activeCategoryFilters) && activeCategoryFilters.length > 0;
+
+    const filteredAdditionalCategories =
+      shouldFilterAdditionalCategories && item.additional_categories
+        ? item.additional_categories.filter((additionalCategory: AdditionalCategory) =>
+            activeCategoryFilters!.includes(additionalCategory.category)
+          )
+        : item.additional_categories;
+
+    const requiresClone =
+      item.category !== category || item.subcategory !== subcategory || shouldFilterAdditionalCategories;
+
+    if (!requiresClone) {
+      return item;
+    }
+
+    const preparedItem: BaseItem | Item = {
+      ...item,
+      category,
+      subcategory,
+    };
+
+    if (shouldFilterAdditionalCategories) {
+      if (!isUndefined(filteredAdditionalCategories) && filteredAdditionalCategories.length > 0) {
+        preparedItem.additional_categories = filteredAdditionalCategories;
+      } else {
+        delete (preparedItem as BaseItem).additional_categories;
+      }
+    }
+
+    return preparedItem;
+  }
+
+  // Group items by tags (considering items can have multiple tags)
+  private groupByTags(items: Item[]): Record<string, Item[]> {
+    return reduce(
+      items,
+      (acc, item) => {
+        const tags = item.tag && item.tag.length > 0 ? item.tag : ['undefined']; // Assign to 'undefined' tag if no tags are present
+
+        tags.forEach((tag) => {
+          (acc[tag] ||= []).push(item);
+        });
+
+        return acc;
+      },
+      {} as Record<string, Item[]>
+    );
+  }
+
   // Classify items
   public classifyItems(
     items: (BaseItem | Item)[],
@@ -372,8 +482,8 @@ export class ItemsDataGetter {
         return this.classifyItemsByCatAndSub(items, group, activeCategoryFilters);
       case ClassifyOption.Maturity:
         return groupBy(items, 'maturity');
-      case ClassifyOption.Tag:
-        return groupBy(items, 'tag');
+      case ClassifyOption.TAG:
+        return this.groupByTags(items as Item[]);
     }
   }
 
@@ -391,26 +501,27 @@ export class ItemsDataGetter {
       }
 
       const addItem = (group: string, category: string, subcategory: string, item: Item | BaseItem) => {
+        const preparedItem = this.prepareItemForCategory(item, category, subcategory, activeCategoryFilters);
         if (data[group][category]) {
           if (data[group][category][subcategory]) {
-            data[group][category][subcategory].items.push(item);
+            data[group][category][subcategory].items.push(preparedItem);
             data[group][category][subcategory].itemsCount++;
-            if (item.featured) {
+            if (preparedItem.featured) {
               data[group][category][subcategory].itemsFeaturedCount++;
             }
           } else {
             data[group][category][subcategory] = {
-              items: [item],
+              items: [preparedItem],
               itemsCount: 1,
-              itemsFeaturedCount: item.featured ? 1 : 0,
+              itemsFeaturedCount: preparedItem.featured ? 1 : 0,
             };
           }
         } else {
           data[group][category] = {
             [subcategory]: {
-              items: [item],
+              items: [preparedItem],
               itemsCount: 1,
-              itemsFeaturedCount: item.featured ? 1 : 0,
+              itemsFeaturedCount: preparedItem.featured ? 1 : 0,
             },
           };
         }
@@ -452,7 +563,7 @@ export class ItemsDataGetter {
 
     Object.keys(data).forEach((group: string) => {
       sortedData[group] = {};
-      Object.keys(data[group]).forEach((category: string) => {
+      sortCategoriesByGroupOrder(Object.keys(data[group]), group).forEach((category: string) => {
         const isOverriden =
           !isUndefined(window.baseDS.categories_overridden) && window.baseDS.categories_overridden.includes(category);
         if (!isOverriden) {
@@ -527,7 +638,7 @@ export class ItemsDataGetter {
       case ClassifyOption.Maturity:
         options = sortMenuOptions(Object.keys(data as { [key: string]: never }));
         return options.length > 0 ? { Maturity: options } : {};
-      case ClassifyOption.Tag:
+      case ClassifyOption.TAG:
         options = sortMenuOptions(Object.keys(data as { [key: string]: never }));
         return options.length > 0 ? { Tag: options } : {};
     }
@@ -627,9 +738,11 @@ export class ItemsDataGetter {
   }
 
   // Get items by end user
-  public getItemsByEndUser(): Item[] | undefined {
+  public getItemsByEndUser(excludeSubcategories?: string[]): Item[] | undefined {
     if (this.ready && this.landscapeData && this.landscapeData.items) {
-      return this.landscapeData.items.filter((i: Item) => i.enduser);
+      return this.landscapeData.items.filter(
+        (i: Item) => i.enduser && (!excludeSubcategories || !excludeSubcategories.includes(i.subcategory))
+      );
     }
   }
 
@@ -637,6 +750,12 @@ export class ItemsDataGetter {
   public getMaturityOptions(): string[] {
     const maturity = window.baseDS.items.map((i: Item) => i.maturity);
     return uniq(compact(maturity)) || [];
+  }
+
+  // Get tag options
+  public getTagOptions(): string[] {
+    const tags = window.baseDS.items.map((i: Item) => i.tag);
+    return uniq(compact(flatten(tags))) || [];
   }
 
   // Get license options
@@ -648,7 +767,9 @@ export class ItemsDataGetter {
         allGroupedItems[group].forEach((i: Item) => {
           if (i.repositories) {
             i.repositories.forEach((r: Repository) => {
-              if (r.github_data) {
+              if (r.license) {
+                options.push(r.license);
+              } else if (r.github_data) {
                 options.push(r.github_data!.license);
               }
             });
@@ -742,6 +863,10 @@ export class ItemsDataGetter {
           {
             value: 'enduser',
             name: 'End user members',
+          },
+          {
+            value: 'enduser-notsupporters',
+            name: 'End user members (excluding End User Supporter and Contributor)',
           },
         ],
       });

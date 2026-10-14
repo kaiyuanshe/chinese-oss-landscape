@@ -1,19 +1,20 @@
 //! This module defines some types used to parse the landscape data file in
 //! legacy format and convert it to the new one.
 
-use super::{ItemAudit, ItemLink};
-use crate::util::validate_url;
-use anyhow::{bail, format_err, Context, Result};
+use std::{collections::HashMap, sync::LazyLock};
+
+use anyhow::{Context, Result, bail, format_err};
 use chrono::NaiveDate;
-use lazy_static::lazy_static;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
-lazy_static! {
-    /// TAG name regular expression.
-    static ref TAG_NAME: Regex = Regex::new(r"^[a-z\-]+$").expect("exprs in TAG_NAME to be valid");
-}
+use crate::util::validate_url;
+
+use super::{ItemAudit, ItemLink};
+
+/// TAG name regular expression.
+static TAG_NAME: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^[a-z\-]+$").expect("exprs in TAG_NAME to be valid"));
 
 /// Landscape data (legacy format).
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
@@ -27,7 +28,7 @@ impl LandscapeData {
     pub fn validate(&self) -> Result<()> {
         for (category_index, category) in self.landscape.iter().enumerate() {
             // Check category name
-            if category.name.is_empty() {
+            if category.name.trim().is_empty() {
                 bail!("category [{category_index}] name is required");
             }
 
@@ -36,7 +37,7 @@ impl LandscapeData {
                 let mut items_seen = Vec::new();
 
                 // Check subcategory name
-                if subcategory.name.is_empty() {
+                if subcategory.name.trim().is_empty() {
                     bail!(
                         "subcategory [{subcategory_index}] name is required (category: [{}]) ",
                         category.name
@@ -45,7 +46,7 @@ impl LandscapeData {
 
                 for (item_index, item) in subcategory.items.iter().enumerate() {
                     // Prepare context for errors
-                    let item_id = if item.name.is_empty() {
+                    let item_id = if item.name.trim().is_empty() {
                         format!("{item_index}")
                     } else {
                         item.name.clone()
@@ -56,7 +57,7 @@ impl LandscapeData {
                     );
 
                     // Check name
-                    if item.name.is_empty() {
+                    if item.name.trim().is_empty() {
                         return Err(format_err!("item name is required")).context(ctx);
                     }
                     if items_seen.contains(&item.name) {
@@ -65,12 +66,12 @@ impl LandscapeData {
                     items_seen.push(item.name.clone());
 
                     // Check homepage
-                    if item.homepage_url.is_empty() {
+                    if item.homepage_url.trim().is_empty() {
                         return Err(format_err!("homepage url is required")).context(ctx);
                     }
 
                     // Check logo
-                    if item.logo.is_empty() {
+                    if item.logo.trim().is_empty() {
                         return Err(format_err!("logo is required")).context(ctx);
                     }
 
@@ -79,22 +80,24 @@ impl LandscapeData {
                         // Check other links
                         if let Some(other_links) = &extra.other_links {
                             for link in other_links {
-                                if link.name.is_empty() {
+                                if link.name.trim().is_empty() {
                                     return Err(format_err!("link name is required")).context(ctx);
                                 }
-                                if link.url.is_empty() {
+                                if link.url.trim().is_empty() {
                                     return Err(format_err!("link url is required")).context(ctx);
                                 }
                             }
                         }
 
-                        // Check tag name
-                        if let Some(tag) = &extra.tag {
-                            if !TAG_NAME.is_match(tag) {
-                                return Err(format_err!(
-                                    "invalid tag (must use only lowercase letters and hyphens)"
-                                ))
-                                .context(ctx);
+                        // Check TAGs names
+                        if let Some(tags) = &extra.tag {
+                            for tag in tags {
+                                if !TAG_NAME.is_match(tag) {
+                                    return Err(format_err!(
+                                        "invalid tag (must use only lowercase letters and hyphens)"
+                                    ))
+                                    .context(ctx);
+                                }
                             }
                         }
                     }
@@ -136,6 +139,7 @@ pub(super) struct Item {
     pub enduser: Option<bool>,
     pub extra: Option<ItemExtra>,
     pub joined: Option<NaiveDate>,
+    pub license: Option<String>,
     pub project: Option<String>,
     pub repo_url: Option<String>,
     pub second_path: Option<Vec<String>>,
@@ -155,6 +159,7 @@ pub(super) struct ItemExtra {
     pub annual_review_url: Option<String>,
     pub artwork_url: Option<String>,
     pub blog_url: Option<String>,
+    pub bluesky_url: Option<String>,
     pub chat_channel: Option<String>,
     pub clomonitor_name: Option<String>,
     pub dev_stats_url: Option<String>,
@@ -162,10 +167,12 @@ pub(super) struct ItemExtra {
     pub docker_url: Option<String>,
     pub documentation_url: Option<String>,
     pub facebook_url: Option<String>,
+    pub funding_url: Option<String>,
     pub github_discussions_url: Option<String>,
     pub gitter_url: Option<String>,
     pub graduated: Option<NaiveDate>,
     pub incubating: Option<NaiveDate>,
+    pub lfx_slug: Option<String>,
     pub linkedin_url: Option<String>,
     pub mailing_list_url: Option<String>,
     pub other_links: Option<Vec<ItemLink>>,
@@ -184,7 +191,7 @@ pub(super) struct ItemExtra {
     pub summary_release_rate: Option<String>,
     pub summary_tags: Option<String>,
     pub summary_use_case: Option<String>,
-    pub tag: Option<String>,
+    pub tag: Option<Vec<String>>,
     pub training_certifications: Option<String>,
     pub training_type: Option<String>,
     pub youtube_url: Option<String>,
@@ -195,6 +202,7 @@ pub(super) struct ItemExtra {
 pub(super) struct Repository {
     pub repo_url: String,
     pub branch: Option<String>,
+    pub license: Option<String>,
 }
 
 /// Validate the urls of the item provided.
@@ -226,11 +234,13 @@ fn validate_urls(item: &Item) -> Result<()> {
             ("annual_review", &extra.annual_review_url),
             ("artwork", &extra.artwork_url),
             ("blog", &extra.blog_url),
+            ("bluesky", &extra.bluesky_url),
             ("dev_stats", &extra.dev_stats_url),
             ("discord", &extra.discord_url),
             ("docker", &extra.docker_url),
             ("documentation", &extra.documentation_url),
             ("facebook", &extra.facebook_url),
+            ("funding", &extra.funding_url),
             ("github_discussions", &extra.github_discussions_url),
             ("gitter", &extra.gitter_url),
             ("linkedin", &extra.linkedin_url),
@@ -261,7 +271,7 @@ fn validate_urls(item: &Item) -> Result<()> {
                 validate_url("other_link", link_url.as_ref())?;
             }
         }
-    };
+    }
 
     Ok(())
 }
@@ -291,10 +301,16 @@ mod tests {
                             ..Default::default()
                         }]),
                         blog_url: Some("https://blog.url".to_string()),
-                        other_links: Some(vec![ItemLink {
-                            name: "link".to_string(),
-                            url: "https://link.url".to_string(),
-                        }]),
+                        other_links: Some(vec![
+                            ItemLink {
+                                name: "email".to_string(),
+                                url: "mailto:team@example.com".to_string(),
+                            },
+                            ItemLink {
+                                name: "link".to_string(),
+                                url: "https://link.url".to_string(),
+                            },
+                        ]),
                         ..Default::default()
                     }),
                     ..Default::default()
@@ -310,7 +326,7 @@ mod tests {
     fn landscape_data_validate_empty_category_name() {
         let mut landscape = LandscapeData::default();
         landscape.landscape.push(Category {
-            name: String::new(),
+            name: "   ".to_string(),
             subcategories: vec![],
         });
 
@@ -324,7 +340,7 @@ mod tests {
         landscape.landscape.push(Category {
             name: "Category".to_string(),
             subcategories: vec![SubCategory {
-                name: String::new(),
+                name: "   ".to_string(),
                 items: vec![],
             }],
         });
@@ -341,7 +357,7 @@ mod tests {
             subcategories: vec![SubCategory {
                 name: "Subcategory".to_string(),
                 items: vec![Item {
-                    name: String::new(),
+                    name: "   ".to_string(),
                     ..Default::default()
                 }],
             }],
@@ -381,6 +397,8 @@ mod tests {
                 name: "Subcategory".to_string(),
                 items: vec![Item {
                     name: "Item".to_string(),
+                    homepage_url: "   ".to_string(),
+                    logo: "logo".to_string(),
                     ..Default::default()
                 }],
             }],
@@ -400,6 +418,7 @@ mod tests {
                 items: vec![Item {
                     name: "Item".to_string(),
                     homepage_url: "https://example.com".to_string(),
+                    logo: "   ".to_string(),
                     ..Default::default()
                 }],
             }],
@@ -422,7 +441,7 @@ mod tests {
                     logo: "logo".to_string(),
                     extra: Some(ItemExtra {
                         other_links: Some(vec![ItemLink {
-                            name: String::new(),
+                            name: "   ".to_string(),
                             url: "https://link.url".to_string(),
                         }]),
                         ..Default::default()
@@ -450,7 +469,7 @@ mod tests {
                     extra: Some(ItemExtra {
                         other_links: Some(vec![ItemLink {
                             name: "name".to_string(),
-                            url: String::new(),
+                            url: "   ".to_string(),
                         }]),
                         ..Default::default()
                     }),
@@ -475,7 +494,7 @@ mod tests {
                     homepage_url: "https://example.com".to_string(),
                     logo: "logo".to_string(),
                     extra: Some(ItemExtra {
-                        tag: Some("Invalid Tag".to_string()),
+                        tag: Some(vec!["Invalid Tag".to_string()]),
                         ..Default::default()
                     }),
                     ..Default::default()

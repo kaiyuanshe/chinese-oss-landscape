@@ -1,9 +1,15 @@
-import { ItemModalContent, ItemModalMobileContent, Loading, Modal, useBreakpointDetect } from 'common';
+import { ItemModalContent, ItemModalMobileContent, Loading, Modal, NoData, useBreakpointDetect } from 'common';
 import isNull from 'lodash/isNull';
 import isUndefined from 'lodash/isUndefined';
-import { createEffect, createSignal, Show } from 'solid-js';
+import { batch, createEffect, createSignal, Show } from 'solid-js';
 
-import { BASE_PATH, FOUNDATION, ITEM_VIEW, SMALL_DEVICES_BREAKPOINTS } from '../../../data';
+import {
+  BASE_PATH,
+  FOUNDATION,
+  HIDE_ORGANIZATION_SECTION_IN_PROJECTS,
+  ITEM_VIEW,
+  SMALL_DEVICES_BREAKPOINTS,
+} from '../../../data';
 import { Item } from '../../../types';
 import itemsDataGetter from '../../../utils/itemsDataGetter';
 import { useActiveItemId, useUpdateActiveItemId } from '../../stores/activeItem';
@@ -19,29 +25,42 @@ const ItemModal = () => {
   const [itemInfo, setItemInfo] = createSignal<Item | null | undefined>(undefined);
   const [parentInfo, setParentInfo] = createSignal<Item>();
   const { point } = useBreakpointDetect();
+  let activeRequestId = 0;
 
-  createEffect(() => {
-    async function fetchItemInfo() {
-      try {
-        const itemTmp = await itemsDataGetter.getItemById(visibleItemId()! as string);
-        if (!isUndefined(itemTmp) && !isUndefined(itemTmp!.parent_project)) {
-          const parentItem = await itemsDataGetter.getItemByName(itemTmp.parent_project);
-          if (!isUndefined(parentItem)) {
-            setParentInfo(parentItem);
-          }
-        } else {
-          setParentInfo(undefined);
-        }
-        setItemInfo(itemTmp);
-      } catch {
+  const fetchItemInfo = async (itemId: string, requestId: number) => {
+    try {
+      const item = await itemsDataGetter.getItemById(itemId);
+      const parentItem = !isUndefined(item?.parent_project)
+        ? await itemsDataGetter.getItemByName(item.parent_project)
+        : undefined;
+      if (requestId !== activeRequestId) return;
+
+      batch(() => {
+        setItemInfo(item ?? null);
+        setParentInfo(parentItem);
+      });
+    } catch {
+      if (requestId === activeRequestId) {
         setItemInfo(null);
       }
     }
+  };
 
-    if (visibleItemId() && fullDataReady()) {
-      fetchItemInfo();
+  createEffect(() => {
+    const itemId = visibleItemId();
+    const requestId = ++activeRequestId;
+
+    if (itemId && fullDataReady()) {
+      batch(() => {
+        setItemInfo(undefined);
+        setParentInfo(undefined);
+      });
+      void fetchItemInfo(itemId, requestId);
     } else {
-      setItemInfo(undefined);
+      batch(() => {
+        setItemInfo(undefined);
+        setParentInfo(undefined);
+      });
     }
   });
 
@@ -57,31 +76,47 @@ const ItemModal = () => {
         id={ITEM_VIEW}
       >
         <Show
-          when={!isUndefined(itemInfo()) && !isNull(itemInfo())}
+          when={!isUndefined(itemInfo())}
           fallback={
-            <div class={`d-flex flex-column p-5 ${styles.loadingWrapper}`}>
+            <div class={`d-flex flex-column p-5 ${styles.stateWrapper}`}>
               <Loading />
             </div>
           }
         >
           <Show
-            when={isUndefined(point()) || !SMALL_DEVICES_BREAKPOINTS.includes(point()!)}
+            when={!isNull(itemInfo())}
             fallback={
-              <ItemModalMobileContent
-                item={itemInfo()}
-                foundation={FOUNDATION}
-                parentInfo={parentInfo()}
-                onClose={() => updateActiveItemId()}
-              />
+              <div class={`d-flex flex-column align-items-center justify-content-center p-5 ${styles.stateWrapper}`}>
+                <NoData>
+                  <>
+                    <div class="fs-4">We couldn't find this item.</div>
+                    <p class="h6 mt-3 mb-0 lh-base">It may have been removed or the link may be incorrect.</p>
+                  </>
+                </NoData>
+              </div>
             }
           >
-            <ItemModalContent
-              item={itemInfo()}
-              foundation={FOUNDATION}
-              basePath={BASE_PATH}
-              parentInfo={parentInfo()}
-              onClose={() => updateActiveItemId()}
-            />
+            <Show
+              when={isUndefined(point()) || !SMALL_DEVICES_BREAKPOINTS.includes(point()!)}
+              fallback={
+                <ItemModalMobileContent
+                  item={itemInfo()}
+                  foundation={FOUNDATION}
+                  parentInfo={parentInfo()}
+                  onClose={() => updateActiveItemId()}
+                  hideOrganizationSection={HIDE_ORGANIZATION_SECTION_IN_PROJECTS}
+                />
+              }
+            >
+              <ItemModalContent
+                item={itemInfo()}
+                foundation={FOUNDATION}
+                basePath={BASE_PATH}
+                parentInfo={parentInfo()}
+                onClose={() => updateActiveItemId()}
+                hideOrganizationSection={HIDE_ORGANIZATION_SECTION_IN_PROJECTS}
+              />
+            </Show>
           </Show>
         </Show>
       </Modal>

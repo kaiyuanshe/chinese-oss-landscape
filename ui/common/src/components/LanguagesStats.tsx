@@ -1,5 +1,6 @@
 import { createEffect, createSignal, For, on } from 'solid-js';
 
+import { formatPercentage } from '../utils/formatPercentage';
 import { sortObjectByValue } from '../utils/sortObjectByValue';
 import { Box } from './Box';
 
@@ -36,7 +37,7 @@ export const LanguagesStats = (props: Props) => {
           return (
             <Box
               class={props.boxClass}
-              value={`${Number.isInteger(value()) ? value() : value().toFixed(2)}%`}
+              value={formatPercentage(value())}
               legend={lang}
               fillBgPercentage={value()}
               description={`${lang} language percentage`}

@@ -1,7 +1,7 @@
 //! This module contains the quiz game types and logic.
 
 #[cfg(not(test))]
-use cached::proc_macro::cached;
+use cached::cached;
 #[cfg(not(test))]
 use gloo_net::http::Request;
 use landscape2_core::games::Question;
@@ -43,7 +43,7 @@ pub struct Quiz {
 #[wasm_bindgen]
 impl Quiz {
     /// Create a new Quiz instance.
-    #[wasm_bindgen(constructor)]
+    #[wasm_bindgen]
     pub async fn new(options: Option<QuizOptions>) -> Result<Quiz, String> {
         let options = options.unwrap_or_default();
         let questions = pick_questions(options.landscape_url).await?;
@@ -197,7 +197,7 @@ async fn pick_questions(landscape_url: String) -> Result<Vec<Question>, String> 
 }
 
 /// Fetch the questions available for the quiz.
-#[cfg_attr(not(test), cached(result = true, sync_writes = true))]
+#[cfg_attr(not(test), cached(sync_writes = true))]
 async fn fetch_questions(landscape_url: String) -> Result<Vec<Question>, String> {
     let url = format!("{}/{}", landscape_url.trim_end_matches('/'), QUIZ_DATA_PATH);
 
@@ -220,7 +220,7 @@ async fn fetch_questions(landscape_url: String) -> Result<Vec<Question>, String>
 
 /// Helper function to convert an error to a string.
 fn to_str<E: std::fmt::Debug>(err: E) -> String {
-    format!("{:?}", err)
+    format!("{err:?}")
 }
 
 #[cfg(test)]
@@ -402,7 +402,7 @@ mod tests {
     async fn setup_mock_server(status_code: usize, data_file: &str) -> (mockito::ServerGuard, mockito::Mock) {
         let mut server = mockito::Server::new_async().await;
         let mock = server
-            .mock("GET", format!("/{}", QUIZ_DATA_PATH).as_str())
+            .mock("GET", format!("/{QUIZ_DATA_PATH}").as_str())
             .with_status(status_code)
             .with_body_from_file(data_file)
             .create_async()

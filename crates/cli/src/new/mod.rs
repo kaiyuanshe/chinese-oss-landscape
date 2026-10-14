@@ -1,13 +1,14 @@
 //! This module defines the functionality of the create CLI subcommand.
 
-use anyhow::Result;
-use rust_embed::RustEmbed;
 use std::{
     fs::{self, File},
     io::Write,
     path::{Path, PathBuf},
     time::Instant,
 };
+
+use anyhow::Result;
+use rust_embed::RustEmbed;
 use tracing::{info, instrument};
 
 /// Embed landscape template files into binary.
@@ -24,6 +25,10 @@ pub struct NewArgs {
 }
 
 /// Create a new landscape from the built-in template.
+///
+/// # Errors
+/// Returns an error if the output directory or template files cannot be
+/// created or written.
 #[instrument(skip_all)]
 pub fn new(args: &NewArgs) -> Result<()> {
     info!("creating new landscape from the built-in template..");

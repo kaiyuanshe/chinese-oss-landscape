@@ -7,19 +7,22 @@
 //! backwards compatibility, this module provides a `legacy` submodule that
 //! allows parsing the legacy format and convert it to the new one.
 
-use super::settings::{self, LandscapeSettings};
-use crate::util::normalize_name;
-use anyhow::{bail, Context, Result};
-use chrono::{DateTime, NaiveDate, Utc};
-use clap::Args;
-use reqwest::StatusCode;
-use serde::{Deserialize, Serialize};
 use std::{
     collections::{BTreeMap, HashMap},
     fs,
     path::{Path, PathBuf},
 };
+
+use anyhow::{Context, Result, bail};
+use chrono::{DateTime, NaiveDate, Utc};
+use clap::Args;
+use reqwest::StatusCode;
+use serde::{Deserialize, Serialize};
 use tracing::{debug, instrument, warn};
+
+use crate::util::normalize_name;
+
+use super::settings::{self, LandscapeSettings};
 
 mod legacy;
 
@@ -78,19 +81,23 @@ pub struct LandscapeData {
 
 impl LandscapeData {
     /// Create a new landscape data instance from the source provided.
+    ///
+    /// # Errors
+    /// Returns an error if the source is missing, the file or URL cannot be read,
+    /// or the data is invalid.
     #[instrument(skip_all, err)]
     pub async fn new(src: &DataSource) -> Result<Self> {
         // Try from file
         if let Some(file) = &src.data_file {
             debug!(?file, "getting landscape data from file");
             return LandscapeData::new_from_file(file);
-        };
+        }
 
         // Try from url
         if let Some(url) = &src.data_url {
             debug!(?url, "getting landscape data from url");
             return LandscapeData::new_from_url(url).await;
-        };
+        }
 
         bail!("data file or url not provided");
     }
@@ -132,10 +139,10 @@ impl LandscapeData {
     #[instrument(skip_all)]
     pub fn add_crunchbase_data(&mut self, crunchbase_data: &CrunchbaseData) {
         for item in &mut self.items {
-            if let Some(crunchbase_url) = item.crunchbase_url.as_ref() {
-                if let Some(org_crunchbase_data) = crunchbase_data.get(crunchbase_url) {
-                    item.crunchbase_data = Some(org_crunchbase_data.clone());
-                }
+            if let Some(crunchbase_url) = item.crunchbase_url.as_ref()
+                && let Some(org_crunchbase_data) = crunchbase_data.get(crunchbase_url)
+            {
+                item.crunchbase_data = Some(org_crunchbase_data.clone());
             }
         }
     }
@@ -153,13 +160,13 @@ impl LandscapeData {
             match rule.field.as_str() {
                 "maturity" => {
                     for item in &mut self.items {
-                        if let Some(item_maturity) = item.maturity.as_ref() {
-                            if let Some(option) = rule.options.iter().find(|o| o.value == *item_maturity) {
-                                item.featured = Some(ItemFeatured {
-                                    order: option.order,
-                                    label: option.label.clone(),
-                                });
-                            }
+                        if let Some(item_maturity) = item.maturity.as_ref()
+                            && let Some(option) = rule.options.iter().find(|o| o.value == *item_maturity)
+                        {
+                            item.featured = Some(ItemFeatured {
+                                label: option.label.clone(),
+                                order: option.order,
+                            });
                         }
                     }
                 }
@@ -167,8 +174,8 @@ impl LandscapeData {
                     for item in &mut self.items {
                         if let Some(option) = rule.options.iter().find(|o| o.value == item.subcategory) {
                             item.featured = Some(ItemFeatured {
-                                order: option.order,
                                 label: option.label.clone(),
+                                order: option.order,
                             });
                         }
                     }
@@ -195,11 +202,9 @@ impl LandscapeData {
             }
 
             // Set item's oss field
-            if item
-                .primary_repository()
-                .and_then(|repo| repo.github_data.as_ref())
-                .and_then(|gh_data| gh_data.license.as_ref())
-                .is_some()
+            if let Some(repo) = item.primary_repository()
+                && (repo.license.is_some()
+                    || repo.github_data.as_ref().is_some_and(|gh| gh.license.is_some()))
             {
                 item.oss = Some(true);
             }
@@ -223,10 +228,10 @@ impl LandscapeData {
 
         // Set item's member subcategory using the item's Crunchbase url to match
         for item in &mut self.items {
-            if let Some(crunchbase_url) = &item.crunchbase_url {
-                if let Some(member_subcategory) = members_subcategories.get(crunchbase_url) {
-                    item.member_subcategory = Some(member_subcategory.clone());
-                }
+            if let Some(crunchbase_url) = &item.crunchbase_url
+                && let Some(member_subcategory) = members_subcategories.get(crunchbase_url)
+            {
+                item.member_subcategory = Some(member_subcategory.clone());
             }
         }
     }
@@ -251,11 +256,9 @@ impl LandscapeData {
                         Some(s)
                     });
 
-                    if let Some(subcategories) = subcategories {
-                        if item.category == rule.category && subcategories.contains(&item.subcategory) {
-                            return Some(tag.clone());
-                        }
-                    } else if item.category == rule.category {
+                    if item.category == rule.category
+                        && subcategories.is_none_or(|scs| scs.contains(&item.subcategory))
+                    {
                         return Some(tag.clone());
                     }
                 }
@@ -266,7 +269,7 @@ impl LandscapeData {
 
         // Iterate over items and set TAG when found
         for item in &mut self.items {
-            // Only projects should be owned by a TAG
+            // Only projects should be associated to a TAG
             if item.maturity.is_none() {
                 continue;
             }
@@ -278,7 +281,7 @@ impl LandscapeData {
 
             // Try to find the appropriate TAG based on the settings
             if let Some(tag) = find_tag(item) {
-                item.tag = Some(tag);
+                item.tag = Some(vec![tag]);
             }
         }
     }
@@ -307,11 +310,9 @@ impl LandscapeData {
                     Some(s)
                 });
 
-                if let Some(subcategories) = &subcategories {
-                    if item.category == rule.category && subcategories.contains(&item.subcategory) {
-                        item.enduser = Some(true);
-                    }
-                } else if item.category == rule.category {
+                if item.category == rule.category
+                    && subcategories.as_ref().is_none_or(|scs| scs.contains(&item.subcategory))
+                {
                     item.enduser = Some(true);
                 }
             }
@@ -395,6 +396,7 @@ impl From<legacy::LandscapeData> for LandscapeData {
                             url,
                             branch: legacy_item.branch,
                             github_data: None,
+                            license: legacy_item.license,
                             primary: Some(true),
                         });
                     }
@@ -404,6 +406,7 @@ impl From<legacy::LandscapeData> for LandscapeData {
                                 url: entry.repo_url,
                                 branch: entry.branch,
                                 github_data: None,
+                                license: entry.license,
                                 primary: Some(false),
                             });
                         }
@@ -420,6 +423,7 @@ impl From<legacy::LandscapeData> for LandscapeData {
                         item.artwork_url = extra.artwork_url;
                         item.audits = extra.audits;
                         item.blog_url = extra.blog_url;
+                        item.bluesky_url = extra.bluesky_url;
                         item.chat_channel = extra.chat_channel;
                         item.clomonitor_name = extra.clomonitor_name;
                         item.devstats_url = extra.dev_stats_url;
@@ -427,12 +431,14 @@ impl From<legacy::LandscapeData> for LandscapeData {
                         item.docker_url = extra.docker_url;
                         item.documentation_url = extra.documentation_url;
                         item.facebook_url = extra.facebook_url;
+                        item.funding_url = extra.funding_url;
                         item.github_discussions_url = extra.github_discussions_url;
                         item.gitter_url = extra.gitter_url;
                         item.graduated_at = extra.graduated;
                         item.incubating_at = extra.incubating;
                         item.latest_annual_review_at = extra.annual_review_date;
                         item.latest_annual_review_url = extra.annual_review_url;
+                        item.lfx_slug = extra.lfx_slug;
                         item.linkedin_url = extra.linkedin_url;
                         item.mailing_list_url = extra.mailing_list_url;
                         item.other_links = extra.other_links;
@@ -554,6 +560,9 @@ pub struct Item {
     pub blog_url: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub bluesky_url: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub chat_channel: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -593,6 +602,9 @@ pub struct Item {
     pub featured: Option<ItemFeatured>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub funding_url: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub github_discussions_url: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -606,6 +618,9 @@ pub struct Item {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub joined_at: Option<NaiveDate>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub lfx_slug: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub linkedin_url: Option<String>,
@@ -662,7 +677,7 @@ pub struct Item {
     pub summary: Option<ItemSummary>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub tag: Option<String>,
+    pub tag: Option<Vec<String>>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub training_certifications: Option<String>,
@@ -726,15 +741,13 @@ impl Item {
     /// it matches the primary repository URL, we'll fallback to the homepage
     /// URL defined in the Crunchbase data -when available-.
     pub fn set_website(&mut self) {
-        if let Some(primary_repository) = self.primary_repository() {
-            if self.homepage_url == primary_repository.url {
-                if let Some(crunchbase_data) = &self.crunchbase_data {
-                    if let Some(cb_homepage_url) = &crunchbase_data.homepage_url {
-                        self.website.clone_from(cb_homepage_url);
-                        return;
-                    }
-                }
-            }
+        if let Some(primary_repository) = self.primary_repository()
+            && self.homepage_url == primary_repository.url
+            && let Some(crunchbase_data) = &self.crunchbase_data
+            && let Some(cb_homepage_url) = &crunchbase_data.homepage_url
+        {
+            self.website.clone_from(cb_homepage_url);
+            return;
         }
 
         self.website.clone_from(&self.homepage_url);
@@ -925,6 +938,9 @@ pub struct Repository {
     pub github_data: Option<RepositoryGithubData>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub license: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub primary: Option<bool>,
 }
 
@@ -956,8 +972,9 @@ pub struct RepositoryGithubData {
 
 #[cfg(test)]
 mod tests {
+    use crate::settings::{self, EndUserRule, FeaturedItemRule, FeaturedItemRuleOption, TagRule};
+
     use super::*;
-    use crate::settings::{EndUserRule, FeaturedItemRule, FeaturedItemRuleOption, TagRule};
 
     const DATA_FILE: &str = "data.yml";
     const TESTS_DATA_FILE: &str = "src/testdata/data.yml";
@@ -1080,6 +1097,7 @@ mod tests {
                     label: Some("Graduated".to_string()),
                     order: Some(1),
                 }],
+                ..Default::default()
             }]),
             ..Default::default()
         };
@@ -1089,7 +1107,7 @@ mod tests {
             landscape_data.items[0].featured,
             Some(ItemFeatured {
                 label: Some("Graduated".to_string()),
-                order: Some(1)
+                order: Some(1),
             })
         );
     }
@@ -1110,6 +1128,7 @@ mod tests {
                     label: Some("VIP category".to_string()),
                     order: Some(1),
                 }],
+                ..Default::default()
             }]),
             ..Default::default()
         };
@@ -1119,7 +1138,7 @@ mod tests {
             landscape_data.items[0].featured,
             Some(ItemFeatured {
                 label: Some("VIP category".to_string()),
-                order: Some(1)
+                order: Some(1),
             })
         );
     }
@@ -1202,7 +1221,7 @@ mod tests {
         };
 
         landscape_data.add_tags(&settings);
-        assert_eq!(landscape_data.items[0].tag, Some("tag1".to_string()));
+        assert_eq!(landscape_data.items[0].tag, Some(vec!["tag1".to_string()]));
     }
 
     #[test]
@@ -1229,7 +1248,7 @@ mod tests {
         };
 
         landscape_data.add_tags(&settings);
-        assert_eq!(landscape_data.items[0].tag, Some("tag1".to_string()));
+        assert_eq!(landscape_data.items[0].tag, Some(vec!["tag1".to_string()]));
     }
 
     #[test]
@@ -1263,7 +1282,7 @@ mod tests {
         landscape_data.items.push(Item {
             category: "Category".to_string(),
             maturity: Some("graduated".to_string()),
-            tag: Some("tag2".to_string()),
+            tag: Some(vec!["tag2".to_string()]),
             ..Default::default()
         });
 
@@ -1281,7 +1300,7 @@ mod tests {
         };
 
         landscape_data.add_tags(&settings);
-        assert_eq!(landscape_data.items[0].tag, Some("tag2".to_string()));
+        assert_eq!(landscape_data.items[0].tag, Some(vec!["tag2".to_string()]));
     }
 
     #[test]
@@ -1368,6 +1387,7 @@ mod tests {
                         additional_repos: Some(vec![legacy::Repository {
                             repo_url: "additional_repo_url".to_string(),
                             branch: Some("branch".to_string()),
+                            license: Some("license".to_string()),
                         }]),
                         branch: Some("branch".to_string()),
                         crunchbase: Some("crunchbase_url".to_string()),
@@ -1387,6 +1407,7 @@ mod tests {
                             annual_review_url: Some("annual_review_url".to_string()),
                             artwork_url: Some("artwork_url".to_string()),
                             blog_url: Some("blog_url".to_string()),
+                            bluesky_url: Some("bluesky_url".to_string()),
                             chat_channel: Some("chat_channel".to_string()),
                             clomonitor_name: Some("clomonitor_name".to_string()),
                             dev_stats_url: Some("dev_stats_url".to_string()),
@@ -1394,10 +1415,12 @@ mod tests {
                             docker_url: Some("docker_url".to_string()),
                             documentation_url: Some("documentation_url".to_string()),
                             facebook_url: Some("facebook_url".to_string()),
+                            funding_url: Some("funding_url".to_string()),
                             github_discussions_url: Some("github_discussions_url".to_string()),
                             gitter_url: Some("gitter_url".to_string()),
                             graduated: Some(date),
                             incubating: Some(date),
+                            lfx_slug: Some("lfx_slug".to_string()),
                             linkedin_url: Some("linkedin_url".to_string()),
                             mailing_list_url: Some("mailing_list_url".to_string()),
                             other_links: Some(vec![ItemLink {
@@ -1419,12 +1442,13 @@ mod tests {
                             summary_release_rate: Some("summary_release_rate".to_string()),
                             summary_tags: Some("tag1,tag2".to_string()),
                             summary_use_case: Some("summary_use_case".to_string()),
-                            tag: Some("tag".to_string()),
+                            tag: Some(vec!["tag".to_string()]),
                             training_certifications: Some("training_certifications".to_string()),
                             training_type: Some("training_type".to_string()),
                             youtube_url: Some("youtube_url".to_string()),
                         }),
                         joined: Some(date),
+                        license: Some("license".to_string()),
                         project: Some("graduated".to_string()),
                         repo_url: Some("repo_url".to_string()),
                         second_path: Some(vec!["category2 / subcategory2.1".to_string()]),
@@ -1467,6 +1491,7 @@ mod tests {
                     vendor: "vendor".to_string(),
                 }]),
                 blog_url: Some("blog_url".to_string()),
+                bluesky_url: Some("bluesky_url".to_string()),
                 chat_channel: Some("chat_channel".to_string()),
                 clomonitor_name: Some("clomonitor_name".to_string()),
                 clomonitor_report_summary: None,
@@ -1480,11 +1505,13 @@ mod tests {
                 enduser: Some(false),
                 facebook_url: Some("facebook_url".to_string()),
                 featured: None,
+                funding_url: Some("funding_url".to_string()),
                 github_discussions_url: Some("github_discussions_url".to_string()),
                 gitter_url: Some("gitter_url".to_string()),
                 graduated_at: Some(date),
                 incubating_at: Some(date),
                 joined_at: Some(date),
+                lfx_slug: Some("lfx_slug".to_string()),
                 linkedin_url: Some("linkedin_url".to_string()),
                 mailing_list_url: Some("mailing_list_url".to_string()),
                 maturity: Some("graduated".to_string()),
@@ -1506,12 +1533,14 @@ mod tests {
                         url: "repo_url".to_string(),
                         branch: Some("branch".to_string()),
                         github_data: None,
+                        license: Some("license".to_string()),
                         primary: Some(true),
                     },
                     Repository {
                         url: "additional_repo_url".to_string(),
                         branch: Some("branch".to_string()),
                         github_data: None,
+                        license: Some("license".to_string()),
                         primary: Some(false),
                     },
                 ]),
@@ -1528,7 +1557,7 @@ mod tests {
                     tags: Some(vec!["tag1".to_string(), "tag2".to_string()]),
                     use_case: Some("summary_use_case".to_string()),
                 }),
-                tag: Some("tag".to_string()),
+                tag: Some(vec!["tag".to_string()]),
                 training_certifications: Some("training_certifications".to_string()),
                 training_type: Some("training_type".to_string()),
                 twitter_url: Some("twitter_url".to_string()),

@@ -6,9 +6,6 @@
 
 您可以通过访问 [CNCF landscape](https://landscape.cncf.io) 来查看生成的景观效果。此外，该工具生成的其他景观示例可以在 [landscape2-sites 代码库](https://github.com/cncf/landscape2-sites#landscape2-sites) 中找到。
 
-> [!WARNING]
-> 上游项目 **Landscape2** 目前处于早期开发阶段。未来可能会对命令的使用方式、参数选项以及配置文件格式进行重大调整，这些变动可能会导致不兼容的情况发生。
-
 <br/>
 <table>
     <tr>
@@ -68,13 +65,13 @@ brew install cncf/landscape2/landscape2
 #### 通过 Shell 脚本安装
 
 ```text
-curl --proto '=https' --tlsv1.2 -LsSf https://github.com/cncf/landscape2/releases/download/v0.12.0/landscape2-installer.sh | sh
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/cncf/landscape2/releases/download/v1.1.0/landscape2-installer.sh | sh
 ```
 
 #### 通过 PowerShell 脚本安装
 
 ```text
-irm https://github.com/cncf/landscape2/releases/download/v0.12.0/landscape2-installer.ps1 | iex
+irm https://github.com/cncf/landscape2/releases/download/v1.1.0/landscape2-installer.ps1 | iex
 ```
 
 ---
@@ -87,11 +84,11 @@ irm https://github.com/cncf/landscape2/releases/download/v0.12.0/landscape2-inst
 
 ### 容器镜像
 
-Landscape2 CLI 工具也以 [容器镜像](https://gallery.ecr.aws/g6m3a0y9/landscape2) 的形式分发。该镜像既可以在本地运行，也可以用于 [CI 工作流中以自动化生成景观网站](https://github.com/cncf/landscape2-sites/tree/main/.github/workflows)。[landscape2-validate-action](https://github.com/cncf/landscape2-validate-action) 也使用此镜像，该工具可用于验证景观数据、设置和指南文件的有效性。
+Landscape2 CLI 工具也以 [容器镜像](https://github.com/cncf/landscape2/pkgs/container/landscape2) 的形式分发。该镜像既可以在本地运行，也可以用于 [CI 工作流中以自动化生成景观网站](https://github.com/cncf/landscape2-sites/tree/main/.github/workflows)。[landscape2-validate-action](https://github.com/cncf/landscape2-validate-action) 也使用此镜像，该工具可用于验证景观数据、设置和指南文件的有效性。
 
 ### 从源代码构建
 
-您可以使用 [Cargo](https://rustup.rs)（Rust 包管理器）从源代码构建 **landscape2**。构建 wasm 模块需要 [wasm-pack](https://rustwasm.github.io/wasm-pack/installer/)。在安装过程中还需要 [yarn](https://classic.yarnpkg.com/lang/en/docs/install/) 来构建 Web 应用程序，该应用程序将作为构建过程的一部分嵌入到 `landscape2` 二进制文件中。
+您可以使用 [Cargo](https://rustup.rs)（Rust 包管理器）从源代码构建 **landscape2**，当前源码要求 Rust 1.96.1 或更高版本。构建 wasm 模块需要 [wasm-pack](https://rustwasm.github.io/wasm-pack/installer/)。在安装过程中还需要 [yarn](https://classic.yarnpkg.com/lang/en/docs/install/) 来构建 Web 应用程序，该应用程序将作为构建过程的一部分嵌入到 `landscape2` 二进制文件中。
 
 ```text
 cargo install --git https://github.com/cncf/landscape2
@@ -125,7 +122,7 @@ https://github.com/cncf/landscape2#usage
 
 ## 使用方法
 
-为了展示 **landscape2** 的实际操作，我们将从头开始创建一个新的景观，构建并运行它。以下说明假设 `landscape2` 二进制文件已在您的 PATH 中可用。或者，您可以从 [提供的镜像](https://gallery.ecr.aws/g6m3a0y9/landscape2) 启动一个容器，其中 **landscape2** CLI 工具已准备就绪。
+为了展示 **landscape2** 的实际操作，我们将从头开始创建一个新的景观，构建并运行它。以下说明假设 `landscape2` 二进制文件已在您的 PATH 中可用。或者，您可以从 [提供的镜像](https://github.com/cncf/landscape2/pkgs/container/landscape2) 启动一个容器，其中 **landscape2** CLI 工具已准备就绪。
 
 ### 创建一个新的景观
 
@@ -234,6 +231,9 @@ INFO serve: landscape2::serve: http server running (press ctrl+c to stop)
 - `serve` 子命令已经内置了对 SPA 路由的支持，因此在使用它时无需额外配置。  
 - 对于 GitHub Pages，将 `index.html` 复制为 `404.html` 是一种常见的解决方案，因为 GitHub Pages 会在请求不存在的路径时自动提供 `404.html` 文件。
 
+> [!NOTE]
+> 如果将生成的网站部署在子路径（例如 `/chinese-oss-landscape`），请在 `settings.yml` 中设置对应的 `base_path`。
+
 ### 验证数据、设置和指南文件
 
 **landscape2** CLI 工具包含一个名为 `validate` 的子命令，允许您检查景观数据、设置和指南文件是否有效。如果您有兴趣将此验证集成到您的 CI 工作流中（例如，在合并 PR 之前强制确保这些文件有效），请查看 [landscape2-validate-action](https://github.com/cncf/landscape2-validate-action)。
@@ -254,7 +254,7 @@ Some operations like collecting data from external sources or processing a lot o
 
 ### Embeddable views
 
-**Landscape2** allows other websites to embed a view to display the items in a category or subcategory. The embed code can be easily obtained from the corresponding landscape website by visiting `/embed-setup` (i.e. in the case of the CNCF landscape, the url would be <https://landscape.cncf.io/embed-setup>). The customization options available can be adjusted as needed, and the generated embed code will be updated accordingly.
+**Landscape2** allows other websites to embed a view to display the items in one or more categories or subcategories. The embed code can be easily obtained from the corresponding landscape website by visiting `/embed-setup` (i.e. in the case of the CNCF landscape, the url would be <https://landscape.cncf.io/embed-setup>). The customization options available can be adjusted as needed, and the generated embed code will be updated accordingly.
 
 ![embed-setup](docs/screenshots/embed-setup.png)
 

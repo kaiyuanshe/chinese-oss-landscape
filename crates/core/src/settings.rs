@@ -7,21 +7,24 @@
 //! NOTE: the landscape settings file uses a new format that is not backwards
 //! compatible with the legacy settings file used by existing landscapes.
 
-use super::data::{CategoryName, SubcategoryName};
-use crate::util::{normalize_name, validate_url};
-use anyhow::{bail, format_err, Context, Result};
-use chrono::NaiveDate;
-use clap::Args;
-use lazy_static::lazy_static;
-use regex::Regex;
-use reqwest::StatusCode;
-use serde::{Deserialize, Serialize};
 use std::{
     collections::BTreeMap,
     fs,
     path::{Path, PathBuf},
+    sync::LazyLock,
 };
+
+use anyhow::{Context, Result, bail, format_err};
+use chrono::NaiveDate;
+use clap::Args;
+use regex::Regex;
+use reqwest::StatusCode;
+use serde::{Deserialize, Serialize};
 use tracing::{debug, instrument};
+
+use crate::util::{is_url, normalize_name, validate_url};
+
+use super::data::{CategoryName, SubcategoryName};
 
 /// Landscape settings location.
 #[derive(Args, Default, Debug, Clone, PartialEq)]
@@ -66,6 +69,9 @@ pub struct LandscapeSettings {
     pub colors: Option<Colors>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub enduser: Option<Vec<EndUserRule>>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -82,6 +88,9 @@ pub struct LandscapeSettings {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub groups: Option<Vec<Group>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub hide_organization_section_in_projects: Option<bool>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub images: Option<Images>,
@@ -110,19 +119,23 @@ pub struct LandscapeSettings {
 
 impl LandscapeSettings {
     /// Create a new landscape settings instance from the source provided.
+    ///
+    /// # Errors
+    /// Returns an error if the source is missing, the file or URL cannot be read,
+    /// or the data is invalid.
     #[instrument(skip_all, err)]
     pub async fn new(src: &SettingsSource) -> Result<Self> {
         // Try from file
         if let Some(file) = &src.settings_file {
             debug!(?file, "getting landscape settings from file");
             return LandscapeSettings::new_from_file(file);
-        };
+        }
 
         // Try from url
         if let Some(url) = &src.settings_url {
             debug!(?url, "getting landscape settings from url");
             return LandscapeSettings::new_from_url(url).await;
-        };
+        }
 
         bail!("settings file or url not provided");
     }
@@ -155,6 +168,7 @@ impl LandscapeSettings {
         let mut settings: LandscapeSettings = serde_yaml::from_str(raw_data).context("invalid yaml file")?;
 
         settings.validate().context("the landscape settings file provided is not valid")?;
+        settings.header_motd_to_html().context("error converting header motd md text to html")?;
         settings.footer_text_to_html().context("error converting footer md text to html")?;
         settings.remove_base_path_trailing_slash();
         settings.set_groups_normalized_name();
@@ -164,11 +178,23 @@ impl LandscapeSettings {
 
     /// Convert the provided footer text in markdown format to HTML.
     fn footer_text_to_html(&mut self) -> Result<()> {
-        if let Some(footer) = &mut self.footer {
-            if let Some(text) = &mut footer.text {
-                let options = markdown::Options::default();
-                *text = markdown::to_html_with_options(text, &options).map_err(|err| format_err!("{err}"))?;
-            }
+        if let Some(footer) = &mut self.footer
+            && let Some(text) = &mut footer.text
+        {
+            let options = markdown::Options::default();
+            *text = markdown::to_html_with_options(text, &options).map_err(|err| format_err!("{err}"))?;
+        }
+
+        Ok(())
+    }
+
+    /// Convert the provided header motd in markdown format to HTML.
+    fn header_motd_to_html(&mut self) -> Result<()> {
+        if let Some(header) = &mut self.header
+            && let Some(motd) = &mut header.motd
+        {
+            let options = markdown::Options::default();
+            *motd = markdown::to_html_with_options(motd, &options).map_err(|err| format_err!("{err}"))?;
         }
 
         Ok(())
@@ -176,10 +202,10 @@ impl LandscapeSettings {
 
     /// Remove base_path trailing slash if present.
     fn remove_base_path_trailing_slash(&mut self) {
-        if let Some(base_path) = &mut self.base_path {
-            if let Some(base_path_updated) = base_path.strip_suffix('/') {
-                *base_path = base_path_updated.to_string();
-            }
+        if let Some(base_path) = &mut self.base_path
+            && let Some(base_path_updated) = base_path.strip_suffix('/')
+        {
+            *base_path = base_path_updated.to_string();
         }
     }
 
@@ -195,7 +221,7 @@ impl LandscapeSettings {
     /// Validate landscape settings.
     fn validate(&self) -> Result<()> {
         // Check foundation is not empty
-        if self.foundation.is_empty() {
+        if self.foundation.trim().is_empty() {
             bail!("foundation cannot be empty");
         }
 
@@ -203,6 +229,7 @@ impl LandscapeSettings {
         validate_url("landscape", Some(self.url.clone()).as_ref())?;
 
         self.validate_base_path()?;
+        self.validate_description()?;
         self.validate_categories()?;
         self.validate_colors()?;
         self.validate_featured_items()?;
@@ -225,7 +252,7 @@ impl LandscapeSettings {
         };
 
         // Check base path is not empty
-        if base_path.is_empty() {
+        if base_path.trim().is_empty() {
             bail!("base_path cannot be empty");
         }
 
@@ -241,20 +268,20 @@ impl LandscapeSettings {
     fn validate_categories(&self) -> Result<()> {
         if let Some(categories) = &self.categories {
             for (i, category) in categories.iter().enumerate() {
-                let category_id = if category.name.is_empty() {
+                let category_id = if category.name.trim().is_empty() {
                     format!("{i}")
                 } else {
                     category.name.clone()
                 };
 
                 // Name
-                if category.name.is_empty() {
+                if category.name.trim().is_empty() {
                     bail!("category [{category_id}] name cannot be empty");
                 }
 
                 // Subcategories
                 for (subcategory_index, subcategory) in category.subcategories.iter().enumerate() {
-                    if subcategory.is_empty() {
+                    if subcategory.trim().is_empty() {
                         bail!("category [{category_id}]: subcategory [{subcategory_index}] cannot be empty");
                     }
                 }
@@ -287,11 +314,22 @@ impl LandscapeSettings {
         Ok(())
     }
 
+    /// Check description is not empty when provided.
+    fn validate_description(&self) -> Result<()> {
+        if let Some(description) = &self.description
+            && description.trim().is_empty()
+        {
+            bail!("description cannot be empty");
+        }
+
+        Ok(())
+    }
+
     /// Check featured item rules are valid.
     fn validate_featured_items(&self) -> Result<()> {
         if let Some(featured_items) = &self.featured_items {
             for (i, rule) in featured_items.iter().enumerate() {
-                let rule_id = if rule.field.is_empty() {
+                let rule_id = if rule.field.trim().is_empty() {
                     format!("{i}")
                 } else {
                     rule.field.clone()
@@ -299,7 +337,7 @@ impl LandscapeSettings {
                 let ctx = format!("featured item rule [{rule_id}] is not valid");
 
                 // Field
-                if rule.field.is_empty() {
+                if rule.field.trim().is_empty() {
                     return Err(format_err!("field cannot be empty")).context(ctx);
                 }
 
@@ -309,15 +347,15 @@ impl LandscapeSettings {
                 }
                 for option in &rule.options {
                     // Value
-                    if option.value.is_empty() {
+                    if option.value.trim().is_empty() {
                         return Err(format_err!("option value cannot be empty")).context(ctx);
                     }
 
                     // Label
-                    if let Some(label) = &option.label {
-                        if label.is_empty() {
-                            return Err(format_err!("option label cannot be empty")).context(ctx);
-                        }
+                    if let Some(label) = &option.label
+                        && label.trim().is_empty()
+                    {
+                        return Err(format_err!("option label cannot be empty")).context(ctx);
                     }
                 }
             }
@@ -352,13 +390,17 @@ impl LandscapeSettings {
         }
 
         // Logo
-        validate_url("footer logo", footer.logo.as_ref())?;
+        if let Some(logo) = &footer.logo
+            && is_url(logo)
+        {
+            validate_url("footer logo", Some(logo))?;
+        }
 
         // Text
-        if let Some(text) = &footer.text {
-            if text.is_empty() {
-                bail!("footer text cannot be empty");
-            }
+        if let Some(text) = &footer.text
+            && text.trim().is_empty()
+        {
+            bail!("footer text cannot be empty");
         }
 
         Ok(())
@@ -368,20 +410,20 @@ impl LandscapeSettings {
     fn validate_groups(&self) -> Result<()> {
         if let Some(groups) = &self.groups {
             for (i, group) in groups.iter().enumerate() {
-                let group_id = if group.name.is_empty() {
+                let group_id = if group.name.trim().is_empty() {
                     format!("{i}")
                 } else {
                     group.name.clone()
                 };
 
                 // Name
-                if group.name.is_empty() {
+                if group.name.trim().is_empty() {
                     bail!("group [{group_id}] name cannot be empty");
                 }
 
                 // Categories
                 for (category_index, category) in group.categories.iter().enumerate() {
-                    if category.is_empty() {
+                    if category.trim().is_empty() {
                         bail!("group [{group_id}]: category [{category_index}] cannot be empty");
                     }
                 }
@@ -404,7 +446,18 @@ impl LandscapeSettings {
         }
 
         // Logo
-        validate_url("header logo", header.logo.as_ref())?;
+        if let Some(logo) = &header.logo
+            && is_url(logo)
+        {
+            validate_url("header logo", Some(logo))?;
+        }
+
+        // Message of the day
+        if let Some(motd) = &header.motd
+            && motd.trim().is_empty()
+        {
+            bail!("header motd cannot be empty");
+        }
 
         Ok(())
     }
@@ -428,7 +481,7 @@ impl LandscapeSettings {
         };
 
         // Check members category is not empty
-        if members_category.is_empty() {
+        if members_category.trim().is_empty() {
             bail!("members category cannot be empty");
         }
 
@@ -440,10 +493,10 @@ impl LandscapeSettings {
         let Some(osano) = &self.osano else { return Ok(()) };
 
         // Check customer id and customer configuration id are not empty
-        if osano.customer_id.is_empty() {
+        if osano.customer_id.trim().is_empty() {
             bail!("osano customer id cannot be empty");
         }
-        if osano.customer_configuration_id.is_empty() {
+        if osano.customer_configuration_id.trim().is_empty() {
             bail!("osano customer configuration id cannot be empty");
         }
 
@@ -469,15 +522,15 @@ impl LandscapeSettings {
             for (i, tag_rules) in tags {
                 for rule in tag_rules {
                     // Category
-                    if rule.category.is_empty() {
+                    if rule.category.trim().is_empty() {
                         bail!("tag [{i}] category cannot be empty");
                     }
 
                     // Subcategories
-                    if let Some(subcategories) = &rule.subcategories {
-                        if subcategories.is_empty() {
-                            bail!("tag [{i}] subcategories cannot be empty");
-                        }
+                    if let Some(subcategories) = &rule.subcategories
+                        && subcategories.is_empty()
+                    {
+                        bail!("tag [{i}] subcategories cannot be empty");
                     }
                 }
             }
@@ -501,12 +554,11 @@ pub struct Category {
     pub subcategories: Vec<SubcategoryName>,
 }
 
-lazy_static! {
-    /// RGBA regular expression.
-    static ref RGBA: Regex =
-        Regex::new(r"rgba?\(((25[0-5]|2[0-4]\d|1\d{1,2}|\d\d?)\s*,\s*?){2}(25[0-5]|2[0-4]\d|1\d{1,2}|\d\d?)\s*,?\s*([01]\.?\d*?)\)")
-            .expect("exprs in RGBA to be valid");
-}
+/// RGBA regular expression.
+static RGBA: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"rgba?\(((25[0-5]|2[0-4]\d|1\d{1,2}|\d\d?)\s*,\s*?){2}(25[0-5]|2[0-4]\d|1\d{1,2}|\d\d?)\s*,?\s*([01]\.?\d*?)\)")
+        .expect("exprs in RGBA to be valid")
+});
 
 /// Colors used across the landscape UI.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
@@ -537,6 +589,17 @@ pub struct EndUserRule {
 pub struct FeaturedItemRule {
     pub field: String,
     pub options: Vec<FeaturedItemRuleOption>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub exclude: Option<FeaturedItemRuleExclude>,
+}
+
+/// Featured item rule exclusion configuration.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct FeaturedItemRuleExclude {
+    /// Groups where the featured highlight should not be applied.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub groups: Option<Vec<String>>,
 }
 
 /// Featured item rule option.
@@ -624,9 +687,14 @@ pub enum GridItemsSize {
 /// categories in the web application.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct Group {
-    pub name: String,
-    pub normalized_name: Option<String>,
     pub categories: Vec<CategoryName>,
+    pub name: String,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub alias: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub normalized_name: Option<String>,
 }
 
 /// Header configuration.
@@ -637,6 +705,9 @@ pub struct Header {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub logo: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub motd: Option<String>,
 }
 
 /// Header links.
@@ -918,6 +989,19 @@ mod tests {
     }
 
     #[test]
+    #[should_panic(expected = "description cannot be empty")]
+    fn settings_validate_description_empty() {
+        let settings = LandscapeSettings {
+            foundation: "Foundation".to_string(),
+            url: "https://example.url".to_string(),
+            description: Some("   ".to_string()),
+            ..Default::default()
+        };
+
+        settings.validate().unwrap();
+    }
+
+    #[test]
     fn settings_validate_categories_succeeds() {
         let settings = LandscapeSettings {
             foundation: "Foundation".to_string(),
@@ -1017,6 +1101,29 @@ mod tests {
                     label: Some("Label".to_string()),
                     order: Some(1),
                 }],
+                ..Default::default()
+            }]),
+            ..Default::default()
+        };
+
+        settings.validate().unwrap();
+    }
+
+    #[test]
+    fn settings_validate_featured_items_with_exclude_succeeds() {
+        let settings = LandscapeSettings {
+            foundation: "Foundation".to_string(),
+            url: "https://example.url".to_string(),
+            featured_items: Some(vec![FeaturedItemRule {
+                field: "Field".to_string(),
+                options: vec![FeaturedItemRuleOption {
+                    value: "Value".to_string(),
+                    label: Some("Label".to_string()),
+                    order: Some(1),
+                }],
+                exclude: Some(FeaturedItemRuleExclude {
+                    groups: Some(vec!["members".to_string()]),
+                }),
             }]),
             ..Default::default()
         };
@@ -1033,6 +1140,7 @@ mod tests {
             featured_items: Some(vec![FeaturedItemRule {
                 field: String::new(),
                 options: vec![],
+                ..Default::default()
             }]),
             ..Default::default()
         };
@@ -1049,6 +1157,7 @@ mod tests {
             featured_items: Some(vec![FeaturedItemRule {
                 field: "Field".to_string(),
                 options: vec![],
+                ..Default::default()
             }]),
             ..Default::default()
         };
@@ -1068,6 +1177,7 @@ mod tests {
                     value: String::new(),
                     ..Default::default()
                 }],
+                ..Default::default()
             }]),
             ..Default::default()
         };
@@ -1088,6 +1198,7 @@ mod tests {
                     label: Some(String::new()),
                     ..Default::default()
                 }],
+                ..Default::default()
             }]),
             ..Default::default()
         };
@@ -1140,7 +1251,7 @@ mod tests {
             foundation: "Foundation".to_string(),
             url: "https://example.url".to_string(),
             footer: Some(Footer {
-                logo: Some("invalid-url".to_string()),
+                logo: Some("https:// invalid_url".to_string()),
                 ..Default::default()
             }),
             ..Default::default()
@@ -1225,6 +1336,7 @@ mod tests {
                     github: Some("https://github.com".to_string()),
                 }),
                 logo: Some("https://logo.url".to_string()),
+                ..Default::default()
             }),
             ..Default::default()
         };
@@ -1257,7 +1369,23 @@ mod tests {
             foundation: "Foundation".to_string(),
             url: "https://example.url".to_string(),
             header: Some(Header {
-                logo: Some("invalid-url".to_string()),
+                logo: Some("https:// invalid_url".to_string()),
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+
+        settings.validate().unwrap();
+    }
+
+    #[test]
+    #[should_panic(expected = "header motd cannot be empty")]
+    fn settings_validate_header_empty_motd() {
+        let settings = LandscapeSettings {
+            foundation: "Foundation".to_string(),
+            url: "https://example.url".to_string(),
+            header: Some(Header {
+                motd: Some(String::new()),
                 ..Default::default()
             }),
             ..Default::default()

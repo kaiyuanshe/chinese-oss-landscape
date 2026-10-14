@@ -1,4 +1,4 @@
-import { Image, Loading } from 'common';
+import { Image, Loading, NoData } from 'common';
 import isUndefined from 'lodash/isUndefined';
 import orderBy from 'lodash/orderBy';
 import { createEffect, createSignal, For, on, Show } from 'solid-js';
@@ -72,6 +72,11 @@ const Logos = () => {
             switch (selectedOptionValue()) {
               case 'enduser':
                 list = itemsDataGetter.getItemsByEndUser() || [];
+                break;
+
+              case 'enduser-notsupporters':
+                // This case use End User Supporter and Contributor subcategory
+                list = itemsDataGetter.getItemsByEndUser(['End User Supporter and Contributor']) || [];
                 break;
 
               default:
@@ -250,6 +255,13 @@ const Logos = () => {
                 </div>
                 <div class="position-relative mt-5">
                   <Show when={!isUndefined(items())}>
+                    <Show when={items()!.length === 0}>
+                      <NoData>
+                        <div>
+                          <h4 class="fw-normal">No items found for the selected options</h4>
+                        </div>
+                      </NoData>
+                    </Show>
                     <div class={styles.grid} role="list">
                       <For each={items()}>
                         {(item) => {

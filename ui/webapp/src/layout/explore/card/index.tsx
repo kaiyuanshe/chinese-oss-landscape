@@ -6,9 +6,9 @@ import { createEffect, createSignal, on, onMount, Show } from 'solid-js';
 
 import { CardMenu, ClassifyOption, SortDirection, SortOption } from '../../../types';
 import getName from '../../../utils/getName';
-import getNormalizedName from '../../../utils/getNormalizedName';
 import goToElement from '../../../utils/goToElement';
 import isElementInView from '../../../utils/isElementInView';
+import buildNormalizedId from '../../../utils/normalizeId';
 import ButtonToTopScroll from '../../common/ButtonToTopScroll';
 import { useFullDataReady } from '../../stores/fullData';
 import styles from './CardCategory.module.css';
@@ -17,7 +17,6 @@ import Menu from './Menu';
 
 interface Props {
   initialIsVisible: boolean;
-  group: string;
   classify: ClassifyOption;
   sorted: SortOption;
   direction: SortDirection;
@@ -43,7 +42,7 @@ const CardCategory = (props: Props) => {
       } else {
         return false;
       }
-    } else if (props.classify === ClassifyOption.Tag) {
+    } else if (props.classify === ClassifyOption.TAG) {
       const tagOpt = selection.split('--')[1];
       if (!isUndefined(menu()) && !isUndefined(menu()!.Tag) && menu()!.Tag.includes(tagOpt)) {
         return true;
@@ -93,7 +92,7 @@ const CardCategory = (props: Props) => {
         const firstTitle = Object.keys(menu()!)[0];
         const firstSubtitle = menu()![firstTitle][0];
         if (!isUndefined(firstSubtitle)) {
-          const firstItemInMenu = getNormalizedName({
+          const firstItemInMenu = buildNormalizedId({
             title: firstTitle.toLowerCase(),
             subtitle: firstSubtitle,
             grouped: true,

@@ -7,6 +7,66 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2025-10-17
+
+### Added
+
+- Group alias (#881)
+- Option to set landscape description (#879)
+- Option to select multiple categories and subcategories on embed (#876, #880)
+- Display message of the day in header (#873)
+- Flag to hide organization section in projects (#871)
+- First commit date to projects summary table (#852)
+
+### Changed
+
+- Settings logos can now use local paths (#846)
+- Extend API item type with some more fields (#837)
+- Upgrade CLI tool dependencies
+- Upgrade web application and embed dependencies
+
+### Fixed
+
+- Issue with category filter (#875)
+- Issue with multiple tags (#874)
+- Issue normalizing names with non-ascii chars (#838)
+- Issue with hardware acceleration on Windows (#823)
+- Some minor UI issues (#825)
+
+## [1.0.0] - 2025-05-16
+
+### Added
+
+- Allow overriding repositories license (#807)
+- Bluesky url field (#797)
+
+### Changed
+
+- Some improvements for stats graphs on mobile devices (#810)
+- Improve how summary fields are displayed (#808)
+- Increase screenshot timeout to 10m (#796)
+- Upgrade CLI tool dependencies
+- Upgrade web application and embed dependencies
+
+### Fixed
+
+- Issue handling empty categories in embed modal (#791, #801)
+
+## [0.13.0] - 2025-01-24
+
+### Added
+
+- JSON schema for data and config files (#785)
+- Allow classifying by maturity and TAG on embed (#781)
+- Allow associating projects with multiple TAGs (#780)
+- Search keyboard shortcut (#779)
+
+### Fixed
+
+- Issue with additional categories on embed view (#787)
+- Empty subcategory on embed view (#782)
+- Additional categories ignored in zoom item modal and guide (#773)
+
 ## [0.12.0] - 2024-12-11
 
 ### Added

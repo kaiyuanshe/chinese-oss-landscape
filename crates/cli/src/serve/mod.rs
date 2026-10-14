@@ -1,14 +1,15 @@
 //! This module defines the functionality of the serve CLI subcommand.
 
+use std::{env, net::SocketAddr, path::PathBuf};
+
 use anyhow::Result;
 use axum::{
+    Router,
     extract::Request,
-    http::{header::CACHE_CONTROL, HeaderValue},
+    http::{HeaderValue, header::CACHE_CONTROL},
     middleware::{self, Next},
     response::IntoResponse,
-    Router,
 };
-use std::{env, net::SocketAddr, path::PathBuf};
 use tokio::{net::TcpListener, signal};
 use tower_http::services::{ServeDir, ServeFile};
 use tracing::{info, instrument};
@@ -35,18 +36,18 @@ pub struct ServeArgs {
 }
 
 /// Serve landscape website.
+///
+/// # Errors
+/// Returns an error if the server cannot bind, start, or read the current
+/// directory when needed.
 #[instrument(skip_all)]
 pub async fn serve(args: &ServeArgs) -> Result<()> {
     // Setup router
     let landscape_dir = args.landscape_dir.clone().unwrap_or(env::current_dir()?);
     let index_path = landscape_dir.join("index.html");
     let router: Router<()> = Router::new()
-        .nest_service(
-            "/",
-            ServeDir::new(&landscape_dir).not_found_service(ServeFile::new(&index_path)),
-        )
-        .fallback_service(ServeFile::new(index_path))
-        .route_layer(middleware::from_fn(set_cache_control_header));
+        .fallback_service(ServeDir::new(&landscape_dir).not_found_service(ServeFile::new(&index_path)))
+        .layer(middleware::from_fn(set_cache_control_header));
 
     // Setup and launch HTTP server
     let addr: SocketAddr = args.addr.parse()?;
@@ -59,7 +60,7 @@ pub async fn serve(args: &ServeArgs) -> Result<()> {
         axum::serve(listener, router).with_graceful_shutdown(shutdown_signal()).await?;
     } else {
         axum::serve(listener, router).await?;
-    };
+    }
 
     Ok(())
 }

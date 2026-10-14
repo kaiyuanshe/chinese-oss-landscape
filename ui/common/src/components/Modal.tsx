@@ -3,7 +3,7 @@ import { createEffect, createSignal, JSXElement, Show } from 'solid-js';
 import { css, keyframes } from 'solid-styled-components';
 
 import { BANNER_ID } from '../data/data';
-import { useBodyScroll, useOutsideClick } from '../hooks';
+import { useBodyScroll, useModalFocus, useOutsideClick } from '../hooks';
 import { SVGIconKind } from '../types/types';
 import { SVGIcon } from './SVGIcon';
 
@@ -59,14 +59,12 @@ const ModalDialog = css`
   max-height: calc(100% - 6rem);
   margin: 3em auto;
 
-  @media only screen and (max-width: 767.98px) {
-    margin: 0.75em auto !important;
-  }
-
   @media (max-width: 1199.98px) {
-    width: 95% !important;
-    max-width: 95% !important;
-    max-height: calc(100% - 1.5rem) !important;
+    width: calc(100% - 2rem);
+    max-width: calc(100% - 2rem);
+    max-height: calc(100% - 2rem);
+    min-height: calc(100% - 2rem);
+    margin: 1rem !important;
   }
 `;
 
@@ -119,18 +117,17 @@ const Btn = css`
 
 export const Modal = (props: Props) => {
   const [openStatus, setOpenStatus] = createSignal(false);
+  const [modalRef, setModalRef] = createSignal<HTMLDivElement>();
   const [ref, setRef] = createSignal<HTMLDivElement>();
-
-  useOutsideClick([ref], [BANNER_ID], openStatus, () => {
-    closeModal();
-  });
-
-  useBodyScroll(openStatus, 'modal');
 
   const closeModal = () => {
     setOpenStatus(false);
     props.onClose();
   };
+
+  useBodyScroll(openStatus, 'modal');
+  useModalFocus(modalRef, openStatus, closeModal);
+  useOutsideClick([ref], [BANNER_ID], openStatus, closeModal);
 
   createEffect(() => {
     setOpenStatus(props.open);
@@ -143,12 +140,12 @@ export const Modal = (props: Props) => {
       </Show>
 
       <div
+        ref={setModalRef}
         class={`modal d-block ${ModalClass} ${Active}`}
         role="dialog"
         tabIndex={-1}
         aria-label={`${props.title} modal`}
         aria-modal={true}
-        aria-hidden={true}
       >
         <div
           ref={setRef}

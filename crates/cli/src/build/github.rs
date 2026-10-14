@@ -2,23 +2,25 @@
 //! from GitHub for each of the landscape items repositories (when applicable),
 //! as well as the functionality used to collect that information.
 
-use super::{cache::Cache, LandscapeData};
-use anyhow::{format_err, Result};
+use std::collections::BTreeMap;
+use std::env;
+use std::sync::LazyLock;
+
+use anyhow::{Result, format_err};
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use deadpool::unmanaged::{Object, Pool};
 use futures::stream::{self, StreamExt};
 use landscape2_core::data::{Commit, Contributors, GithubData, Release, RepositoryGithubData};
-use lazy_static::lazy_static;
 #[cfg(test)]
 use mockall::automock;
 use octorust::auth::Credentials;
 use octorust::types::{FullRepository, ParticipationStats};
 use regex::Regex;
 use reqwest::header::{self, HeaderMap, HeaderValue};
-use std::collections::BTreeMap;
-use std::env;
 use tracing::{debug, instrument, warn};
+
+use super::{LandscapeData, cache::Cache};
 
 /// File used to cache data collected from GitHub.
 const GITHUB_CACHE_FILE: &str = "github.json";
@@ -175,6 +177,7 @@ type DynGH = Box<dyn GH + Send + Sync>;
 /// Trait that defines some operations a GH implementation must support.
 #[async_trait]
 #[cfg_attr(test, automock)]
+#[allow(clippy::struct_field_names)]
 trait GH {
     /// Get number of repository contributors.
     async fn get_contributors_count(&self, owner: &str, repo: &str) -> Result<usize>;
@@ -212,7 +215,7 @@ impl GHApi {
         let gh_client = octorust::Client::custom(
             user_agent.clone(),
             Credentials::Token(token.to_string()),
-            reqwest_middleware::ClientBuilder::new(reqwest_octorust::Client::builder().build()?).build(),
+            reqwest_middleware::ClientBuilder::new(reqwest::Client::builder().build()?).build(),
         );
 
         // Setup HTTP client ready to make requests to the GitHub API
@@ -318,21 +321,20 @@ impl GH for GHApi {
     }
 }
 
-lazy_static! {
-    /// GitHub repository url regular expression.
-    pub(crate) static ref GITHUB_REPO_URL: Regex =
-        Regex::new("^https://github.com/(?P<owner>[^/]+)/(?P<repo>[^/]+)/?$")
-            .expect("exprs in GITHUB_REPO_URL to be valid");
-}
+/// GitHub repository url regular expression.
+pub(crate) static GITHUB_REPO_URL: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new("^https://github.com/(?P<owner>[^/]+)/(?P<repo>[^/]+)/?$")
+        .expect("exprs in GITHUB_REPO_URL to be valid")
+});
 
 /// Return the last page of results available from the headers provided.
 fn get_last_page(headers: &HeaderMap) -> Result<Option<usize>> {
     if let Some(link_header) = headers.get("link") {
         let rels = parse_link_header::parse_with_rel(link_header.to_str()?)?;
-        if let Some(last_page_url) = rels.get("last") {
-            if let Some(last_page) = last_page_url.queries.get("page") {
-                return Ok(Some(last_page.parse()?));
-            }
+        if let Some(last_page_url) = rels.get("last")
+            && let Some(last_page) = last_page_url.queries.get("page")
+        {
+            return Ok(Some(last_page.parse()?));
         }
     }
     Ok(None)

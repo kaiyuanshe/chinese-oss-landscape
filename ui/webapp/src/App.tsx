@@ -1,9 +1,9 @@
 import { createWindowSize } from '@solid-primitives/resize-observer';
-import { Route, Router } from '@solidjs/router';
+import { Route, Router, useNavigate } from '@solidjs/router';
 import { Loading } from 'common';
 import isUndefined from 'lodash/isUndefined';
 import range from 'lodash/range';
-import { batch, createEffect, createSignal, on, onMount, Show } from 'solid-js';
+import { batch, createEffect, createMemo, createSignal, For, on, onCleanup, onMount, Show } from 'solid-js';
 
 import styles from './App.module.css';
 import {
@@ -18,6 +18,7 @@ import {
   PROJECTS_PATH,
   SCREENSHOTS_PATH,
   STATS_PATH,
+  SUMMARY_PATH,
 } from './data';
 import Layout from './layout';
 import Explore from './layout/explore';
@@ -44,13 +45,38 @@ let COLOR_5 = 'rgba(1, 107, 204, 0.7)';
 let COLOR_6 = 'rgba(0, 42, 81, 0.7)';
 let COLOR_7 = 'rgba(180, 219, 255, 1)';
 
+const GroupAliasRedirect = (props: { target: string }) => {
+  const navigate = useNavigate();
+  onMount(() => {
+    navigate(props.target, { replace: true });
+  });
+  return null;
+};
+
 const App = () => {
   const [isOverlay, setIsOverlay] = createSignal<boolean | undefined>();
   const [data, setData] = createSignal<BaseData>();
   const [loadingOverlay, setLoadingOverlay] = createSignal<boolean>(false);
   const [error, setError] = createSignal<string | undefined>();
+  const [motdDismissed, setMotdDismissed] = createSignal(false);
   const size = createWindowSize();
   const height = () => size.height;
+  const motdContent = () => data()?.header?.motd;
+  const motdVisible = createMemo(() => !isUndefined(motdContent()) && !motdDismissed());
+  let motdRef: HTMLDivElement | undefined;
+  const groupAliasRoutes = createMemo(() => {
+    const groups = data()?.groups;
+    if (isUndefined(groups)) return [];
+    return groups.reduce<{ alias: string; normalized: string }[]>((aliasRoutes, group) => {
+      const alias = group.alias?.trim();
+      if (!alias) return aliasRoutes;
+      const sanitizedAlias = alias.replace(/^\/+|\/+$/g, '');
+      if (sanitizedAlias === '') return aliasRoutes;
+      if (aliasRoutes.some((route) => route.alias === sanitizedAlias)) return aliasRoutes;
+      aliasRoutes.push({ alias: sanitizedAlias, normalized: group.normalized_name });
+      return aliasRoutes;
+    }, []);
+  });
 
   async function fetchOverlayData() {
     try {
@@ -69,6 +95,15 @@ const App = () => {
 
   const updateAppHeight = () => {
     document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
+  };
+
+  const updateMotdHeight = () => {
+    if (!motdVisible()) {
+      document.documentElement.style.setProperty('--motd-height', '0px');
+      return;
+    }
+    const elementHeight = motdRef?.offsetHeight ?? 0;
+    document.documentElement.style.setProperty('--motd-height', `${elementHeight}px`);
   };
 
   const loadColors = () => {
@@ -119,6 +154,38 @@ const App = () => {
 
   createEffect(on(height, updateAppHeight));
 
+  createEffect(
+    on(motdContent, () => {
+      setMotdDismissed(false);
+    })
+  );
+
+  createEffect(() => {
+    if (motdVisible()) {
+      document.body.classList.add('motd-visible');
+      requestAnimationFrame(() => {
+        updateMotdHeight();
+      });
+    } else {
+      document.body.classList.remove('motd-visible');
+      document.documentElement.style.setProperty('--motd-height', '0px');
+    }
+  });
+
+  createEffect(() => {
+    if (!motdVisible() || !motdRef || typeof ResizeObserver === 'undefined') {
+      return;
+    }
+    updateMotdHeight();
+    const observer = new ResizeObserver(() => {
+      updateMotdHeight();
+    });
+    observer.observe(motdRef);
+    onCleanup(() => {
+      observer.disconnect();
+    });
+  });
+
   onMount(() => {
     const isOverlayActive = overlayData.checkIfOverlayInQuery();
     if (!isOverlayActive) {
@@ -147,9 +214,33 @@ const App = () => {
       <Show when={isOverlay() && !isUndefined(error)}>
         <div class={`position-fixed top-0 start-0 end-0 ${styles.alertWrapper}`}>
           <div
-            class={`alert alert-warning w-100 d-flex align-items-center justify-content-center rounded-0 m-0 px-3 py-0 lh-base text-uppercase fw-semibold ${styles.alert}`}
+            class={`alert alert-warning w-100 d-flex align-items-center justify-content-center rounded-0 m-0 px-3 py-0 lh-base text-uppercase fw-semibold ${styles.alert} ${styles.alertOverlay}`}
           >
             Landscape overlay enabled
+          </div>
+        </div>
+      </Show>
+      {/* motd */}
+      <Show when={motdVisible() && !isUndefined(motdContent())}>
+        <div
+          class={`position-fixed start-0 end-0 ${styles.alertWrapper}`}
+          style={{ top: isOverlay() ? 'var(--overlay-alert-height)' : '0px' }}
+        >
+          <div
+            ref={motdRef}
+            class={`alert w-100 d-flex align-items-center rounded-0 m-0 px-3 px-lg-4 py-2 lh-base ${styles.alert} ${styles.motd} ${styles.motdAlert}`}
+          >
+            {/* eslint-disable solid/no-innerhtml */}
+            <div class={`flex-grow-1 text-center ${styles.motdMessage}`} innerHTML={motdContent()} />
+            {/* eslint-enable solid/no-innerhtml */}
+            <button
+              type="button"
+              class={`btn-close ${styles.motdClose}`}
+              aria-label="Dismiss message"
+              onClick={() => {
+                setMotdDismissed(true);
+              }}
+            />
           </div>
         </div>
       </Show>
@@ -182,8 +273,18 @@ const App = () => {
           <Route path={FINANCES_PATH} component={Finances} />
           <Route path={FUNDING_PATH} component={Finances} />
           <Route path={ACQUISITIONS_PATH} component={Finances} />
-          <Route path={PROJECTS_PATH} component={Projects} />
+          <Route path={[PROJECTS_PATH, SUMMARY_PATH]} component={Projects} />
           <Route path={LOGOS_PREVIEW_PATH} component={Logos} />
+          <For each={groupAliasRoutes()}>
+            {(route) => (
+              <Route
+                path={`${EXPLORE_PATH}${route.alias}`}
+                component={() => (
+                  <GroupAliasRedirect target={`${EXPLORE_PATH}?group=${encodeURIComponent(route.normalized)}`} />
+                )}
+              />
+            )}
+          </For>
           <Route path="*" component={NotFound} />
           <Route path={SCREENSHOTS_PATH} component={() => <Screenshots initialData={data()!} />} />
         </Router>

@@ -7,6 +7,7 @@ export interface BaseData {
   colors?: {
     [key: string]: string;
   };
+  featured_items?: FeaturedItemRule[];
   grid_items_size?: string;
   groups?: Group[];
   categories: Category[];
@@ -18,6 +19,7 @@ export interface BaseData {
   view_mode?: ViewMode;
   header?: HeaderContent;
   footer?: FooterContent;
+  hide_organization_section_in_projects?: boolean;
 }
 
 export interface HeaderContent {
@@ -25,6 +27,7 @@ export interface HeaderContent {
     github?: string;
   };
   logo?: string;
+  motd?: string;
 }
 
 export interface FooterContent {
@@ -49,6 +52,7 @@ export interface FooterContent {
 export interface Group {
   name: string;
   normalized_name: string;
+  alias?: string;
   categories: string[];
 }
 
@@ -77,7 +81,7 @@ export interface BaseItem {
   description?: string;
   featured?: Featured;
   maturity?: string;
-  tag?: string;
+  tag?: string[];
   additional_categories?: AdditionalCategory[];
 }
 
@@ -86,12 +90,29 @@ export interface Featured {
   order?: number;
 }
 
+export interface FeaturedItemRule {
+  field: string;
+  options: FeaturedItemRuleOption[];
+  exclude?: FeaturedItemRuleExclude;
+}
+
+export interface FeaturedItemRuleOption {
+  value: string;
+  label?: string;
+  order?: number;
+}
+
+export interface FeaturedItemRuleExclude {
+  groups?: string[];
+}
+
 export interface Item extends BaseItem {
   website?: string;
   accepted_at?: string;
   homepage_url?: string;
   artwork_url?: string;
   blog_url?: string;
+  bluesky_url?: string;
   chat_channel?: string;
   clomonitor_name?: string;
   clomonitor_report_summary?: string;
@@ -103,6 +124,7 @@ export interface Item extends BaseItem {
   docker_url?: string;
   documentation_url?: string;
   enduser?: boolean;
+  funding_url?: string;
   github_discussions_url?: string;
   graduated_at?: string;
   incubating_at?: string;
@@ -125,6 +147,7 @@ export interface Item extends BaseItem {
   audits?: SecurityAudit[];
   parent_project?: string;
   other_links?: OtherLink[];
+  hide_organization_section_in_projects?: boolean;
 }
 
 export interface OtherLink {
@@ -192,6 +215,7 @@ export interface ItemSummary {
 
 export interface Repository {
   url: string;
+  license?: string;
   branch?: string;
   github_data?: GithubRepository;
   primary: boolean;
@@ -461,7 +485,7 @@ export enum ClassifyOption {
   None = 'none',
   Category = 'category',
   Maturity = 'maturity',
-  Tag = 'tag',
+  TAG = 'tag',
 }
 
 export enum SortOption {

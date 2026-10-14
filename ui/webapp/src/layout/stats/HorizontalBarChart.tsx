@@ -1,4 +1,5 @@
 import { sortObjectByValue } from 'common';
+import { isInteger } from 'lodash';
 import isUndefined from 'lodash/isUndefined';
 import { SolidApexCharts } from 'solid-apexcharts';
 import { createSignal, onMount, Show } from 'solid-js';
@@ -69,6 +70,8 @@ const HorizontalBarChart = (props: Props) => {
       },
       colors: ['var(--color-stats-1)'],
       xaxis: {
+        min: 0,
+        tickAmount: 6,
         categories: sortedKeys(),
         labels: {
           style: {
@@ -77,7 +80,7 @@ const HorizontalBarChart = (props: Props) => {
           },
           formatter: (value: string): string => {
             if (!isUndefined(props.dataType) && props.dataType === 'bytes') {
-              return prettifyBytes(parseInt(value));
+              return prettifyBytes(parseInt(value), 1);
             } else {
               return parseInt(value).toString();
             }
@@ -92,21 +95,31 @@ const HorizontalBarChart = (props: Props) => {
             },
           },
           formatter: (val: number): string => {
+            const percentage = (val * 100) / props.total;
+            let formattedPercentage = `${percentage}`;
+            if (!isInteger(percentage)) {
+              formattedPercentage = `${percentage.toFixed(2)}%`;
+            }
             if (!isUndefined(props.dataType) && props.dataType === 'bytes') {
-              return `${prettifyBytes(val)} (${((val * 100) / props.total).toFixed(2)}%)`;
+              return `${prettifyBytes(val)} (${formattedPercentage})`;
             } else {
-              return `${val} (${((val * 100) / props.total).toFixed(2)}%)`;
+              return `${val} (${formattedPercentage})`;
             }
           },
         },
       },
       responsive: [
         {
-          breakpoint: 992,
+          breakpoint: 1200,
           options: {
             xaxis: {
-              tickAmount: 3,
+              tickAmount: 4,
               max: maxValue(),
+              labels: {
+                style: {
+                  fontSize: '10px',
+                },
+              },
             },
           },
         },

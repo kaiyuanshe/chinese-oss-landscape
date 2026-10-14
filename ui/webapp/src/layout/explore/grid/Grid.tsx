@@ -7,7 +7,6 @@ import { createEffect, createSignal, For, on, Show } from 'solid-js';
 import { GUIDE_PATH, ZOOM_LEVELS } from '../../../data';
 import { BaseItem, Item } from '../../../types';
 import calculateGridItemsPerRow from '../../../utils/calculateGridItemsPerRow';
-import getNormalizedName from '../../../utils/getNormalizedName';
 import getGridCategoryLayout, {
   GridCategoryLayout,
   LayoutColumn,
@@ -17,7 +16,9 @@ import getGridCategoryLayout, {
 import isSectionInGuide from '../../../utils/isSectionInGuide';
 import { CategoryData } from '../../../utils/itemsDataGetter';
 import ItemIterator from '../../../utils/itemsIterator';
+import buildNormalizedId from '../../../utils/normalizeId';
 import sortItemsByOrderValue from '../../../utils/sortItemsByOrderValue';
+import { useFeaturedItems } from '../../stores/featuredItems';
 import { useGridWidth } from '../../stores/gridWidth';
 import { useSetVisibleZoom } from '../../stores/visibleZoomSection';
 import { useZoomLevel } from '../../stores/zoom';
@@ -44,6 +45,7 @@ interface ItemsListProps {
 export const ItemsList = (props: ItemsListProps) => {
   const zoom = useZoomLevel();
   const gridWidth = useGridWidth();
+  const { withEffectiveFeatured } = useFeaturedItems();
   const percentage = () => props.percentage;
   const initialItems = () => props.items;
   const [items, setItems] = createSignal<(BaseItem | Item)[]>();
@@ -64,7 +66,10 @@ export const ItemsList = (props: ItemsListProps) => {
     setItems((prev) => {
       const tmpItems: (BaseItem | Item)[] = [];
 
-      for (const item of new ItemIterator(initialItems(), itemsPerRow() <= 0 ? MIN_COLUMN_ITEMS : itemsPerRow())) {
+      for (const item of new ItemIterator(
+        withEffectiveFeatured(initialItems()),
+        itemsPerRow() <= 0 ? MIN_COLUMN_ITEMS : itemsPerRow()
+      )) {
         if (item) {
           tmpItems.push(item);
         }
@@ -112,6 +117,7 @@ export const ItemsList = (props: ItemsListProps) => {
 const Grid = (props: Props) => {
   const zoom = useZoomLevel();
   const updateActiveSection = useSetVisibleZoom();
+  const { countFeaturedItems, withEffectiveFeatured } = useFeaturedItems();
   const [grid, setGrid] = createSignal<GridCategoryLayout | undefined>();
   const gridWidth = useGridWidth();
   const [prevSubcategories, setPrevSubcategories] = createSignal<SubcategoryDetails[]>();
@@ -149,8 +155,10 @@ const Grid = (props: Props) => {
                 {(subcat: LayoutColumn) => {
                   const items = () => data()[subcat.subcategoryName].items;
                   if (items().length === 0) return null;
-                  const featuredItems = items().filter((item: BaseItem | Item) => !isUndefined(item.featured)).length;
-                  const sortedItems: (BaseItem | Item)[] = sortItemsByOrderValue(items());
+                  // Apply effective featured status before counting and sorting
+                  const effectiveItems = () => withEffectiveFeatured(items());
+                  const featuredItemsCount = countFeaturedItems(effectiveItems());
+                  const sortedItems: (BaseItem | Item)[] = sortItemsByOrderValue(effectiveItems());
 
                   return (
                     <div
@@ -169,7 +177,7 @@ const Grid = (props: Props) => {
                         <Show when={isSectionInGuide(props.categoryName, subcat.subcategoryName)}>
                           <div>
                             <A
-                              href={`${GUIDE_PATH}#${getNormalizedName({
+                              href={`${GUIDE_PATH}#${buildNormalizedId({
                                 title: props.categoryName,
                                 subtitle: subcat.subcategoryName,
                                 grouped: true,
@@ -203,7 +211,7 @@ const Grid = (props: Props) => {
                       <div class={`flex-grow-1 ${styles.itemsContainer}`}>
                         {/* Use ItemsList when subcategory has featured and no featured items */}
                         <Show
-                          when={featuredItems > 0 && featuredItems < sortedItems.length}
+                          when={featuredItemsCount > 0 && featuredItemsCount < sortedItems.length}
                           fallback={
                             <div class={styles.items} role="list">
                               <For each={sortedItems}>

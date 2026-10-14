@@ -1,13 +1,13 @@
 import { A } from '@solidjs/router';
-import { SVGIcon, SVGIconKind } from 'common';
+import { formatTAGName, SVGIcon, SVGIconKind } from 'common';
 import intersection from 'lodash/intersection';
 import isUndefined from 'lodash/isUndefined';
 import { Accessor, For, Match, Show, Switch } from 'solid-js';
 
 import { COLORS, GUIDE_PATH } from '../../../data';
 import { BaseItem, Category, ClassifyOption, Item, SortDirection, SortOption, Subcategory } from '../../../types';
-import getNormalizedName from '../../../utils/getNormalizedName';
 import isSectionInGuide from '../../../utils/isSectionInGuide';
+import buildNormalizedId from '../../../utils/normalizeId';
 import sortItems from '../../../utils/sortItems';
 import sortMaturityStatusTitles from '../../../utils/sortMenuOptions';
 import { useUpdateActiveItemId } from '../../stores/activeItem';
@@ -66,6 +66,7 @@ const CardList = (props: ListProps) => {
 const Content = (props: Props) => {
   const bgColor = COLORS[0];
   const data = () => props.data();
+  const getTitles = (): string[] => sortMaturityStatusTitles(Object.keys(data()));
 
   const getSubtitles = (content: { [key: string]: unknown }, title: string): string[] => {
     let subtitles = Object.keys(content).sort();
@@ -100,7 +101,7 @@ const Content = (props: Props) => {
           <CardList items={data()} isVisible={props.isVisible} sorted={props.sorted} direction={props.direction} />
         </Match>
         <Match when={!Array.isArray(data())}>
-          <For each={sortMaturityStatusTitles(Object.keys(data()))}>
+          <For each={getTitles()}>
             {(title: string) => {
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               const content = () => (data() as any)[title] as { [key: string]: unknown } | (BaseItem | Item)[];
@@ -116,7 +117,7 @@ const Content = (props: Props) => {
                           const items = () => (content() as any)[subtitle];
                           if (items().length === 0) return null;
 
-                          const id = getNormalizedName({ title: title, subtitle: subtitle, grouped: true });
+                          const id = buildNormalizedId({ title: title, subtitle: subtitle, grouped: true });
 
                           return (
                             <div id={`card_${id}`} class={`mb-3 ${styles.section}`}>
@@ -128,7 +129,7 @@ const Content = (props: Props) => {
                                   <Show when={isSectionInGuide(title)}>
                                     <div>
                                       <A
-                                        href={`${GUIDE_PATH}#${getNormalizedName({ title: title })}`}
+                                        href={`${GUIDE_PATH}#${buildNormalizedId({ title: title })}`}
                                         state={{ from: 'explore' }}
                                         class={`position-relative btn btn-link text-white p-0 pe-2 ${styles.btnIcon}`}
                                         aria-label={`Open section ${subtitle} on guide page`}
@@ -147,7 +148,7 @@ const Content = (props: Props) => {
                                   <Show when={isSectionInGuide(title, subtitle)}>
                                     <div>
                                       <A
-                                        href={`${GUIDE_PATH}#${getNormalizedName({
+                                        href={`${GUIDE_PATH}#${buildNormalizedId({
                                           title: title,
                                           subtitle: subtitle,
                                           grouped: true,
@@ -161,7 +162,8 @@ const Content = (props: Props) => {
                                     </div>
                                   </Show>
                                   <div class="flex-grow-1 text-truncate">
-                                    {subtitle} ({items().length})
+                                    {props.classify === ClassifyOption.TAG ? formatTAGName(subtitle) : subtitle} (
+                                    {items().length})
                                   </div>
                                 </div>
                               </div>
@@ -181,7 +183,12 @@ const Content = (props: Props) => {
                         <div class={`d-flex flex-row fw-semibold mb-4 ${styles.title}`}>
                           <div class={`d-flex flex-row flex-grow-1 align-items-center p-2 ${styles.subcategoryTitle}`}>
                             <div class="flex-grow-1 text-truncate text-capitalize">
-                              {title === 'undefined' ? 'None' : title} ({(content() as (BaseItem | Item)[]).length})
+                              {title === 'undefined'
+                                ? 'None'
+                                : props.classify === ClassifyOption.TAG
+                                  ? formatTAGName(title)
+                                  : title}{' '}
+                              ({(content() as (BaseItem | Item)[]).length})
                             </div>
                           </div>
                         </div>

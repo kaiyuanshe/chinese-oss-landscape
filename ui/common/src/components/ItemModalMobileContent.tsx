@@ -9,6 +9,7 @@ import { css } from 'solid-styled-components';
 import { AdditionalCategory, Item, SecurityAudit, SVGIconKind } from '../types/types';
 import { cutString, getItemDescription } from '../utils';
 import { formatProfitLabel } from '../utils/formatProfitLabel';
+import { formatSummaryField } from '../utils/formatSummaryField';
 import { prettifyNumber } from '../utils/prettifyNumber';
 import { AcquisitionsTable } from './AcquisitionsTable';
 import { Badge } from './Badge';
@@ -27,6 +28,7 @@ interface Props {
   item?: Item | null;
   parentInfo?: Item | null;
   foundation: string;
+  hideOrganizationSection?: boolean;
   onClose?: () => void;
 }
 
@@ -100,7 +102,7 @@ const OtherLink = css`
   max-width: calc(100% - 2rem - 15px);
   font-size: 0.65rem !important;
   color: var(--color4);
-  line-height: 16px;
+  line-height: 1;
 `;
 
 const Dot = css`
@@ -214,7 +216,7 @@ export const ItemModalMobileContent = (props: Props) => {
                     <Show when={!isUndefined(itemInfo()!.member_subcategory)}>
                       <div
                         title={`${itemInfo()!.member_subcategory} member`}
-                        class={`badge rounded-0 text-uppercase me-2 ${BadgeOutlineDark} badgeOutlineDark`}
+                        class={`badge rounded-0 text-truncate text-uppercase me-2 ${BadgeOutlineDark} badgeOutlineDark`}
                       >
                         {itemInfo()!.member_subcategory} member
                       </div>
@@ -312,6 +314,7 @@ export const ItemModalMobileContent = (props: Props) => {
         {/* Repositories */}
         <RepositoriesSection
           repositories={itemInfo()!.repositories}
+          projectMaturity={itemInfo()!.maturity}
           titleClass={`text-uppercase mt-3 mb-4 fw-semibold border-bottom ${SectionTitle}`}
           boxClass="col-6"
         />
@@ -355,7 +358,7 @@ export const ItemModalMobileContent = (props: Props) => {
         </Show>
 
         {/* Organization */}
-        <Show when={!isUndefined(itemInfo()!.crunchbase_data)}>
+        <Show when={!props.hideOrganizationSection && !isUndefined(itemInfo()!.crunchbase_data)}>
           <div class={`text-uppercase mt-3 fw-semibold border-bottom ${SectionTitle}`}>Organization</div>
           <div class={`fw-semibold text-truncate my-2 ${Text}`}>{itemInfo()!.crunchbase_data!.name}</div>
           <div class="d-flex flex-row align-items-center">
@@ -468,8 +471,24 @@ export const ItemModalMobileContent = (props: Props) => {
           </div>
 
           {/* Funding rounds */}
+          <Show when={!isUndefined(itemInfo()!.funding_url) && !isEmpty(itemInfo()!.funding_url)}>
+            <div class={`fw-bold text-uppercase mt-3 mt-lg-4 mb-2 mb-lg-3 ${TitleInSection}`}>Funding rounds</div>
+            <div class="w-100 my-1">
+              <small class="text-muted lh-1">For more financial details, see:</small>
+              <div class="mt-1 lh-1">
+                <ExternalLink
+                  class="text-muted d-inline-block text-truncate text-decoration-underline mw-100 lh-1"
+                  href={itemInfo()!.funding_url!}
+                >
+                  {itemInfo()!.funding_url!}
+                </ExternalLink>
+              </div>
+            </div>
+          </Show>
           <Show
             when={
+              (isUndefined(itemInfo()!.funding_url) || isEmpty(itemInfo()!.funding_url)) &&
+              !isUndefined(itemInfo()!.crunchbase_data) &&
               !isUndefined(itemInfo()!.crunchbase_data!.funding_rounds) &&
               !isEmpty(itemInfo()!.crunchbase_data!.funding_rounds!)
             }
@@ -498,14 +517,20 @@ export const ItemModalMobileContent = (props: Props) => {
             <Show when={!isUndefined(itemInfo()!.summary!.intro_url) && !isEmpty(itemInfo()!.summary!.intro_url)}>
               <div class="summaryBlock">
                 <div class={`fw-bold text-uppercase ${TitleInSection}`}>Introduction</div>
-                <div class={`mt-2 text-truncate ${SummaryContent}`}>{itemInfo()!.summary!.intro_url!}</div>
+                {/* eslint-disable solid/no-innerhtml */}
+                <div
+                  class={`mt-2 text-truncate ${SummaryContent}`}
+                  innerHTML={formatSummaryField(itemInfo()!.summary!.intro_url!)}
+                />
+                {/* eslint-enable solid/no-innerhtml */}
               </div>
             </Show>
 
             <Show when={!isUndefined(itemInfo()!.summary!.use_case) && !isEmpty(itemInfo()!.summary!.use_case)}>
               <div class="summaryBlock">
                 <div class={`fw-bold text-uppercase ${TitleInSection}`}>Use case</div>
-                <div class={`mt-2 ${SummaryContent}`}>{itemInfo()!.summary!.use_case!}</div>
+                {/* eslint-disable-next-line solid/no-innerhtml */}
+                <div class={`mt-2 ${SummaryContent}`} innerHTML={formatSummaryField(itemInfo()!.summary!.use_case!)} />
               </div>
             </Show>
 
@@ -516,7 +541,12 @@ export const ItemModalMobileContent = (props: Props) => {
             >
               <div class="summaryBlock">
                 <div class={`fw-bold text-uppercase ${TitleInSection}`}>Business use case</div>
-                <div class={`mt-2 ${SummaryContent}`}>{itemInfo()!.summary!.business_use_case!}</div>
+                {/* eslint-disable solid/no-innerhtml */}
+                <div
+                  class={`mt-2 ${SummaryContent}`}
+                  innerHTML={formatSummaryField(itemInfo()!.summary!.business_use_case!)}
+                />
+                {/* eslint-enable solid/no-innerhtml */}
               </div>
             </Show>
 
@@ -528,16 +558,24 @@ export const ItemModalMobileContent = (props: Props) => {
             >
               <div class="summaryBlock">
                 <div class={`fw-bold text-uppercase ${TitleInSection}`}>Integrations</div>
-                <div class={`mt-2 ${SummaryContent}`}>
-                  {(itemInfo()!.summary!.integrations || itemInfo()!.summary!.integration)!}
-                </div>
+                {/* eslint-disable solid/no-innerhtml */}
+                <div
+                  class={`mt-2 ${SummaryContent}`}
+                  innerHTML={formatSummaryField(itemInfo()!.summary!.integrations || itemInfo()!.summary!.integration!)}
+                />
+                {/* eslint-enable solid/no-innerhtml */}
               </div>
             </Show>
 
             <Show when={!isUndefined(itemInfo()!.summary!.release_rate) && !isEmpty(itemInfo()!.summary!.release_rate)}>
               <div class="summaryBlock">
                 <div class={`fw-bold text-uppercase ${TitleInSection}`}>Release rate</div>
-                <div class={`mt-2 ${SummaryContent}`}>{itemInfo()!.summary!.release_rate!}</div>
+                {/* eslint-disable solid/no-innerhtml */}
+                <div
+                  class={`mt-2 ${SummaryContent}`}
+                  innerHTML={formatSummaryField(itemInfo()!.summary!.release_rate!)}
+                />
+                {/* eslint-enable solid/no-innerhtml */}
               </div>
             </Show>
 

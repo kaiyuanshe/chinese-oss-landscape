@@ -16,13 +16,15 @@ import { SVGIcon } from './SVGIcon';
 interface Props {
   repositories?: Repository[];
   class?: string;
+  projectMaturity?: string;
   titleClass?: string;
   boxClass?: string;
 }
 
 interface RepoProps {
-  repository: Repository;
   boxClass?: string;
+  projectMaturity?: string;
+  repository: Repository;
 }
 
 const SubtitleInSection = css`
@@ -117,25 +119,27 @@ const RepositoryInfo = (props: RepoProps) => {
               <Show when={props.repository.primary}>
                 <div class={`me-2 badge rounded-0 text-uppercase ${BadgeOutlineDark} ${MiniBadge}`}>Primary</div>
               </Show>
-              <Show when={!isUndefined(props.repository.github_data)}>
+              <Show when={!isUndefined(props.repository.license) || !isUndefined(props.repository.github_data)}>
                 <div class={`badge rounded-0 me-2 ${BadgeOutlineDark} ${MiniBadge}`}>
-                  {props.repository.github_data!.license}
+                  {props.repository.license || props.repository.github_data!.license}
                 </div>
               </Show>
-              <div class="d-none d-md-flex">
-                <ExternalLink
-                  class={`d-flex ${GoodFirstBadge}`}
-                  href={`https://github.com/${formatRepoUrl(
-                    props.repository.url
-                  )}/issues?q=is%3Aopen+is%3Aissue+label%3A"good+first+issue"`}
-                >
-                  <img
-                    src={`https://img.shields.io/github/issues/${formatRepoUrl(
+              <Show when={props.projectMaturity !== 'archived'}>
+                <div class="d-none d-md-flex">
+                  <ExternalLink
+                    class={`d-flex ${GoodFirstBadge}`}
+                    href={`https://github.com/${formatRepoUrl(
                       props.repository.url
-                    )}/good%20first%20issue.svg?style=flat-square&label=good%20first%20issues&labelColor=e9ecef&color=6c757d`}
-                  />
-                </ExternalLink>
-              </div>
+                    )}/issues?q=is%3Aopen+is%3Aissue+label%3A"good+first+issue"`}
+                  >
+                    <img
+                      src={`https://img.shields.io/github/issues/${formatRepoUrl(
+                        props.repository.url
+                      )}/good%20first%20issue.svg?style=flat-square&label=good%20first%20issues&labelColor=e9ecef&color=6c757d`}
+                    />
+                  </ExternalLink>
+                </div>
+              </Show>
             </div>
           </Show>
         </div>
@@ -249,7 +253,11 @@ export const RepositoriesSection = (props: Props) => {
         </select>
 
         <Show when={!isUndefined(selectedRepo())}>
-          <RepositoryInfo repository={selectedRepo()!} boxClass={props.boxClass} />
+          <RepositoryInfo
+            boxClass={props.boxClass}
+            projectMaturity={props.projectMaturity}
+            repository={selectedRepo()!}
+          />
         </Show>
       </div>
     </Show>
