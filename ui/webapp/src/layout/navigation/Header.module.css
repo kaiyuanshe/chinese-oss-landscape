@@ -11,10 +11,6 @@
   top: var(--motd-height);
 }
 
-:global(.overlay-active) .navbar {
-  top: calc(var(--overlay-alert-height) + var(--motd-height));
-}
-
 .logo {
   height: 34px;
   max-width: 250px;

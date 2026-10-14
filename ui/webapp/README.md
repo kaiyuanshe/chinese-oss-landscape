@@ -4,12 +4,14 @@ The SolidJS web application is located in this directory. Install its dependenci
 and start the Vite development server from the repository root:
 
 ```text
-yarn --cwd ui/webapp install
-yarn --cwd ui/webapp dev
+npm run dev
 ```
 
-By default, the development server loads datasets and generated assets from
-`ui/webapp/static`. To develop against data from an existing landscape, copy the
+This command builds the local site, prepares datasets and generated assets in
+`ui/webapp/static`, and starts Vite. Restart it after changing YAML inputs or logos.
+For the generated production site, run `npm run build` and `npm run preview`.
+
+To develop against data from an existing landscape, copy the
 example environment file and configure the landscape URL:
 
 ```text

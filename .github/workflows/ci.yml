@@ -9,35 +9,45 @@ on:
 jobs:
   lint-and-test-cli-tool:
     runs-on:
-      labels: ubuntu-latest-8-cores
+      labels: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install Yarn
+        run: npm install --global yarn@1.22.22
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: 1.96.1
           components: clippy, rustfmt
-      - name: Install wasm-pack
-        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
       - name: Run clippy
-        run: cargo clippy --all-targets --all-features -- --deny warnings
+        run: cargo clippy --locked --all-targets --all-features -- --deny warnings
       - name: Run rustfmt
         run: cargo fmt --all -- --check
       - name: Run tests
-        run: cargo test
+        run: cargo test --locked
 
   lint-and-test-webapp:
     runs-on:
-      labels: ubuntu-latest-8-cores
+      labels: ubuntu-latest
     env:
       NODE_OPTIONS: --max_old_space_size=4096
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install Yarn
+        run: npm install --global yarn@1.22.22
       - name: Install dependencies
         working-directory: ./ui/webapp
-        run: yarn install --network-concurrency 1
+        run: yarn install --frozen-lockfile --network-concurrency 1
       - name: Run prettier
         working-directory: ./ui/webapp
         run: yarn format:diff
@@ -50,15 +60,21 @@ jobs:
 
   lint-common:
     runs-on:
-      labels: ubuntu-latest-8-cores
+      labels: ubuntu-latest
     env:
       NODE_OPTIONS: --max_old_space_size=4096
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install Yarn
+        run: npm install --global yarn@1.22.22
       - name: Install dependencies
         working-directory: ./ui/common
-        run: yarn install --network-concurrency 1
+        run: yarn install --frozen-lockfile --network-concurrency 1
       - name: Run prettier
         working-directory: ./ui/common
         run: yarn format:diff
@@ -68,15 +84,21 @@ jobs:
 
   lint-and-test-embed:
     runs-on:
-      labels: ubuntu-latest-8-cores
+      labels: ubuntu-latest
     env:
       NODE_OPTIONS: --max_old_space_size=4096
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install Yarn
+        run: npm install --global yarn@1.22.22
       - name: Install dependencies
         working-directory: ./ui/embed
-        run: yarn install --network-concurrency 1
+        run: yarn install --frozen-lockfile --network-concurrency 1
       - name: Run prettier
         working-directory: ./ui/embed
         run: yarn format:diff
@@ -86,15 +108,21 @@ jobs:
 
   lint-embed-item:
     runs-on:
-      labels: ubuntu-latest-8-cores
+      labels: ubuntu-latest
     env:
       NODE_OPTIONS: --max_old_space_size=4096
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install Yarn
+        run: npm install --global yarn@1.22.22
       - name: Install dependencies
         working-directory: ./ui/embed-item
-        run: yarn install --network-concurrency 1
+        run: yarn install --frozen-lockfile --network-concurrency 1
       - name: Run prettier
         working-directory: ./ui/embed-item
         run: yarn format:diff

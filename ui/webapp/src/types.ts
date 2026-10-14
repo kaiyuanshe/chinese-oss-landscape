@@ -1,7 +1,6 @@
 export interface BaseData {
   base_path?: string;
   finances_available: boolean;
-  games_available?: string[];
   foundation: string;
   guide_summary?: GuideSummary;
   colors?: {

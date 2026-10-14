@@ -1,15 +1,9 @@
 .DS_Store
 .idea
 .vscode
-crates/wasm/overlay/data
-crates/wasm/overlay/dist
-crates/wasm/overlay/sources
-crates/wasm/quiz/data
-crates/wasm/quiz/dist
 lcov.info
 npm-debug.log*
 target
-target-wasm
 ui/common/dist
 ui/common/node_modules
 ui/embed/dist
@@ -23,3 +17,16 @@ ui/webapp/node_modules
 ui/webapp/static/*
 yarn-debug.log*
 yarn-error.log*
+/dist/
+/.cache/
+
+# Local build, debug and test artifacts
+/target-wasm/
+node_modules/
+coverage/
+*.tsbuildinfo
+*.log
+.env
+.env.*
+!.env.example
+!.env.*.example

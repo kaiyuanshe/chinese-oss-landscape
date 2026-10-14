@@ -2,45 +2,62 @@ name: Build
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-site
+  cancel-in-progress: false
 
 jobs:
   build:
-    runs-on:
-      labels: ubuntu-latest
-    container:
-      image: ghcr.io/cncf/landscape2:latest
-      options: --user root
+    runs-on: ubuntu-latest
     steps:
-      - name: Install git
-        run: apk add git
-
       - name: Checkout this repository
         uses: actions/checkout@v5
-
-      - name: Build landscape
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: 1.96.1
+      - name: Install Yarn
+        run: npm install --global yarn@1.22.22
+      - name: Build this repository's landscape
+        run: npm run build
+      - name: Prepare static hosting files
         run: |
-          landscape2 build \
-            --settings-file ./settings.yml \
-            --guide-file ./guide.yml \
-            --data-file ./data.yml \
-            --logos-path ./logos \
-            --output-dir /tmp/landscape
-
+          cp dist/index.html dist/404.html
+          touch dist/.nojekyll
+      - name: Upload static site
+        uses: actions/upload-artifact@v4
+        with:
+          name: landscape-site
+          path: dist
+          include-hidden-files: true
       - name: Commit built landscape to build branch
+        env:
+          SITE_OUTPUT: ${{ github.workspace }}/dist
+          SITE_PUBLISH: ${{ runner.temp }}/landscape-publish
         run: |
-          git config --global safe.directory `pwd`
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "no-reply@sample-domain.io"
-          git fetch origin build:build
-          git checkout build
-          git branch --set-upstream-to=origin/build build
-          git pull
-          rm -rf *
-          cp -R /tmp/landscape/* .
-          cp index.html 404.html
-          git add .
-          git commit -m "Build landscape"
-          git push origin build
+          git worktree add --detach "$SITE_PUBLISH"
+          cd "$SITE_PUBLISH"
+          if git fetch origin build; then
+            git checkout -B build FETCH_HEAD
+          else
+            git checkout --orphan build
+          fi
+          git rm -rf --ignore-unmatch .
+          cp -a "$SITE_OUTPUT/." .
+          git add --all
+          if ! git diff --cached --quiet; then
+            git -c user.name="github-actions[bot]" \
+              -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+              commit -s -m "build(site): generate static landscape"
+            git push origin HEAD:build
+          fi

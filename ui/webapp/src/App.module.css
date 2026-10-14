@@ -9,31 +9,6 @@
   border-width: 1px 0 1px 0;
 }
 
-.alertOverlay {
-  height: var(--overlay-alert-height);
-  cursor: none;
-  position: relative;
-  padding-right: 3rem;
-  border-color: var(--bs-warning-border-subtle);
-}
-
-.legend {
-  font-size: 2.5rem;
-  margin-top: 2rem !important;
-}
-
-.errorAlert {
-  width: 800px;
-  max-width: 90%;
-  max-height: 80%;
-  height: 500px;
-  margin-top: calc(var(--overlay-alert-height) + var(--motd-height));
-}
-
-.errorAlertHeading {
-  font-size: 1.5rem;
-}
-
 .motd p {
   margin-bottom: 0.25rem;
 }
@@ -101,24 +76,4 @@
   cursor: pointer;
   align-self: flex-start;
   margin: 0.25rem 0 0 auto;
-}
-
-.preWrapper {
-  margin-top: 2.5rem;
-  max-height: calc(100% - 9rem);
-}
-
-.pre {
-  background-color: rgba(0, 0, 0, 0.85);
-  font-size: 0.8rem;
-}
-
-@media only screen and (max-width: 767.98px) {
-  .errorAlertHeading {
-    font-size: 1.2rem;
-  }
-
-  .legend {
-    font-size: 1.5rem;
-  }
 }

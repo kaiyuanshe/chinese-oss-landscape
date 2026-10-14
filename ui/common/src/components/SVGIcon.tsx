@@ -555,26 +555,6 @@ const Forums = (props: IconProps) => (
   </svg>
 );
 
-const Games = (props: IconProps) => (
-  <svg
-    class={props.class}
-    stroke="currentColor"
-    fill="currentColor"
-    stroke-width="0"
-    viewBox="0 0 24 24"
-    height="1em"
-    width="1em"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <title>Games icon</title>
-    <path
-      fill="none"
-      stroke-width="2"
-      d="M12,6 L12,2 M12,6 C14.4983324,6.0444148 16.0056152,6 17,6 C19,6 21,6.5 22,10 C23,13.5 23,15.5 23,18 C23,20.5 21,21 19,21 C17,21 15.9456522,17 12,17 C8.05434783,17 7,21 5,21 C3,21 1,20.5 1,18 C1,15.5 1,13.5 2,10 C3,6.5 5,6 7,6 C7.99438477,6 9.50166757,6.0444148 12,6 L12,6 L12,6 Z M18,15 C18.5522847,15 19,14.5522847 19,14 C19,13.4477153 18.5522847,13 18,13 C17.4477153,13 17,13.4477153 17,14 C17,14.5522847 17.4477153,15 18,15 Z M14,12 C14.5522847,12 15,11.5522847 15,11 C15,10.4477153 14.5522847,10 14,10 C13.4477153,10 13,10.4477153 13,11 C13,11.5522847 13.4477153,12 14,12 Z M4,12 L10,12 M7,9 L7,15"
-    />
-  </svg>
-);
-
 const GitHub = (props: IconProps) => (
   <svg
     class={props.class}
@@ -986,24 +966,6 @@ const PyPi = (props: IconProps) => (
   </svg>
 );
 
-const Quiz = (props: IconProps) => (
-  <svg
-    class={props.class}
-    stroke="currentColor"
-    fill="currentColor"
-    stroke-width="0"
-    viewBox="0 0 24 24"
-    height="1em"
-    width="1em"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <title>Quiz icon</title>
-    <path fill="none" d="M0 0h24v24H0V0z" />
-    <path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6z" />
-    <path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-5.99 13c-.59 0-1.05-.47-1.05-1.05 0-.59.47-1.04 1.05-1.04.59 0 1.04.45 1.04 1.04-.01.58-.45 1.05-1.04 1.05zm2.5-6.17c-.63.93-1.23 1.21-1.56 1.81-.13.24-.18.4-.18 1.18h-1.52c0-.41-.06-1.08.26-1.65.41-.73 1.18-1.16 1.63-1.8.48-.68.21-1.94-1.14-1.94-.88 0-1.32.67-1.5 1.23l-1.37-.57C11.51 5.96 12.52 5 13.99 5c1.23 0 2.08.56 2.51 1.26.37.61.58 1.73.01 2.57z" />
-  </svg>
-);
-
 const Reddit = (props: IconProps) => (
   <svg
     class={props.class}
@@ -1327,7 +1289,6 @@ const icons: ValidComponent[] = [
   Flickr,
   Flutter,
   Forums,
-  Games,
   GitHub,
   GitHubCircle,
   Guide,
@@ -1351,7 +1312,6 @@ const icons: ValidComponent[] = [
   Play,
   PNG,
   PyPi,
-  Quiz,
   Reddit,
   RubyGems,
   Rust,
