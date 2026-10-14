@@ -22,19 +22,19 @@ async-trait = "0.1.89"
 aws-config = "1.8.18"
 aws-sdk-s3 = "1.137.0"
 axum = "0.8.9"
-base64 = "0.22.1"
-cached = { version = "2.0.2", default-features = false, features = ["async", "proc_macro"] }
+base64 = "0.23.1"
+cached = { version = "4.0.1", default-features = false, features = ["async", "proc_macro"] }
 chrono = { version = "0.4.45", features = ["serde"] }
 clap = { version = "4.6.1", features = ["derive"] }
 csv = "1.4.0"
 deadpool = "0.13.0"
-dirs = "6.0.0"
+dirs = "7.0.0"
 futures = "0.3.32"
 gloo-console = "0.4.0"
 gloo-net = { version = "0.7.0", default-features = false, features = ["http", "json"] }
 headless_chrome = "1.0.22"
 hex = "0.4.3"
-imagesize = "0.14.0"
+imagesize = "0.15.0"
 itertools = "0.15.0"
 leaky-bucket = "1.1.2"
 markdown = "1.0.0"
@@ -47,10 +47,10 @@ octorust = "0.10.0"
 parse_link_header = "0.4.1"
 pretty_assertions = "1.4.1"
 qrcode = "0.14.1"
-rand = "0.8.5" # do-not-upgrade
+rand = "0.10.1" # do-not-upgrade
 regex = "1.12.4"
-reqwest = { version = "0.12.28", features = ["json",  "multipart", "native-tls-vendored"] } # do-not-upgrade
-reqwest-middleware = "0.4.2" # do-not-upgrade
+reqwest = { version = "0.13.5", features = ["json",  "multipart", "native-tls-vendored"] } # do-not-upgrade
+reqwest-middleware = "0.5.2" # do-not-upgrade
 rust-embed = "8.11.0"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.150"
