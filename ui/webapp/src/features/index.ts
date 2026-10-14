@@ -1,3 +1,4 @@
+import { siteCapabilities } from 'common';
 import { lazy } from 'solid-js';
 
 import {
@@ -10,10 +11,10 @@ import {
   STATS_PATH,
   SUMMARY_PATH,
 } from '../data';
-import { createFeatureRegistry } from './registry';
+import { createFeatureRegistry, SiteFeature } from './registry';
 
-// Add or remove optional modules here; the explorer and shared components stay independent.
-export const siteFeatures = createFeatureRegistry([
+// Keep optional implementations available without registering disabled routes.
+const features: SiteFeature[] = [
   {
     id: 'guide',
     routes: [{ path: GUIDE_PATH, component: lazy(() => import('../layout/guide')) }],
@@ -42,4 +43,11 @@ export const siteFeatures = createFeatureRegistry([
     id: 'logos',
     routes: [{ path: LOGOS_PREVIEW_PATH, component: lazy(() => import('../layout/logos')) }],
   },
-]);
+];
+
+export const siteFeatures = createFeatureRegistry(
+  features,
+  Object.entries(siteCapabilities.pages)
+    .filter(([, enabled]) => enabled)
+    .map(([id]) => id)
+);

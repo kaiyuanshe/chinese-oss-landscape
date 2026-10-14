@@ -56,6 +56,39 @@ export default defineConfig(({ mode }) => ({
         }
       },
     },
+    {
+      name: 'preview-static-resource-errors',
+      configurePreviewServer(server) {
+        const outputDir = path.resolve(server.config.root, server.config.build.outDir);
+        const basePath = server.config.base.replace(/\/$/, '');
+        server.middlewares.use((request, response, next) => {
+          let pathname: string;
+          try {
+            pathname = decodeURIComponent(new URL(request.url || '/', 'http://localhost').pathname);
+          } catch {
+            response.statusCode = 400;
+            response.end('Bad Request');
+            return;
+          }
+          if (basePath && !pathname.startsWith(`${basePath}/`)) {
+            next();
+            return;
+          }
+          const resource = pathname.slice(basePath.length);
+          if (!/^\/(assets|data|fonts|images|logos|sources|api|docs|embed)(\/|$)/.test(resource)) {
+            next();
+            return;
+          }
+          const file = path.resolve(outputDir, `.${resource}`);
+          if (file.startsWith(`${outputDir}${path.sep}`) && fs.statSync(file, { throwIfNoEntry: false })?.isFile()) {
+            next();
+          } else {
+            response.statusCode = 404;
+            response.end('Not Found');
+          }
+        });
+      },
+    },
   ],
   preview: {
     port: 8000,

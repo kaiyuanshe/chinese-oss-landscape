@@ -9,6 +9,7 @@
     "build": "node scripts/site.mjs build",
     "dev": "node scripts/site.mjs dev",
     "preview": "node scripts/site.mjs preview",
-    "validate": "node scripts/site.mjs validate"
+    "validate": "node scripts/site.mjs validate",
+    "test:site": "node --test scripts/site-output.test.mjs"
   }
 }

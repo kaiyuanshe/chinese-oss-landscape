@@ -5,6 +5,7 @@ import moment from 'moment';
 import { createSignal, For, onMount, Show } from 'solid-js';
 import { css } from 'solid-styled-components';
 
+import { siteCapabilities } from '../siteCapabilities';
 import { Repository, SVGIconKind } from '../types/types';
 import { prettifyNumber } from '../utils/prettifyNumber';
 import { Box } from './Box';
@@ -124,7 +125,7 @@ const RepositoryInfo = (props: RepoProps) => {
                   {props.repository.license || props.repository.github_data!.license}
                 </div>
               </Show>
-              <Show when={props.projectMaturity !== 'archived'}>
+              <Show when={siteCapabilities.repositoryBadges && props.projectMaturity !== 'archived'}>
                 <div class="d-none d-md-flex">
                   <ExternalLink
                     class={`d-flex ${GoodFirstBadge}`}

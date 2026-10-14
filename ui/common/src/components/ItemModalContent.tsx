@@ -6,6 +6,7 @@ import sortBy from 'lodash/sortBy';
 import { createEffect, createSignal, For, Match, on, Show, Switch } from 'solid-js';
 import { css } from 'solid-styled-components';
 
+import { siteCapabilities } from '../siteCapabilities';
 import { AdditionalCategory, Item, Repository, SecurityAudit, SVGIconKind } from '../types/types';
 import { cutString, getItemDescription } from '../utils';
 import { formatProfitLabel } from '../utils/formatProfitLabel';
@@ -258,7 +259,7 @@ export const ItemModalContent = (props: Props) => {
 
   return (
     <>
-      <Show when={!isUndefined(props.basePath)}>
+      <Show when={siteCapabilities.projectBadges && !isUndefined(props.basePath)}>
         <ItemDropdown itemId={itemInfo()!.id} foundation={props.foundation} basePath={props.basePath!} />
       </Show>
       <div class="d-flex flex-column p-3">

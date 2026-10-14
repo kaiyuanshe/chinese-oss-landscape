@@ -11,6 +11,8 @@ export default {
           presets: ['./jest.babel-preset.cjs', 'babel-preset-solid'],
         },
         tsconfig: 'tsconfig.jest.json',
+        // jest.import-meta.cjs replaces Vite's MODE before CommonJS execution.
+        diagnostics: { ignoreCodes: [1343] },
       },
     ],
   },

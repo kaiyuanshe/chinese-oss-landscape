@@ -1,5 +1,8 @@
 import type { Accessor, JSXElement } from 'solid-js';
 
+export { siteCapabilities } from '../../../common/src/siteCapabilities';
+export { capitalizeFirstLetter } from '../../../common/src/utils/capitalizeFirstLetter';
+
 export enum SVGIconKind {
   CSV = 'csv',
   Download = 'download',

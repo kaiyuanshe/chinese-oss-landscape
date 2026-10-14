@@ -19,6 +19,8 @@ yarn-debug.log*
 yarn-error.log*
 /dist/
 /.cache/
+/.site-build-*/
+/.site-previous-*/
 
 # Local build, debug and test artifacts
 /target-wasm/

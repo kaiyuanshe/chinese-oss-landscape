@@ -48,6 +48,8 @@ jobs:
       - name: Install dependencies
         working-directory: ./ui/webapp
         run: yarn install --frozen-lockfile --network-concurrency 1
+      - name: Test site output replacement
+        run: npm run test:site
       - name: Run prettier
         working-directory: ./ui/webapp
         run: yarn format:diff

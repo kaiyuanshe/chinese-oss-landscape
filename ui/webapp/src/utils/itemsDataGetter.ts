@@ -33,6 +33,7 @@ import {
 import checkIfCategoryInGroup from './checkIfCategoryInGroup';
 import filterData from './filterData';
 import search from './search';
+import { getSiteSortOptions } from './siteSort';
 import sortCategoriesByGroupOrder from './sortCategoriesByGroupOrder';
 import sortMenuOptions from './sortMenuOptions';
 
@@ -347,7 +348,7 @@ export class ItemsDataGetter {
 
     return {
       classify,
-      sort,
+      sort: getSiteSortOptions(sort),
     };
   };
 

@@ -38,6 +38,7 @@ import getFoundationNameLabel from '../../utils/getFoundationNameLabel';
 import itemsDataGetter, { ClassifyAndSortOptions, GroupData } from '../../utils/itemsDataGetter';
 import buildNormalizedId from '../../utils/normalizeId';
 import scrollToTop from '../../utils/scrollToTop';
+import { getSiteSortOptions, getSiteSortState } from '../../utils/siteSort';
 import ActiveFiltersList from '../common/ActiveFiltersList';
 import Footer from '../navigation/Footer';
 import { useFullDataReady } from '../stores/fullData';
@@ -95,22 +96,39 @@ const Explore = (props: Props) => {
   const [classify, setClassify] = createSignal<ClassifyOption>(
     searchParams[CLASSIFY_PARAM] ? (searchParams[CLASSIFY_PARAM] as ClassifyOption) : DEFAULT_CLASSIFY
   );
-  const [sorted, setSorted] = createSignal<SortOption>(
-    searchParams[SORT_BY_PARAM] ? (searchParams[SORT_BY_PARAM] as SortOption) : DEFAULT_SORT
-  );
-  const [sortDirection, setSortDirection] = createSignal<SortDirection>(
-    searchParams[SORT_DIRECTION_PARAM] ? (searchParams[SORT_DIRECTION_PARAM] as SortDirection) : DEFAULT_SORT_DIRECTION
-  );
+  const initialSort = getSiteSortState(location.search);
+  const [sorted, setSorted] = createSignal<SortOption>(initialSort.sort);
+  const [sortDirection, setSortDirection] = createSignal<SortDirection>(initialSort.direction);
   const openMenuTOCFromHeader = useMobileTOCStatus();
   const setMenuTOCFromHeader = useSetMobileTOCStatus();
   const [classifyAndSortOptions, setClassifyAndSortOptions] = createSignal<{
     [key: string]: ClassifyAndSortOptions;
   }>({});
   const [classifyOptions, setClassifyOptions] = createSignal<ClassifyOption[]>(Object.values(ClassifyOption));
-  const [sortOptions, setSortOptions] = createSignal<SortOption[]>(Object.values(SortOption));
+  const [sortOptions, setSortOptions] = createSignal<SortOption[]>(getSiteSortOptions(Object.values(SortOption)));
   const [numItems, setNumItems] = createSignal<{ [key: string]: number }>({});
   const [licenseOptions, setLicenseOptions] = createSignal<string[]>([]);
   const activeGroups = () => itemsDataGetter.getGroups();
+
+  createEffect(
+    on(
+      () => location.search,
+      (search) => {
+        const next = getSiteSortState(search);
+        batch(() => {
+          setSorted(next.sort);
+          setSortDirection(next.direction);
+        });
+        if (next.query !== new URLSearchParams(search).toString()) {
+          navigate(`${location.pathname}${next.query ? `?${next.query}` : ''}${location.hash}`, {
+            state: location.state,
+            replace: true,
+            scroll: false,
+          });
+        }
+      }
+    )
+  );
 
   const checkIfFullDataRequired = (): boolean => {
     if (viewMode() === ViewMode.Card) {

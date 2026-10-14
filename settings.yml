@@ -166,7 +166,8 @@ header:
 #
 # screenshot_width: <WIDTH_IN_PIXELS>
 #
-screenshot_width: 1500
+# PNG/PDF exports are disabled for the site's first release.
+# screenshot_width: 1500
 
 # TAGs (optional)
 #

@@ -1,4 +1,8 @@
+import { siteFeatures } from '.';
+import { createGroupAliasRoutes } from './groupAliases';
 import { createFeatureRegistry, FeatureContext, SiteFeature } from './registry';
+
+jest.mock('../utils/getFoundationNameLabel', () => ({ __esModule: true, default: () => 'demo' }));
 
 const context: FeatureContext = {
   data: { foundation: 'DEMO', finances_available: false, categories: [], items: [] },
@@ -36,5 +40,58 @@ describe('site feature composition', () => {
     expect(() =>
       createFeatureRegistry([...features, { id: 'collision', routes: [{ path: '/alias', component: () => null }] }])
     ).toThrow('Duplicate feature route');
+  });
+
+  it('keeps only Guide available in the first-release registry', () => {
+    expect(siteFeatures.routes.map((route) => route.path)).toEqual(['/guide']);
+    expect(
+      siteFeatures
+        .navigation({ ...context, data: { ...context.data, guide_summary: { category: ['subcategory'] } } })
+        .map((entry) => entry.id)
+    ).toEqual(['guide']);
+    expect(siteFeatures.reservedPaths).toEqual(
+      expect.arrayContaining(['/stats', '/finances', '/funding', '/acquisitions', '/projects-summary', '/summary'])
+    );
+  });
+
+  it('does not let group aliases reopen disabled pages or their aliases under a base path', () => {
+    const reservedPaths = [
+      ...siteFeatures.reservedPaths.map((path) => `/map${path}`),
+      '/map/embed-setup',
+      '/screenshot',
+    ];
+    const aliases = [
+      'stats',
+      'Stats',
+      '%73tats',
+      '%2573tats',
+      'stats/nested',
+      'funding',
+      'acquisitions',
+      'summary',
+      'projects-summary',
+      'logos-preview',
+      'embed-setup',
+      'screenshot',
+      'guide',
+      '*',
+      ':name',
+      'team/../stats',
+      '%',
+      'cloud',
+      '/cloud/',
+      'Cloud',
+      '数据库',
+    ];
+    expect(
+      createGroupAliasRoutes(
+        aliases.map((alias) => ({ alias, normalized_name: 'group' })),
+        reservedPaths,
+        '/map'
+      )
+    ).toEqual([
+      { alias: 'cloud', normalized: 'group' },
+      { alias: '数据库', normalized: 'group' },
+    ]);
   });
 });

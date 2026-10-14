@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from '@solidjs/router';
-import { ExternalLink, Image, SVGIcon, SVGIconKind } from 'common';
+import { ExternalLink, Image, siteCapabilities, SVGIcon, SVGIconKind } from 'common';
 import isUndefined from 'lodash/isUndefined';
 import { createMemo, For, Show } from 'solid-js';
 
@@ -112,8 +112,12 @@ const Header = (props: Props) => {
             </div>
 
             <div class={`d-flex align-items-center ${styles.icons}`}>
-              <EmbedModal />
-              <DownloadDropdown />
+              <Show when={siteCapabilities.embed}>
+                <EmbedModal />
+              </Show>
+              <Show when={siteCapabilities.downloads}>
+                <DownloadDropdown />
+              </Show>
               <Show
                 when={
                   !isUndefined(window.baseDS.header) &&

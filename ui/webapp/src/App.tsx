@@ -1,12 +1,14 @@
 import { createWindowSize } from '@solid-primitives/resize-observer';
 import { Route, Router, useNavigate } from '@solidjs/router';
+import { siteCapabilities } from 'common';
 import isUndefined from 'lodash/isUndefined';
 import range from 'lodash/range';
 import { createEffect, createMemo, createSignal, For, on, onCleanup, onMount, Show } from 'solid-js';
 
 import styles from './App.module.css';
-import { EMBED_SETUP_PATH, EXPLORE_PATH, SCREENSHOTS_PATH } from './data';
+import { BASE_PATH, EMBED_SETUP_PATH, EXPLORE_PATH, SCREENSHOTS_PATH } from './data';
 import { siteFeatures } from './features';
+import { createGroupAliasRoutes } from './features/groupAliases';
 import Layout from './layout';
 import Explore from './layout/explore';
 import NotFound from './layout/notFound';
@@ -41,19 +43,13 @@ const App = () => {
   const motdContent = () => data()?.header?.motd;
   const motdVisible = createMemo(() => !isUndefined(motdContent()) && !motdDismissed());
   let motdRef: HTMLDivElement | undefined;
-  const groupAliasRoutes = createMemo(() => {
-    const groups = data()?.groups;
-    if (isUndefined(groups)) return [];
-    return groups.reduce<{ alias: string; normalized: string }[]>((aliasRoutes, group) => {
-      const alias = group.alias?.trim();
-      if (!alias) return aliasRoutes;
-      const sanitizedAlias = alias.replace(/^\/+|\/+$/g, '');
-      if (sanitizedAlias === '') return aliasRoutes;
-      if (aliasRoutes.some((route) => route.alias === sanitizedAlias)) return aliasRoutes;
-      aliasRoutes.push({ alias: sanitizedAlias, normalized: group.normalized_name });
-      return aliasRoutes;
-    }, []);
-  });
+  const groupAliasRoutes = createMemo(() =>
+    createGroupAliasRoutes(
+      data()?.groups,
+      [...siteFeatures.reservedPaths, EMBED_SETUP_PATH, SCREENSHOTS_PATH],
+      BASE_PATH
+    )
+  );
 
   const updateAppHeight = () => {
     document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
@@ -175,7 +171,10 @@ const App = () => {
       </Show>
       <Show when={!isUndefined(data())}>
         <Router root={Layout}>
-          <Route path={[EXPLORE_PATH, EMBED_SETUP_PATH]} component={() => <Explore initialData={data()!} />} />
+          <Route
+            path={siteCapabilities.embed ? [EXPLORE_PATH, EMBED_SETUP_PATH] : EXPLORE_PATH}
+            component={() => <Explore initialData={data()!} />}
+          />
           <For each={siteFeatures.routes}>{(route) => <Route path={route.path} component={route.component} />}</For>
           <For each={groupAliasRoutes()}>
             {(route) => (
@@ -188,7 +187,9 @@ const App = () => {
             )}
           </For>
           <Route path="*" component={NotFound} />
-          <Route path={SCREENSHOTS_PATH} component={() => <Screenshots initialData={data()!} />} />
+          <Show when={siteCapabilities.screenshots}>
+            <Route path={SCREENSHOTS_PATH} component={() => <Screenshots initialData={data()!} />} />
+          </Show>
         </Router>
       </Show>
     </>
