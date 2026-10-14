@@ -40,7 +40,7 @@
         <% if (!isDev) { %>
         <script>
       window.baseDS = {{ datasets.base|json|safe }};
-      window.statsDS = {{ datasets.stats|json|safe }};
+      window.statsDS = {};
         </script>
         <% } %>
         <% if (!isDev) { %>
@@ -58,10 +58,9 @@
                 "@context":"https://schema.org",
                 "@type":"BreadcrumbList",
                 "itemListElement":[
-                    {"@type":"ListItem","position":1,"name":"Explore","item":"{{ datasets.base.url }}/"},
-                    {"@type":"ListItem","position":2,"name":"Stats","item":"{{ datasets.base.url }}/stats"}{% set guide_summary = datasets.base.guide_summary %}
+                    {"@type":"ListItem","position":1,"name":"Explore","item":"{{ datasets.base.url }}/"}{% set guide_summary = datasets.base.guide_summary %}
                     {%- if guide_summary.len() > 0 %},
-                    {"@type":"ListItem","position":3,"name":"Guide","item":"{{ datasets.base.url }}/guide"}{% endif %}
+                    {"@type":"ListItem","position":2,"name":"Guide","item":"{{ datasets.base.url }}/guide"}{% endif %}
                 ]
             }
         </script>
@@ -101,10 +100,8 @@
         };
 
         try {
-            [window.baseDS, window.statsDS] = await Promise.all([
-                fetchDataset("/static/data/base.json"),
-                fetchDataset("/static/data/stats.json"),
-            ]);
+            window.baseDS = await fetchDataset("/static/data/base.json");
+            window.statsDS = {};
             await import("/src/index.tsx");
         } catch (error) {
             console.error("Unable to load development data", error);

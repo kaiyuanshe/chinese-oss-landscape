@@ -15,9 +15,13 @@ npm run build
 npm run preview
 ```
 
-`npm run build` 从本仓库源码编译生成器，自动安装并编译四个 UI 包，然后把网站生成到 `dist/`。构建缓存保存在被 Git 忽略的 `.cache/`，本站适配层设置页面基础路径以支持子页面刷新。首次构建需要下载依赖；不需要 GitHub、Crunchbase 或 AWS 凭证即可生成基本站点。外部服务数据采集仍遵循上游配置。
+`npm run build` 从本仓库源码编译生成器，自动安装并编译四个 UI 包，以 `--site-profile` 生成首发网站。该模式跳过 GitHub、Crunchbase、CLOMonitor 数据采集和采集缓存，不要求这些服务的凭证；首次构建仍需要下载开发依赖。本站适配层设置页面基础路径以支持子页面刷新。
+
+每次先在独立临时目录生成，成功后替换完整的 `dist/`，避免旧 CSV、嵌入页面或截图残留。生成失败保留原来的 `dist/`。这是本地构建产物替换，不替代生产托管的版本切换与回滚。
 
 `npm run preview` 预览 `dist/` 中已经完成数据注入的站点，默认端口 8000。它根据生成的数据读取 `base_path`，当前地址为 `http://127.0.0.1:8000/chinese-oss-landscape/`。直接预览 `ui/webapp/dist` 会得到尚未渲染的数据模板，不能作为最终站点使用。
+
+本地预览保留 SPA 页面回退；资源目录下不存在的 JS、JSON、图片等文件返回 404。生产托管仍需配置同样的资源错误行为，Vite 预览配置不会随 `dist/` 部署。
 
 ```sh
 npm run dev
@@ -37,6 +41,8 @@ npm run dev -- --port 5174
 | `logos/` | 项目 Logo |
 | `site/assets/` | 本站品牌资源；当前保留原有 Logo 的本地副本 |
 | `ui/webapp/src/features/index.ts` | 扩展页面注册入口 |
+| `ui/common/src/siteCapabilities.ts` | 本站首发界面能力开关 |
+| `crates/cli/src/build/site_profile.rs` | 首发数据投影与核心数据集，保留上游数据类型 |
 | `scripts/site.mjs` | 本站构建、开发、预览与校验的薄适配层 |
 | `dist/` | 自动生成的最终静态站点，不提交到源码分支 |
 
@@ -48,7 +54,15 @@ npm run dev -- --port 5174
 
 已删除模板创建 `new`、本地 Rust 服务命令 `serve`、AWS S3 部署 `deploy`、多平台 CLI/安装器/Homebrew 发布、Overlay 在线覆盖预览和 Quiz 游戏，包括对应实现、路由、构建步骤及专属依赖。生成器只保留 `build` 和 `validate`。
 
-PNG/PDF 导出保留。它在构建时使用隔离的临时 HTTP 服务和 Chrome/Chromium；机器没有浏览器时会跳过截图。该内部服务不提供 CLI 入口，也不参与网站上线运行。
+PNG/PDF、嵌入、统计和其他扩展实现保留，首发站点不开放。首发只注册地图和 Guide；融资、项目治理摘要、Logo 预览、嵌入配置和截图路由及别名不可访问，也不显示下载、嵌入、项目徽章或远程仓库徽章入口。原始项目官网和仓库链接保留。
+
+`--site-profile` 不生成 API、统计 JSON、嵌入、Kiosk、CSV/Markdown、PNG/PDF 产物，不启动截图浏览器；临时移除治理、商业和自动采集字段后生成核心数据，原始输入文件保持不变。该投影不是审核过滤：`sources/` 仍会复制输入，私密资料和草稿不能因此被认为已安全隔离，内容发布过滤将在独立内容模块中实现。
+
+后续启用扩展需要同时协调 UI 能力、生成产物和验收，不能只切换导航或省略 `--site-profile`。生成器仍保留上游扩展生成代码，但配套页面在本站首发配置下关闭；本站 `npm` 入口固定使用首发模式。
+
+项目数据中明确填写的标签和许可证保留；依赖 maturity 的 CNCF TAG 自动映射随治理字段一起停用。后续本站分类和标签由独立内容契约定义。
+
+可运行 `npm run test:site` 验证完整产物替换与失败保留行为；前端测试仍使用 `yarn --cwd ui/webapp test --runInBand`。
 
 扩展页面在 `features/index.ts` 注册，每项集中声明路由、别名及导航可见条件，桌面菜单、移动菜单和应用路由使用同一注册表。增删页面从这里接入，核心浏览、搜索、筛选和共享组件保持独立。删除一个扩展的注册项会移除其路由和导航；若要解除它的专属依赖，还需删除对应实现和包依赖。
 

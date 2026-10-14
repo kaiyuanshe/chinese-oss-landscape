@@ -56,6 +56,7 @@ mod github;
 mod logos;
 mod projects;
 mod screenshot_server;
+mod site_profile;
 
 /// Maximum number of CLOMonitor reports summaries to fetch concurrently.
 const CLOMONITOR_MAX_CONCURRENCY: usize = 10;
@@ -128,6 +129,10 @@ pub struct BuildArgs {
     /// Settings source.
     #[command(flatten)]
     pub settings_source: SettingsSource,
+
+    /// Build the core site without optional exports, governance data, or external enrichment.
+    #[arg(long)]
+    pub site_profile: bool,
 }
 
 /// Build landscape website.
@@ -144,16 +149,17 @@ pub async fn build(args: &BuildArgs) -> Result<()> {
     check_web_assets()?;
 
     // Setup output directory, creating it when needed
-    setup_output_dir(&args.output_dir)?;
-
-    // Setup cache
-    let cache = Cache::new(args.cache_dir.as_ref())?;
+    setup_output_dir(&args.output_dir, args.site_profile)?;
 
     // Get landscape data from the source provided
     let mut landscape_data = LandscapeData::new(&args.data_source).await?;
 
     // Get landscape settings from the source provided
     let mut settings = LandscapeSettings::new(&args.settings_source).await?;
+
+    if args.site_profile {
+        site_profile::project(&mut landscape_data, &mut settings);
+    }
 
     // Prepare guide and copy it to the output directory
     let guide = prepare_guide(&args.guide_source, &args.output_dir).await?;
@@ -170,11 +176,8 @@ pub async fn build(args: &BuildArgs) -> Result<()> {
     // Fetch some settings images and update their urls to the local copy
     prepare_settings_images(&mut settings, &args.output_dir).await?;
 
-    // Collect data from external services
-    let (crunchbase_data, github_data) = tokio::try_join!(
-        collect_crunchbase_data(&cache, &landscape_data),
-        collect_github_data(&cache, &landscape_data)
-    )?;
+    // The site profile bypasses cache initialization as well as external services.
+    let (crunchbase_data, github_data) = collect_external_data(args, &mut landscape_data, &settings).await?;
 
     // Enrich landscape data with some extra information from the settings and
     // external services
@@ -185,17 +188,16 @@ pub async fn build(args: &BuildArgs) -> Result<()> {
     landscape_data.add_tags(&settings);
     landscape_data.set_enduser_flag(&settings);
 
-    // Collect CLOMonitor reports summaries and copy them to the output directory
-    collect_clomonitor_reports(&cache, &mut landscape_data, &settings, &args.output_dir).await?;
-
     // Generate API data files
-    generate_api(
-        &ApiSources {
-            landscape_data: &landscape_data,
-            settings: &settings,
-        },
-        &args.output_dir,
-    )?;
+    if !args.site_profile {
+        generate_api(
+            &ApiSources {
+                landscape_data: &landscape_data,
+                settings: &settings,
+            },
+            &args.output_dir,
+        )?;
+    }
 
     // Generate QR code
     let qr_code = generate_qr_code(&settings.url, &args.output_dir)?;
@@ -212,37 +214,34 @@ pub async fn build(args: &BuildArgs) -> Result<()> {
             settings: &settings,
         },
         &args.output_dir,
+        args.site_profile,
     )?;
 
-    // Render index, embed-item, and kiosk html files and write them to the
-    // output dir
+    // Render and copy the main site's assets.
     render_index_html(
         settings.analytics.as_ref(),
         &datasets,
         settings.osano.as_ref(),
         &args.output_dir,
     )?;
-    render_embed_item_html(settings.colors.as_ref(), &args.output_dir)?;
-    render_kiosk_html(
-        &settings.foundation,
-        &settings.url,
-        settings.colors.as_ref(),
-        &args.output_dir,
-    )?;
-
-    // Copy embed and web application assets files to the output directory
-    copy_embed_assets(&args.output_dir)?;
     copy_webapp_assets(&args.output_dir)?;
 
-    // Generate items.csv file
-    generate_items_csv_file(&landscape_data, &args.output_dir)?;
+    if !args.site_profile {
+        render_embed_item_html(settings.colors.as_ref(), &args.output_dir)?;
+        render_kiosk_html(
+            &settings.foundation,
+            &settings.url,
+            settings.colors.as_ref(),
+            &args.output_dir,
+        )?;
+        copy_embed_assets(&args.output_dir)?;
 
-    // Generate projects.* files
-    generate_projects_files(&landscape_data, &args.output_dir)?;
+        generate_items_csv_file(&landscape_data, &args.output_dir)?;
+        generate_projects_files(&landscape_data, &args.output_dir)?;
 
-    // Prepare landscape screenshot (in PNG and PDF formats)
-    if let Some(width) = &settings.screenshot_width {
-        prepare_screenshot(*width, &args.output_dir).await?;
+        if let Some(width) = &settings.screenshot_width {
+            prepare_screenshot(*width, &args.output_dir).await?;
+        }
     }
 
     // Copy data sources files to the output directory
@@ -253,6 +252,26 @@ pub async fn build(args: &BuildArgs) -> Result<()> {
     display_success_msg(&args.output_dir.to_string_lossy());
 
     Ok(())
+}
+
+/// Enrich a full landscape, or return empty data without accessing caches or APIs.
+async fn collect_external_data(
+    args: &BuildArgs,
+    landscape_data: &mut LandscapeData,
+    settings: &LandscapeSettings,
+) -> Result<(CrunchbaseData, GithubData)> {
+    if args.site_profile {
+        return Ok((CrunchbaseData::default(), GithubData::default()));
+    }
+
+    let cache = Cache::new(args.cache_dir.as_ref())?;
+    let (crunchbase_data, github_data) = tokio::try_join!(
+        collect_crunchbase_data(&cache, landscape_data),
+        collect_github_data(&cache, landscape_data)
+    )?;
+    collect_clomonitor_reports(&cache, landscape_data, settings, &args.output_dir).await?;
+
+    Ok((crunchbase_data, github_data))
 }
 
 /// Check web assets are present, to make sure the web app has been built.
@@ -484,10 +503,14 @@ fn generate_api(input: &ApiSources, output_dir: &Path) -> Result<()> {
 /// the datasets will be embedded in the index document, and the rest will be
 /// written to the DATASETS_PATH in the output directory.
 #[instrument(skip_all, err)]
-fn generate_datasets(input: &NewDatasetsInput, output_dir: &Path) -> Result<Datasets> {
+fn generate_datasets(input: &NewDatasetsInput, output_dir: &Path, site_profile: bool) -> Result<Datasets> {
     debug!("generating datasets");
 
-    let datasets = Datasets::new(input);
+    let datasets = if site_profile {
+        site_profile::datasets(input)
+    } else {
+        Datasets::new(input)
+    };
     let datasets_path = output_dir.join(DATASETS_PATH);
 
     // Base
@@ -509,8 +532,10 @@ fn generate_datasets(input: &NewDatasetsInput, output_dir: &Path) -> Result<Data
     full_file.write_all(&serde_json::to_vec(&datasets.full)?)?;
 
     // Stats
-    let mut stats_file = File::create(datasets_path.join("stats.json"))?;
-    stats_file.write_all(&serde_json::to_vec(&datasets.stats)?)?;
+    if !site_profile {
+        let mut stats_file = File::create(datasets_path.join("stats.json"))?;
+        stats_file.write_all(&serde_json::to_vec(&datasets.stats)?)?;
+    }
 
     Ok(datasets)
 }
@@ -928,7 +953,7 @@ fn render_kiosk_html(foundation: &str, url: &str, colors: Option<&Colors>, outpu
 /// Setup output directory, creating it as well as any of the other required
 /// paths inside it when needed.
 #[instrument(err)]
-fn setup_output_dir(output_dir: &Path) -> Result<()> {
+fn setup_output_dir(output_dir: &Path, site_profile: bool) -> Result<()> {
     debug!("setting up output directory");
 
     if !output_dir.exists() {
@@ -936,15 +961,20 @@ fn setup_output_dir(output_dir: &Path) -> Result<()> {
         fs::create_dir_all(output_dir)?;
     }
 
-    for path in &[
-        API_PATH,
-        DATASETS_PATH,
-        DOCS_PATH,
-        EMBED_PATH,
-        IMAGES_PATH,
-        LOGOS_PATH,
-        SOURCES_PATH,
-    ] {
+    let paths = if site_profile {
+        vec![DATASETS_PATH, IMAGES_PATH, LOGOS_PATH, SOURCES_PATH]
+    } else {
+        vec![
+            API_PATH,
+            DATASETS_PATH,
+            DOCS_PATH,
+            EMBED_PATH,
+            IMAGES_PATH,
+            LOGOS_PATH,
+            SOURCES_PATH,
+        ]
+    };
+    for path in paths {
         let path = output_dir.join(path);
         if !path.exists() {
             fs::create_dir(path)?;

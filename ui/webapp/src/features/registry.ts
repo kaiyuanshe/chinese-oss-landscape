@@ -43,6 +43,8 @@ export const createFeatureRegistry = (features: SiteFeature[], enabledIds = feat
   }
   return {
     routes,
+    // Disabled page paths remain reserved, so a group alias cannot reopen them.
+    reservedPaths: features.flatMap((feature) => feature.routes.flatMap((route) => route.path)),
     navigation: (context: FeatureContext) =>
       enabled.flatMap((feature) =>
         feature.navigation?.visible(context) ? [{ id: feature.id, ...feature.navigation }] : []

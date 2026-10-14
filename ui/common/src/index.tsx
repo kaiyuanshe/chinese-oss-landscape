@@ -29,3 +29,6 @@ export { useBodyScroll, useBreakpointDetect, useModalFocus, useOutsideClick } fr
 // Types
 export type { GithubRepository, Item, Organization, Repository } from './types/types';
 export { SVGIconKind } from './types/types';
+
+// Site integration
+export { siteCapabilities } from './siteCapabilities';

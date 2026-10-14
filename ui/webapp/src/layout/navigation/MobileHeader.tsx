@@ -1,6 +1,6 @@
 import { useWindowScrollPosition } from '@solid-primitives/scroll';
 import { A, useLocation } from '@solidjs/router';
-import { ExternalLink, Image, SVGIcon, SVGIconKind, useBreakpointDetect } from 'common';
+import { ExternalLink, Image, siteCapabilities, SVGIcon, SVGIconKind, useBreakpointDetect } from 'common';
 import isUndefined from 'lodash/isUndefined';
 import { createEffect, createSignal, on, Show } from 'solid-js';
 
@@ -90,7 +90,9 @@ const MobileHeader = (props: Props) => {
                 <Searchbar device="mobile" />
               </div>
               <div class="d-none d-lg-flex align-items-center">
-                <DownloadDropdown />
+                <Show when={siteCapabilities.downloads}>
+                  <DownloadDropdown />
+                </Show>
                 <Show
                   when={
                     !isUndefined(window.baseDS.header) &&
