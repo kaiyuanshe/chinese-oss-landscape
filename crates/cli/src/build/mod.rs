@@ -23,7 +23,6 @@ use headless_chrome::{
 use landscape2_core::{
     data::{self, CrunchbaseData, DataSource, GithubData, Item, LandscapeData},
     datasets::{Datasets, NewDatasetsInput, embed::EmbedView, full::Full},
-    games::{GamesSource, LandscapeGames},
     guide::{GuideSource, LandscapeGuide},
     settings::{self, Analytics, Colors, LandscapeSettings, LogosViewbox, Osano, SettingsSource},
 };
@@ -34,12 +33,9 @@ use tokio::sync::Mutex;
 use tracing::{debug, error, info, instrument, trace, warn};
 use url::Url;
 
-use crate::{
-    build::{
-        api::{Api, ApiSources},
-        projects::collect_projects,
-    },
-    serve::{self, serve},
+use crate::build::{
+    api::{Api, ApiSources},
+    projects::collect_projects,
 };
 
 use self::{
@@ -59,6 +55,7 @@ mod export;
 mod github;
 mod logos;
 mod projects;
+mod screenshot_server;
 
 /// Maximum number of CLOMonitor reports summaries to fetch concurrently.
 const CLOMONITOR_MAX_CONCURRENCY: usize = 10;
@@ -116,10 +113,6 @@ pub struct BuildArgs {
     #[command(flatten)]
     pub data_source: DataSource,
 
-    /// Games source.
-    #[command(flatten)]
-    pub games_source: GamesSource,
-
     /// Guide source.
     #[command(flatten)]
     pub guide_source: GuideSource,
@@ -161,9 +154,6 @@ pub async fn build(args: &BuildArgs) -> Result<()> {
 
     // Get landscape settings from the source provided
     let mut settings = LandscapeSettings::new(&args.settings_source).await?;
-
-    // Prepare games data and copy it to the output directory
-    let games = prepare_games_data(&args.games_source, &args.output_dir).await?;
 
     // Prepare guide and copy it to the output directory
     let guide = prepare_guide(&args.guide_source, &args.output_dir).await?;
@@ -214,7 +204,7 @@ pub async fn build(args: &BuildArgs) -> Result<()> {
     let datasets = generate_datasets(
         &NewDatasetsInput {
             crunchbase_data: &crunchbase_data,
-            games: &games,
+            games: &None,
             github_data: &github_data,
             guide: &guide,
             landscape_data: &landscape_data,
@@ -390,15 +380,6 @@ async fn copy_data_sources_files(args: &BuildArgs, output_dir: &Path) -> Result<
     )
     .await?;
 
-    // Games data
-    let games_file = output_dir.join(SOURCES_PATH).join("games.yml");
-    copy(
-        args.games_source.games_file.as_ref(),
-        args.games_source.games_url.as_ref(),
-        games_file,
-    )
-    .await?;
-
     Ok(())
 }
 
@@ -463,9 +444,9 @@ fn display_success_msg(output_dir: &str) {
     println!(
         "\n✅ Landscape built successfully!
 
-You can see it in action by running the following command:
+Static website written to: {output_dir}
 
-👉 landscape2 serve --landscape-dir {output_dir}
+Use npm run preview to preview the default dist directory, or deploy these files to a static host.
 "
     );
 }
@@ -587,24 +568,6 @@ fn generate_qr_code(url: &String, output_dir: &Path) -> Result<String> {
     Ok(svg_path.to_string_lossy().into_owned())
 }
 
-/// Prepare games data and copy it to the output directory.
-#[instrument(skip_all, err)]
-async fn prepare_games_data(games_source: &GamesSource, output_dir: &Path) -> Result<Option<LandscapeGames>> {
-    debug!("preparing games data");
-
-    let Some(games) = LandscapeGames::new(games_source).await? else {
-        return Ok(None);
-    };
-
-    // Quiz game data
-    if let Some(quiz) = &games.quiz {
-        let path = output_dir.join(DATASETS_PATH).join("quiz.json");
-        File::create(path)?.write_all(&serde_json::to_vec(&quiz.questions)?)?;
-    }
-
-    Ok(Some(games))
-}
-
 /// Prepare guide and copy it to the output directory.
 #[instrument(skip_all, err)]
 async fn prepare_guide(guide_source: &GuideSource, output_dir: &Path) -> Result<Option<LandscapeGuide>> {
@@ -711,16 +674,8 @@ async fn prepare_screenshot(width: u32, output_dir: &Path) -> Result<()> {
     };
     let svr_addr = format!("127.0.0.1:{port}");
     let svr_addr_copy = svr_addr.clone();
-    let landscape_dir = Some(PathBuf::from(&output_dir));
-    let server = tokio::spawn(async {
-        let args = serve::ServeArgs {
-            addr: svr_addr_copy,
-            graceful_shutdown: false,
-            landscape_dir,
-            silent: true,
-        };
-        serve(&args).await
-    });
+    let landscape_dir = output_dir.to_path_buf();
+    let server = tokio::spawn(screenshot_server::serve(landscape_dir, svr_addr_copy));
 
     // Setup headless browser and navigate to screenshot url
     const TIMEOUT: Duration = Duration::from_mins(10);

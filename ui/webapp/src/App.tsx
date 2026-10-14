@@ -1,38 +1,18 @@
 import { createWindowSize } from '@solid-primitives/resize-observer';
 import { Route, Router, useNavigate } from '@solidjs/router';
-import { Loading } from 'common';
 import isUndefined from 'lodash/isUndefined';
 import range from 'lodash/range';
-import { batch, createEffect, createMemo, createSignal, For, on, onCleanup, onMount, Show } from 'solid-js';
+import { createEffect, createMemo, createSignal, For, on, onCleanup, onMount, Show } from 'solid-js';
 
 import styles from './App.module.css';
-import {
-  ACQUISITIONS_PATH,
-  EMBED_SETUP_PATH,
-  EXPLORE_PATH,
-  FINANCES_PATH,
-  FUNDING_PATH,
-  GAMES_PATH,
-  GUIDE_PATH,
-  LOGOS_PREVIEW_PATH,
-  PROJECTS_PATH,
-  SCREENSHOTS_PATH,
-  STATS_PATH,
-  SUMMARY_PATH,
-} from './data';
+import { EMBED_SETUP_PATH, EXPLORE_PATH, SCREENSHOTS_PATH } from './data';
+import { siteFeatures } from './features';
 import Layout from './layout';
 import Explore from './layout/explore';
-import Finances from './layout/finances';
-import Games from './layout/games';
-import Guide from './layout/guide';
-import Logos from './layout/logos';
 import NotFound from './layout/notFound';
-import Projects from './layout/projects';
 import Screenshots from './layout/screenshots';
-import Stats from './layout/stats';
 import { BaseData } from './types';
 import itemsDataGetter from './utils/itemsDataGetter';
-import overlayData from './utils/overlayData';
 import updateAlphaInColor from './utils/updateAlphaInColor';
 
 // Colors
@@ -54,10 +34,7 @@ const GroupAliasRedirect = (props: { target: string }) => {
 };
 
 const App = () => {
-  const [isOverlay, setIsOverlay] = createSignal<boolean | undefined>();
   const [data, setData] = createSignal<BaseData>();
-  const [loadingOverlay, setLoadingOverlay] = createSignal<boolean>(false);
-  const [error, setError] = createSignal<string | undefined>();
   const [motdDismissed, setMotdDismissed] = createSignal(false);
   const size = createWindowSize();
   const height = () => size.height;
@@ -77,21 +54,6 @@ const App = () => {
       return aliasRoutes;
     }, []);
   });
-
-  async function fetchOverlayData() {
-    try {
-      const data = await overlayData.getOverlayBaseData();
-      if (data) {
-        loadColors();
-        setData(data);
-      } else {
-        setError('No data found.');
-      }
-    } catch (e) {
-      setError(e as string);
-    }
-    setLoadingOverlay(false);
-  }
 
   const updateAppHeight = () => {
     document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
@@ -140,18 +102,6 @@ const App = () => {
     }
   };
 
-  createEffect(
-    on(isOverlay, () => {
-      if (!isUndefined(isOverlay())) {
-        if (!isOverlay()) {
-          itemsDataGetter.init();
-        } else {
-          fetchOverlayData();
-        }
-      }
-    })
-  );
-
   createEffect(on(height, updateAppHeight));
 
   createEffect(
@@ -187,19 +137,11 @@ const App = () => {
   });
 
   onMount(() => {
-    const isOverlayActive = overlayData.checkIfOverlayInQuery();
-    if (!isOverlayActive) {
-      itemsDataGetter.prepareGroups();
-      setData(window.baseDS);
-    } else {
-      setLoadingOverlay(true);
-    }
-
-    batch(() => {
-      updateAppHeight();
-      setIsOverlay(isOverlayActive);
-      loadColors();
-    });
+    itemsDataGetter.prepareGroups();
+    setData(window.baseDS);
+    itemsDataGetter.init();
+    updateAppHeight();
+    loadColors();
 
     if (window.Osano) {
       window.Osano.cm.addEventListener('osano-cm-initialized', () => {
@@ -210,22 +152,9 @@ const App = () => {
 
   return (
     <>
-      {/* Overlay alert */}
-      <Show when={isOverlay() && !isUndefined(error)}>
-        <div class={`position-fixed top-0 start-0 end-0 ${styles.alertWrapper}`}>
-          <div
-            class={`alert alert-warning w-100 d-flex align-items-center justify-content-center rounded-0 m-0 px-3 py-0 lh-base text-uppercase fw-semibold ${styles.alert} ${styles.alertOverlay}`}
-          >
-            Landscape overlay enabled
-          </div>
-        </div>
-      </Show>
       {/* motd */}
       <Show when={motdVisible() && !isUndefined(motdContent())}>
-        <div
-          class={`position-fixed start-0 end-0 ${styles.alertWrapper}`}
-          style={{ top: isOverlay() ? 'var(--overlay-alert-height)' : '0px' }}
-        >
+        <div class={`position-fixed start-0 end-0 ${styles.alertWrapper}`} style={{ top: '0px' }}>
           <div
             ref={motdRef}
             class={`alert w-100 d-flex align-items-center rounded-0 m-0 px-3 px-lg-4 py-2 lh-base ${styles.alert} ${styles.motd} ${styles.motdAlert}`}
@@ -244,37 +173,10 @@ const App = () => {
           </div>
         </div>
       </Show>
-      <Show when={loadingOverlay()}>
-        <Loading legend="Setting up landscape overlay..." legendClass={`fw-semibold ${styles.legend}`} />
-      </Show>
-      <Show when={!isUndefined(error())}>
-        <div class="d-flex align-items-center justify-content-center w-100 h-100">
-          <div class={`alert alert-danger py-4 px-5 rounded-0 d-flex flex-column ${styles.errorAlert}`} role="alert">
-            <div class={`alert-heading text-center ${styles.errorAlertHeading}`}>
-              Error setting up landscape overlay
-            </div>
-            <hr />
-            <div class={`flex-grow-1 ${styles.preWrapper}`}>
-              <code>
-                <pre class={`overflow-auto p-2 border border-dark text-light font-monospace mb-0 h-100 ${styles.pre}`}>
-                  {error()}
-                </pre>
-              </code>
-            </div>
-          </div>
-        </div>
-      </Show>
       <Show when={!isUndefined(data())}>
         <Router root={Layout}>
           <Route path={[EXPLORE_PATH, EMBED_SETUP_PATH]} component={() => <Explore initialData={data()!} />} />
-          <Route path={GUIDE_PATH} component={Guide} />
-          <Route path={STATS_PATH} component={Stats} />
-          <Route path={GAMES_PATH} component={Games} />
-          <Route path={FINANCES_PATH} component={Finances} />
-          <Route path={FUNDING_PATH} component={Finances} />
-          <Route path={ACQUISITIONS_PATH} component={Finances} />
-          <Route path={[PROJECTS_PATH, SUMMARY_PATH]} component={Projects} />
-          <Route path={LOGOS_PREVIEW_PATH} component={Logos} />
+          <For each={siteFeatures.routes}>{(route) => <Route path={route.path} component={route.component} />}</For>
           <For each={groupAliasRoutes()}>
             {(route) => (
               <Route

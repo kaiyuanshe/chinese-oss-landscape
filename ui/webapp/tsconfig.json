@@ -21,6 +21,6 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src", "wasm/overlay"],
+  "include": ["src"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

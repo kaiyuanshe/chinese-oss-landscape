@@ -97,10 +97,6 @@
   top: var(--motd-height);
 }
 
-:global(.overlay-active) .isSticky {
-  top: calc(var(--overlay-alert-height) + var(--motd-height));
-}
-
 .mobileBtn {
   width: 28px !important;
   height: 28px !important;

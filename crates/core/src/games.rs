@@ -11,7 +11,6 @@ use clap::Args;
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 use tracing::{debug, instrument};
-use wasm_bindgen::prelude::wasm_bindgen;
 
 /// Maximum number of options a question can have.
 const MAX_QUESTION_OPTIONS: usize = 4;
@@ -179,32 +178,24 @@ pub struct Quiz {
 }
 
 /// Quiz question details.
-#[wasm_bindgen]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Question {
-    #[wasm_bindgen(readonly, getter_with_clone)]
     pub title: String,
 
-    #[wasm_bindgen(readonly, getter_with_clone)]
     pub options: Vec<QuestionOption>,
 }
 
 /// Question option details.
-#[wasm_bindgen]
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct QuestionOption {
-    #[wasm_bindgen(readonly, getter_with_clone)]
     pub item: String,
 
-    #[wasm_bindgen(readonly, getter_with_clone)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub category: Option<String>,
 
-    #[wasm_bindgen(readonly, getter_with_clone)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub subcategory: Option<String>,
 
-    #[wasm_bindgen(readonly)]
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub correct: bool,
 }

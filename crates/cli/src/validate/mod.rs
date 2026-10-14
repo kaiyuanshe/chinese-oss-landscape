@@ -4,7 +4,6 @@ use anyhow::{Context, Result};
 use clap::Subcommand;
 use landscape2_core::{
     data::{DataSource, LandscapeData},
-    games::{GamesSource, LandscapeGames},
     guide::{GuideSource, LandscapeGuide},
     settings::{LandscapeSettings, SettingsSource},
 };
@@ -25,9 +24,6 @@ pub enum Target {
     /// Validate landscape data file.
     Data(DataSource),
 
-    /// Validate landscape games file.
-    Games(GamesSource),
-
     /// Validate landscape guide file.
     Guide(GuideSource),
 
@@ -46,20 +42,6 @@ pub async fn validate_data(data_source: &DataSource) -> Result<()> {
         .context("the landscape data file provided is not valid")?;
 
     println!("The landscape data file provided is valid!");
-    Ok(())
-}
-
-/// Validate landscape games file.
-///
-/// # Errors
-/// Returns an error if the landscape games file is invalid or cannot be read.
-#[instrument(skip_all)]
-pub async fn validate_games(games_source: &GamesSource) -> Result<()> {
-    LandscapeGames::new(games_source)
-        .await
-        .context("the landscape games file provided is not valid")?;
-
-    println!("The landscape games file provided is valid!");
     Ok(())
 }
 

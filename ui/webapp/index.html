@@ -102,8 +102,8 @@
 
         try {
             [window.baseDS, window.statsDS] = await Promise.all([
-                fetchDataset("./static/data/base.json"),
-                fetchDataset("./static/data/stats.json"),
+                fetchDataset("/static/data/base.json"),
+                fetchDataset("/static/data/stats.json"),
             ]);
             await import("/src/index.tsx");
         } catch (error) {

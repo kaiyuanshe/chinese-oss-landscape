@@ -27,7 +27,6 @@ export const FUNDING_PATH = `${BASE_PATH}/funding`;
 export const ACQUISITIONS_PATH = `${BASE_PATH}/acquisitions`;
 export const PROJECTS_PATH = `${BASE_PATH}/projects-summary`;
 export const SUMMARY_PATH = `${BASE_PATH}/summary`;
-export const GAMES_PATH = `${BASE_PATH}/games`;
 export const LOGOS_PREVIEW_PATH = `${BASE_PATH}/logos-preview`;
 export const SCREENSHOTS_PATH = '/screenshot';
 
@@ -43,13 +42,6 @@ export const FINANCES_KIND_PARAM = 'kind';
 export const CLASSIFY_PARAM = 'classify';
 export const SORT_BY_PARAM = 'sort-by';
 export const SORT_DIRECTION_PARAM = 'sort-direction';
-
-// Overlay
-export const OVERLAY_DATA_PARAM = 'overlay-data';
-export const OVERLAY_SETTINGS_PARAM = 'overlay-settings';
-export const OVERLAY_GUIDE_PARAM = 'overlay-guide';
-export const OVERLAY_LOGOS_PATH_PARAM = 'overlay-logos';
-export const OVERLAY_GAMES_PATH_PARAM = 'overlay-games';
 
 export const REGEX_SPACE = / /g;
 export const REGEX_PLUS = /\+/g;
@@ -71,7 +63,7 @@ export const SMALL_DEVICES_BREAKPOINTS: Breakpoint[] = [Breakpoint.XS, Breakpoin
 export const DEFAULT_STICKY_MOBILE_NAVBAR_HEIGHT = 50;
 export const DEFAULT_STICKY_NAVBAR_HEIGHT = 72;
 export const DEFAULT_TAB = Tab.Explore;
-export let DEFAULT_VIEW_MODE: ViewMode = window.baseDS ? window.baseDS.view_mode || ViewMode.Grid : ViewMode.Grid;
+export const DEFAULT_VIEW_MODE: ViewMode = window.baseDS ? window.baseDS.view_mode || ViewMode.Grid : ViewMode.Grid;
 export const DEFAULT_GRID_ITEMS_SIZE = GridItemsSize.Small;
 export const DEFAULT_FINANCES_KIND = FinancesKind.Funding;
 export const DEFAULT_CLASSIFY = ClassifyOption.Category;
@@ -79,11 +71,11 @@ export const DEFAULT_SORT = SortOption.Name;
 export const DEFAULT_SORT_DIRECTION = SortDirection.Asc;
 export const ALL_OPTION = 'all';
 
-export let FOUNDATION = window.baseDS ? window.baseDS.foundation : '';
-export let HIDE_ORGANIZATION_SECTION_IN_PROJECTS = window.baseDS
+export const FOUNDATION = window.baseDS ? window.baseDS.foundation : '';
+export const HIDE_ORGANIZATION_SECTION_IN_PROJECTS = window.baseDS
   ? window.baseDS.hide_organization_section_in_projects || DEFAULT_HIDE_ORGANIZATION_SECTION
   : DEFAULT_HIDE_ORGANIZATION_SECTION;
-export let GRID_SIZE = window.baseDS
+export const GRID_SIZE = window.baseDS
   ? window.baseDS.grid_items_size || DEFAULT_GRID_ITEMS_SIZE
   : DEFAULT_GRID_ITEMS_SIZE;
 
@@ -129,7 +121,7 @@ export const ZOOM_LEVELS_PER_SIZE: ZoomLevelsPerSize = {
   ],
 };
 
-export let ZOOM_LEVELS = ZOOM_LEVELS_PER_SIZE[GRID_SIZE as GridItemsSize];
+export const ZOOM_LEVELS = ZOOM_LEVELS_PER_SIZE[GRID_SIZE as GridItemsSize];
 
 export const COLORS: string[] = ['var(--color5)', 'var(--color6)'];
 
@@ -178,7 +170,7 @@ export const COMMON_FILTERS: FilterSection[] = [
     ],
   },
 ];
-export let FILTERS: FilterSection[] = [
+export const FILTERS: FilterSection[] = [
   {
     value: FilterCategory.Maturity,
     title: 'Project',
@@ -224,38 +216,4 @@ export const SORT_OPTION_LABEL = {
   [SortOption.FirstCommit]: 'First commit',
   [SortOption.LatestCommit]: 'Latest commit',
   [SortOption.Funding]: 'Funding',
-};
-
-interface SettingsValue {
-  foundationName: string;
-  gridSize: GridItemsSize;
-  viewMode: ViewMode;
-}
-
-export const overrideSettings = (values: SettingsValue) => {
-  FOUNDATION = values.foundationName;
-  GRID_SIZE = values.gridSize;
-  DEFAULT_VIEW_MODE = values.viewMode;
-  HIDE_ORGANIZATION_SECTION_IN_PROJECTS = window.baseDS
-    ? (window.baseDS.hide_organization_section_in_projects ?? DEFAULT_HIDE_ORGANIZATION_SECTION)
-    : DEFAULT_HIDE_ORGANIZATION_SECTION;
-  ZOOM_LEVELS = ZOOM_LEVELS_PER_SIZE[values.gridSize];
-  FILTERS = [
-    {
-      value: FilterCategory.Maturity,
-      title: 'Project',
-      options: [
-        {
-          value: getFoundationNameLabel(),
-          name: `${FOUNDATION} Projects`,
-          suboptions: [],
-        },
-        {
-          value: `non-${getFoundationNameLabel()}`,
-          name: `Non ${FOUNDATION} Projects`,
-        },
-      ],
-    },
-    ...COMMON_FILTERS,
-  ];
 };

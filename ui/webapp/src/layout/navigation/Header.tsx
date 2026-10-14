@@ -1,18 +1,10 @@
 import { useLocation, useNavigate } from '@solidjs/router';
 import { ExternalLink, Image, SVGIcon, SVGIconKind } from 'common';
-import isEmpty from 'lodash/isEmpty';
 import isUndefined from 'lodash/isUndefined';
-import { createMemo, Show } from 'solid-js';
+import { createMemo, For, Show } from 'solid-js';
 
-import {
-  ALL_OPTION,
-  DEFAULT_VIEW_MODE,
-  EXPLORE_PATH,
-  GAMES_PATH,
-  GUIDE_PATH,
-  SCREENSHOTS_PATH,
-  STATS_PATH,
-} from '../../data';
+import { ALL_OPTION, DEFAULT_VIEW_MODE, EXPLORE_PATH, SCREENSHOTS_PATH } from '../../data';
+import { siteFeatures } from '../../features';
 import isExploreSection from '../../utils/isExploreSection';
 import itemsDataGetter from '../../utils/itemsDataGetter';
 import prepareLink from '../../utils/prepareLink';
@@ -95,45 +87,23 @@ const Header = (props: Props) => {
               Explore
             </button>
 
-            <Show when={!isUndefined(window.baseDS.guide_summary) && !isEmpty(window.baseDS.guide_summary)}>
-              <button
-                class={`btn btn-link position-relative text-uppercase fw-bold text-decoration-none p-0 ${styles.link}`}
-                classList={{ activeLink: isActive(GUIDE_PATH) }}
-                onClick={() => {
-                  if (isActive(GUIDE_PATH)) {
+            <For each={siteFeatures.navigation({ data: window.baseDS, statsVisible: props.statsVisible })}>
+              {(entry) => (
+                <button
+                  class={`btn btn-link position-relative text-uppercase fw-bold text-decoration-none p-0 ${styles.link}`}
+                  classList={{ activeLink: isActive(entry.path) }}
+                  onClick={() => {
+                    if (!isActive(entry.path)) {
+                      navigate(prepareLink(entry.path), { state: { from: 'header' } });
+                    }
                     scrollToTop(false);
-                  } else {
-                    navigate(prepareLink(GUIDE_PATH), {
-                      state: { from: 'header' },
-                    });
-                    scrollToTop(false);
-                  }
-                }}
-                aria-label='Go to "Guide" page'
-              >
-                Guide
-              </button>
-            </Show>
-
-            <Show when={props.statsVisible}>
-              <button
-                class={`btn btn-link position-relative text-uppercase fw-bold text-decoration-none p-0 ${styles.link}`}
-                classList={{ activeLink: isActive(STATS_PATH) }}
-                onClick={() => {
-                  if (isActive(STATS_PATH)) {
-                    scrollToTop(false);
-                  } else {
-                    navigate(prepareLink(STATS_PATH), {
-                      state: { from: 'header' },
-                    });
-                    scrollToTop(false);
-                  }
-                }}
-                aria-label='Go to "Stats" page'
-              >
-                Stats
-              </button>
-            </Show>
+                  }}
+                  aria-label={`Go to "${entry.label}" page`}
+                >
+                  {entry.label}
+                </button>
+              )}
+            </For>
           </div>
 
           <div class={`d-flex flex-row align-items-center ms-auto mt-0 ${styles.searchWrapper}`}>
@@ -144,20 +114,6 @@ const Header = (props: Props) => {
             <div class={`d-flex align-items-center ${styles.icons}`}>
               <EmbedModal />
               <DownloadDropdown />
-              <Show when={!isUndefined(window.baseDS.games_available)}>
-                <button
-                  class={`btn btn-md text-dark ms-3 px-0 ${styles.btnLink}`}
-                  onClick={() => {
-                    navigate(prepareLink(GAMES_PATH), {
-                      state: { from: 'header' },
-                    });
-                    scrollToTop(false);
-                  }}
-                  aria-label='Go to "Games" page'
-                >
-                  <SVGIcon kind={SVGIconKind.Games} class={`position-relative ${styles.linkIcon}`} />
-                </button>
-              </Show>
               <Show
                 when={
                   !isUndefined(window.baseDS.header) &&

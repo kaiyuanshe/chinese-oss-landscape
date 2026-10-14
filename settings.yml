@@ -122,7 +122,7 @@ groups:
 header:
   links:
     github: "https://github.com/cncf/landscape2"
-  logo: "https://raw.githubusercontent.com/cncf/artwork/master/other/cncf-landscape/horizontal/color/cncf-landscape-horizontal-color.svg"
+  logo: "site/assets/cncf-landscape-horizontal-color.svg"
 
 # Images (optional)
 #

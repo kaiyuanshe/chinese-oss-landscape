@@ -1,10 +1,10 @@
 import { A } from '@solidjs/router';
 import { ExternalLink, SVGIcon, SVGIconKind, useOutsideClick } from 'common';
-import isEmpty from 'lodash/isEmpty';
 import isUndefined from 'lodash/isUndefined';
-import { createSignal, Show } from 'solid-js';
+import { createSignal, For, Show } from 'solid-js';
 
-import { EXPLORE_PATH, GAMES_PATH, GUIDE_PATH, STATS_PATH } from '../../data';
+import { EXPLORE_PATH } from '../../data';
+import { siteFeatures } from '../../features';
 import styles from './MobileDropdown.module.css';
 
 interface Props {
@@ -50,43 +50,21 @@ const MobileDropdown = (props: Props) => {
             Explore
           </A>
         </div>
-        <Show when={!isUndefined(window.baseDS.guide_summary) && !isEmpty(window.baseDS.guide_summary)}>
-          <div class="dropdown-item mb-2">
-            <A
-              class={`btn btn-link position-relative text-uppercase w-100 text-start fw-semibold text-decoration-none p-0 ${styles.link}`}
-              href={GUIDE_PATH}
-              activeClass="activeLink"
-              state={{ from: 'mobileHeader' }}
-              onClick={closeDropdown}
-            >
-              Guide
-            </A>
-          </div>
-        </Show>
-        <Show when={props.statsVisible}>
-          <div class="dropdown-item mb-2">
-            <A
-              class={`btn btn-link position-relative text-uppercase w-100 text-start fw-semibold text-decoration-none p-0 ${styles.link}`}
-              activeClass="activeLink"
-              href={STATS_PATH}
-              onClick={closeDropdown}
-            >
-              Stats
-            </A>
-          </div>
-        </Show>
-        <Show when={!isUndefined(window.baseDS.games_available)}>
-          <div class="dropdown-item mb-2">
-            <A
-              class={`btn btn-link position-relative text-uppercase w-100 text-start fw-semibold text-decoration-none p-0 ${styles.link}`}
-              activeClass="activeLink"
-              href={GAMES_PATH}
-              onClick={closeDropdown}
-            >
-              Games
-            </A>
-          </div>
-        </Show>
+        <For each={siteFeatures.navigation({ data: window.baseDS, statsVisible: props.statsVisible })}>
+          {(entry) => (
+            <div class="dropdown-item mb-2">
+              <A
+                class={`btn btn-link position-relative text-uppercase w-100 text-start fw-bold text-decoration-none p-0 ${styles.link}`}
+                href={entry.path}
+                activeClass="activeLink"
+                state={{ from: 'mobileHeader' }}
+                onClick={closeDropdown}
+              >
+                {entry.label}
+              </A>
+            </div>
+          )}
+        </For>
         <Show
           when={
             !isUndefined(window.baseDS.header) &&
