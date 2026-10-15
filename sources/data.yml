@@ -5,7 +5,7 @@ landscape:
     items:
     - name: apache-dubbo
       homepage_url: https://dubbo.apache.org/
-      logo: missing-logo.svg
+      logo: apache-dubbo.png
       description: 面向微服务的 RPC 与服务治理框架，提供服务发现、负载均衡和流量管理等能力。
       repo_url: https://github.com/apache/dubbo
       license: Apache-2.0
@@ -17,7 +17,7 @@ landscape:
           site-name: Apache Dubbo
     - name: apache-brpc
       homepage_url: https://brpc.apache.org/
-      logo: missing-logo.svg
+      logo: apache-brpc.png
       description: 使用 C++ 开发的 RPC 框架，支持多种通信协议及高并发服务调用，适用于搜索、存储等服务。
       repo_url: https://github.com/apache/brpc
       license: Apache-2.0
@@ -27,7 +27,7 @@ landscape:
           site-name: Apache bRPC
     - name: cloudwego-kitex
       homepage_url: https://www.cloudwego.io/zh/docs/kitex/
-      logo: missing-logo.svg
+      logo: cloudwego.png
       description: Go 微服务 RPC 框架，支持多协议通信、代码生成和可扩展的服务治理集成。
       repo_url: https://github.com/cloudwego/kitex
       license: Apache-2.0
@@ -39,7 +39,7 @@ landscape:
     items:
     - name: apache-echarts
       homepage_url: https://echarts.apache.org/
-      logo: missing-logo.svg
+      logo: apache-echarts.png
       description: 用于网页数据可视化的 JavaScript 图表库，提供可配置图表、交互和 Canvas/SVG 渲染。
       repo_url: https://github.com/apache/echarts
       license: Apache-2.0 AND BSD-3-Clause
@@ -51,7 +51,7 @@ landscape:
     items:
     - name: tongsuo
       homepage_url: https://www.tongsuo.net/
-      logo: missing-logo.svg
+      logo: tongsuo.png
       description: 提供密码学算法和 TLS/TLCP 等安全通信协议的基础密码库，支持数据传输、存储和隐私计算场景。
       repo_url: https://github.com/Tongsuo-Project/Tongsuo
       license: Apache-2.0
@@ -65,7 +65,7 @@ landscape:
     items:
     - name: apache-doris
       homepage_url: https://doris.apache.org/
-      logo: missing-logo.svg
+      logo: apache-doris.png
       description: 基于大规模并行处理的分析型数据库，支持 SQL 查询、实时数据分析和交互式报表。
       repo_url: https://github.com/apache/doris
       license: Apache-2.0
@@ -77,7 +77,7 @@ landscape:
     items:
     - name: apache-shardingsphere
       homepage_url: https://shardingsphere.apache.org/
-      logo: missing-logo.svg
+      logo: apache-shardingsphere.jpg
       description: 为现有数据库提供数据分片、弹性扩展和数据安全能力的分布式 SQL 方案。
       repo_url: https://github.com/apache/shardingsphere
       license: Apache-2.0
@@ -89,7 +89,7 @@ landscape:
     items:
     - name: apache-seata
       homepage_url: https://seata.apache.org/
-      logo: missing-logo.svg
+      logo: apache-seata.png
       description: 面向微服务的数据一致性与分布式事务框架，支持 AT、TCC、Saga 和 XA 事务模式。
       repo_url: https://github.com/apache/incubator-seata
       license: Apache-2.0
@@ -101,7 +101,7 @@ landscape:
     items:
     - name: apache-rocketmq
       homepage_url: https://rocketmq.apache.org/
-      logo: missing-logo.svg
+      logo: apache-rocketmq.png
       description: 分布式消息与流处理平台，支持发布订阅、事务消息和顺序消息等通信模式。
       repo_url: https://github.com/apache/rocketmq
       license: Apache-2.0
@@ -113,7 +113,7 @@ landscape:
     items:
     - name: apache-dolphinscheduler
       homepage_url: https://dolphinscheduler.apache.org/
-      logo: missing-logo.svg
+      logo: apache-dolphinscheduler.svg
       description: 通过可视化 DAG 编排数据任务的调度平台，管理任务依赖、执行与失败恢复。
       repo_url: https://github.com/apache/dolphinscheduler
       license: Apache-2.0
@@ -125,7 +125,7 @@ landscape:
     items:
     - name: tikv
       homepage_url: https://tikv.org/
-      logo: missing-logo.svg
+      logo: tikv.png
       description: 采用 Rust 开发的分布式事务型键值数据库，提供一致性事务、自动分片与水平扩展。
       repo_url: https://github.com/tikv/tikv
       license: Apache-2.0
@@ -135,7 +135,7 @@ landscape:
           site-name: TiKV
     - name: pikiwidb
       homepage_url: https://github.com/OpenAtomFoundation/pikiwidb
-      logo: missing-logo.svg
+      logo: pikiwidb.jpg
       description: 兼容 Redis 协议的持久化键值数据库，使用 RocksDB 存储引擎并支持大容量数据；前称 Pika。
       repo_url: https://github.com/OpenAtomFoundation/pikiwidb
       license: BSD-3-Clause
@@ -147,7 +147,7 @@ landscape:
     items:
     - name: milvus
       homepage_url: https://milvus.io/
-      logo: missing-logo.svg
+      logo: milvus.svg
       description: 面向向量相似性检索的数据库，支持文本、图像等非结构化数据的检索以及 AI 应用的数据存储。
       repo_url: https://github.com/milvus-io/milvus
       license: Apache-2.0
@@ -157,7 +157,7 @@ landscape:
           site-name: Milvus
     - name: vearch
       homepage_url: https://vearch.readthedocs.io/
-      logo: missing-logo.svg
+      logo: vearch.png
       description: 面向人工智能应用的分布式向量数据库，提供向量相似性搜索、标量过滤和可扩展存储。
       repo_url: https://github.com/vearch/vearch
       license: Apache-2.0
@@ -169,7 +169,7 @@ landscape:
     items:
     - name: tidb
       homepage_url: https://www.pingcap.com/
-      logo: missing-logo.svg
+      logo: tidb.png
       description: 兼容 MySQL 的分布式 SQL 数据库，支持分布式事务、弹性扩展以及事务与分析混合处理。
       repo_url: https://github.com/pingcap/tidb
       license: Apache-2.0
@@ -181,7 +181,7 @@ landscape:
     items:
     - name: tdengine
       homepage_url: https://www.taosdata.com/
-      logo: missing-logo.svg
+      logo: tdengine.svg
       description: 面向物联网和工业时序数据的开源数据库，提供 SQL 查询、数据订阅、流式处理及集群能力；本条目仅指 TSDB 开源版本。
       repo_url: https://github.com/taosdata/TDengine
       license: AGPL-3.0-only
@@ -195,7 +195,7 @@ landscape:
     items:
     - name: apache-apisix
       homepage_url: https://apisix.apache.org/
-      logo: missing-logo.svg
+      logo: apache-apisix.png
       description: 面向 API 和微服务的网关，支持动态路由、认证、流量控制及可观测性集成。
       repo_url: https://github.com/apache/apisix
       license: Apache-2.0
@@ -207,7 +207,7 @@ landscape:
     items:
     - name: apache-skywalking
       homepage_url: https://skywalking.apache.org/
-      logo: missing-logo.svg
+      logo: apache-skywalking.svg
       description: 面向分布式系统的可观测性平台，关联链路追踪、指标和日志以分析应用运行情况。
       repo_url: https://github.com/apache/skywalking
       license: Apache-2.0
@@ -217,7 +217,7 @@ landscape:
           site-name: Apache SkyWalking
     - name: openstack-venus
       homepage_url: https://wiki.openstack.org/wiki/Venus
-      logo: missing-logo.svg
+      logo: openstack-venus.svg
       description: OpenStack 日志管理服务，支持日志收集、检索、分析与告警；官方治理页将团队标为 Inactive，当前维护状态仍待确认。
       repo_url: https://opendev.org/openstack/venus
       license: Apache-2.0
@@ -231,7 +231,7 @@ landscape:
     items:
     - name: dragonfly
       homepage_url: https://d7y.io/
-      logo: missing-logo.svg
+      logo: dragonfly.svg
       description: 基于 P2P 的文件与容器镜像分发系统，支持大规模镜像、软件制品和 AI 模型文件的传输加速。
       repo_url: https://github.com/dragonflyoss/dragonfly
       license: Apache-2.0
@@ -243,7 +243,7 @@ landscape:
     items:
     - name: harbor
       homepage_url: https://goharbor.io/
-      logo: missing-logo.svg
+      logo: harbor.png
       description: 面向容器镜像和云原生制品的仓库，提供访问控制、漏洞扫描、制品签名与跨仓库复制。
       repo_url: https://github.com/goharbor/harbor
       license: Apache-2.0
@@ -255,7 +255,7 @@ landscape:
     items:
     - name: kubeedge
       homepage_url: https://kubeedge.io/
-      logo: missing-logo.svg
+      logo: kubeedge.png
       description: 将 Kubernetes 应用编排与设备管理扩展至边缘节点的云边协同框架，支持边缘自治和设备连接。
       repo_url: https://github.com/kubeedge/kubeedge
       license: Apache-2.0
@@ -267,7 +267,7 @@ landscape:
     items:
     - name: openstack-skyline
       homepage_url: https://wiki.openstack.org/wiki/Skyline
-      logo: missing-logo.svg
+      logo: openstack-skyline.png
       description: OpenStack 的现代化 Web 控制台，由 API 服务和前端控制台两个主要源码仓库组成。
       repo_url: https://opendev.org/openstack/skyline-apiserver
       license: Apache-2.0
@@ -282,7 +282,7 @@ landscape:
     items:
     - name: jumpserver
       homepage_url: https://www.jumpserver.org/
-      logo: missing-logo.svg
+      logo: jumpserver.png
       description: 开源堡垒机与特权访问管理平台，为主机、数据库和 Kubernetes 等资产提供身份验证、授权和运维审计。
       repo_url: https://github.com/jumpserver/jumpserver
       license: GPL-3.0-only
@@ -296,7 +296,7 @@ landscape:
     items:
     - name: qwen2-5-7b-instruct
       homepage_url: https://huggingface.co/Qwen/Qwen2.5-7B-Instruct
-      logo: missing-logo.svg
+      logo: qwen.jpg
       description: 阿里云 Qwen 团队发布的 7B 级指令微调语言模型权重，支持中英文等语言的对话与文本生成。本条目仅涵盖该模型权重，不代表训练数据或整个 Qwen 系列均按相同条款开放。
       extra:
         annotations:
@@ -311,7 +311,7 @@ landscape:
     items:
     - name: fate
       homepage_url: https://www.fedai.org/
-      logo: missing-logo.svg
+      logo: fate.png
       description: 联邦学习框架，提供同态加密、多方计算和多种联邦机器学习算法，支持跨机构协作建模。
       repo_url: https://github.com/FederatedAI/FATE
       license: Apache-2.0
@@ -323,7 +323,7 @@ landscape:
     items:
     - name: openmldb
       homepage_url: https://openmldb.ai/
-      logo: missing-logo.svg
+      logo: openmldb.png
       description: 面向机器学习的数据库和特征计算平台，以 SQL 统一离线训练与在线推理的特征计算。
       repo_url: https://github.com/4paradigm/OpenMLDB
       license: Apache-2.0
@@ -335,7 +335,7 @@ landscape:
     items:
     - name: paddlepaddle
       homepage_url: https://www.paddlepaddle.org.cn/
-      logo: missing-logo.svg
+      logo: paddlepaddle.png
       description: 飞桨深度学习框架，提供模型训练、自动微分、分布式训练和推理部署能力；本条目聚焦 Paddle 源码项目。
       repo_url: https://github.com/PaddlePaddle/Paddle
       license: Apache-2.0
@@ -347,7 +347,7 @@ landscape:
     items:
     - name: ncnn
       homepage_url: https://github.com/Tencent/ncnn
-      logo: missing-logo.svg
+      logo: ncnn.png
       description: 面向移动端、嵌入式和桌面端优化的神经网络推理框架，提供跨平台 CPU 与 GPU 推理能力。
       repo_url: https://github.com/Tencent/ncnn
       license: BSD-3-Clause AND BSD-2-Clause AND Zlib
@@ -361,7 +361,7 @@ landscape:
     items:
     - name: kaiyuanshe
       homepage_url: https://kaiyuanshe.cn/
-      logo: missing-logo.svg
+      logo: kaiyuanshe.png
       description: 由志愿者参与治理的开源社区，开展开源治理、社区协作、项目孵化和中国开源年会等活动。本条目收录社区身份，不将组织及其旗下项目视为同一许可对象。
       extra:
         annotations:
