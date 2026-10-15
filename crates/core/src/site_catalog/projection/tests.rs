@@ -35,6 +35,22 @@ fn five_types_keep_original_sources_and_asset_scopes() {
     for item in &projection.engine_data.items {
         let public = projection.metadata.items.iter().find(|public| public.id == item.id).unwrap();
         let primary = public.entries.iter().find(|entry| entry.primary).unwrap();
+        let (entry_role, license_scope) = match public.kind {
+            ItemKind::Software => (EntryRole::Repository, LicenseScope::SourceCode),
+            ItemKind::ModelWeights => (EntryRole::Weights, LicenseScope::ModelWeights),
+            ItemKind::Dataset => (EntryRole::Dataset, LicenseScope::Dataset),
+            ItemKind::OpenStandard => (EntryRole::Specification, LicenseScope::StandardText),
+            ItemKind::Community => (EntryRole::Official, LicenseScope::Organization),
+        };
+        assert_eq!(primary.role, entry_role);
+        let license = public.licenses.iter().find(|license| license.scope == license_scope).unwrap();
+        if public.kind == ItemKind::Community {
+            assert_eq!(license.status, LicenseStatus::NotApplicable);
+            assert!(license.identifier.is_none());
+        } else {
+            assert_eq!(license.status, LicenseStatus::Verified);
+            assert_eq!(license.applies_to_entry.as_deref(), Some(primary.id.as_str()));
+        }
         assert!(primary.original);
         assert_eq!(item.homepage_url, primary.url);
         assert_eq!(item.name, public.name.zh_cn);
@@ -340,6 +356,52 @@ fn repositories_do_not_inherit_another_assets_license() {
     assert!(repositories[1].license.is_none());
     assert!(projection.engine_data.items[1].repositories.is_none());
     assert!(projection.metadata.items[1].entries.iter().any(|entry| entry.id == "training-code"));
+
+    let mut independent_license = catalog.items[0].licenses[0].clone();
+    independent_license.applies_to_entry = Some("secondary-source".to_string());
+    independent_license.identifier = Some("MIT".to_string());
+    let mut evidence = catalog.evidence[0].clone();
+    evidence.id = "ev-independent-code-license".to_string();
+    evidence.title = "示例补充代码许可".to_string();
+    evidence.url = "https://example.org/code/license".to_string();
+    evidence.claim = "补充仓库和模型训练代码使用 MIT，权重许可单独记录".to_string();
+    independent_license.evidence_ids = vec![evidence.id.clone()];
+    catalog.evidence.push(evidence);
+    catalog.items[0].licenses.push(independent_license.clone());
+    independent_license.applies_to_entry = Some("training-code".to_string());
+    catalog.items[1].licenses.push(independent_license);
+    // Input order must not make a supplemental repository the primary source.
+    catalog.items[0].entries.reverse();
+    catalog.items[1].entries.reverse();
+    let projection = catalog.project().unwrap();
+    let software = &projection.engine_data.items[0];
+    assert_eq!(
+        software.primary_repository().unwrap().url,
+        "https://example.org/software/repository"
+    );
+    let repositories = software.repositories.as_ref().unwrap();
+    assert_eq!(repositories.len(), 2);
+    assert_eq!(repositories[0].url, "https://example.org/secondary");
+    assert_eq!(repositories[0].license.as_deref(), Some("MIT"));
+    assert_eq!(repositories[1].license.as_deref(), Some("Apache-2.0"));
+    assert!(projection.engine_data.items[1].repositories.is_none());
+    let model = &projection.metadata.items[1];
+    for (entry, scope, identifier) in [
+        ("weights", LicenseScope::ModelWeights, "Apache-2.0"),
+        ("training-code", LicenseScope::SourceCode, "MIT"),
+    ] {
+        let license = model
+            .licenses
+            .iter()
+            .find(|license| license.applies_to_entry.as_deref() == Some(entry))
+            .unwrap();
+        assert_eq!(license.scope, scope);
+        assert_eq!(license.identifier.as_deref(), Some(identifier));
+    }
+    assert_eq!(
+        model.entries.iter().find(|entry| entry.primary).unwrap().id,
+        "weights"
+    );
 }
 
 #[tokio::test]

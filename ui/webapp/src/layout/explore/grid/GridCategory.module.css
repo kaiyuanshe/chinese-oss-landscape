@@ -11,11 +11,7 @@
   left: 7px;
   height: 110px;
   width: 30px;
-  -moz-transform: scale(-1, -1);
-  -webkit-transform: scale(-1, -1);
-  -o-transform: scale(-1, -1);
-  -ms-transform: scale(-1, -1);
-  transform: scale(-1, -1);
+  /* CJK glyphs stay upright and follow the natural top-to-bottom reading order. */
   writing-mode: vertical-rl;
   text-orientation: mixed;
 }

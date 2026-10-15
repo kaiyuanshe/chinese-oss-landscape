@@ -62,12 +62,14 @@ const Category = (props: CatProps) => {
           <Show
             when={!props.isSafari}
             fallback={
-              <div class={`position-absolute text-end ${styles.catTitle} ${styles.ellipsis}`}>
+              <div class={`position-absolute text-start ${styles.catTitle} ${styles.ellipsis}`}>
                 <div class={`${styles.safariTitle}`}>{props.categoryName}</div>
               </div>
             }
           >
-            <div class={`position-absolute text-end d-flex justify-content-end align-items-center ${styles.catTitle}`}>
+            <div
+              class={`position-absolute text-start d-flex justify-content-start align-items-center ${styles.catTitle}`}
+            >
               <div class={`${styles.ellipsis}`}>{props.categoryName}</div>
             </div>
           </Show>
