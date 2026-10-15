@@ -193,9 +193,12 @@ export const FILTERS: FilterSection[] = [
 export const FILTER_CATEGORIES_PER_TITLE: FilterCategoriesPerTitle = {
   [FilterTitle.Project]: [
     FilterCategory.Maturity,
+    FilterCategory.Kind,
+    FilterCategory.ProjectStatus,
     FilterCategory.TAG,
     FilterCategory.License,
     FilterCategory.Category,
+    FilterCategory.Subcategory,
     FilterCategory.Extra,
   ],
   [FilterTitle.Organization]: [

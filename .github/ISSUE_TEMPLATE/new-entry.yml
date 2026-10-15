@@ -1,0 +1,44 @@
+name: Suggest a new entry
+description: Suggest a Chinese-origin software, model, dataset, standard, or community.
+title: "[Entry] "
+labels: [content]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please provide public evidence. A suggestion is reviewed before publication.
+  - type: input
+    id: name
+    attributes:
+      label: Project or organization name
+    validations:
+      required: true
+  - type: input
+    id: url
+    attributes:
+      label: Official entry URL
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Object type
+      options:
+        - software
+        - model_weights
+        - dataset
+        - open_standard
+        - community
+    validations:
+      required: true
+  - type: textarea
+    id: origin
+    attributes:
+      label: Chinese-origin evidence
+      description: Include the supported region and public URLs.
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional notes

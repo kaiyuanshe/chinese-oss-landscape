@@ -8,11 +8,13 @@ import { useLocale } from './locale';
 interface SiteLocalizationContextValue {
   categoryName: (name: string) => string;
   subcategoryName: (category: string, subcategory: string) => string;
+  tagName: (tag: string) => string;
 }
 
 const SiteLocalizationContext = createContext<SiteLocalizationContextValue>({
   categoryName: (name) => name,
   subcategoryName: (_category, subcategory) => subcategory,
+  tagName: (tag) => tag,
 });
 
 export const SiteLocalizationProvider: ParentComponent = (props) => {
@@ -31,8 +33,14 @@ export const SiteLocalizationProvider: ParentComponent = (props) => {
     return resolveLocalizedText(value, locale()) || subcategory;
   };
 
+  const tagName = (tag: string) => {
+    fullDataReady();
+    const value = itemsDataGetter.getSiteLocalization().tags[tag];
+    return resolveLocalizedText(value, locale()) || tag;
+  };
+
   return (
-    <SiteLocalizationContext.Provider value={{ categoryName, subcategoryName }}>
+    <SiteLocalizationContext.Provider value={{ categoryName, subcategoryName, tagName }}>
       {props.children}
     </SiteLocalizationContext.Provider>
   );

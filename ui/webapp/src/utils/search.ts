@@ -13,7 +13,15 @@ class Search {
 
   private async indexItems(items: Item[]) {
     const miniSearch = new MiniSearch({
-      fields: ['crunchbaseCategories', 'description', 'name', 'primaryRepositoryTopics', 'summaryTags'],
+      fields: [
+        'aliases',
+        'crunchbaseCategories',
+        'description',
+        'name',
+        'primaryRepositoryTopics',
+        'summaryTags',
+        'tags',
+      ],
       extractField: (item, fieldName) => {
         let value = '';
 
@@ -42,6 +50,18 @@ class Search {
                   break;
                 }
               }
+            }
+            break;
+
+          case 'aliases':
+            value = item.site?.aliases?.join(' ') || '';
+            break;
+
+          case 'tags':
+            if (item.site?.tag_ids) {
+              value = item.site.tag_ids.join(' ');
+            } else if (item.tag) {
+              value = item.tag.join(' ');
             }
             break;
 
@@ -74,7 +94,7 @@ class Search {
 
         return value;
       },
-      storeFields: ['id', 'category', 'featured', 'logo', 'maturity', 'name', 'subcategory'],
+      storeFields: ['id', 'category', 'featured', 'logo', 'maturity', 'name', 'subcategory', 'site'],
       searchOptions: {
         boost: { name: 3 },
         boostDocument: (_id, _term, storedFields) => {

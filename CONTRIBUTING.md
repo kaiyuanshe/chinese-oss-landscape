@@ -1,10 +1,12 @@
 # Contributing Guide
 
-The Landscape2 project accepts contributions via [GitHub pull requests](https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/about-pull-requests). This document outlines the process to help get your contribution accepted.
+The Chinese Open Source Landscape accepts contributions via [GitHub pull requests](https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/about-pull-requests). This document outlines the process to help get your contribution accepted.
 
 ## Issues and discussions
 
-Feature requests, bug reports, and support requests all occur through GitHub issues and discussions. If you would like to file an issue, view existing issues, or comment on an issue please engage with issues at <https://github.com/cncf/landscape2/issues>. You can create new discussions, view existing ones and comment on them at <https://github.com/cncf/landscape2/discussions>.
+Feature requests, bug reports, and support requests all occur through GitHub issues and discussions. If you would like to file an issue, view existing issues, or comment on an issue please engage with issues at <https://github.com/kaiyuanshe/chinese-oss-landscape/issues>. You can create new discussions, view existing ones and comment on them at <https://github.com/kaiyuanshe/chinese-oss-landscape/discussions>.
+
+For catalog entries, bilingual descriptions, logos, evidence, and withdrawals, follow the [content maintenance guide](docs/content-maintenance.md) and use the repository's content issue forms.
 
 ## Pull Requests
 
@@ -12,11 +14,11 @@ All changes to the source code and documentation are made through [GitHub pull r
 
 If you are unsure if the change will be welcome you may want to file an issue first. The issue can detail the change and you can get feedback from the maintainers prior to starting to make the change.
 
-You can find the existing pull requests at <https://github.com/cncf/landscape2/pulls>.
+You can find the existing pull requests at <https://github.com/kaiyuanshe/chinese-oss-landscape/pulls>.
 
 ## Developer Certificate of Origin
 
-The Landscape2 project uses a [Developers Certificate of Origin (DCO)](https://developercertificate.org/) to sign-off that you have the right to contribute the code being contributed. The full text of the DCO reads:
+The Chinese Open Source Landscape uses a [Developers Certificate of Origin (DCO)](https://developercertificate.org/) to sign-off that you have the right to contribute the code being contributed. The full text of the DCO reads:
 
 ```text
 Developer Certificate of Origin

@@ -9,6 +9,7 @@ export { Loading } from './components/Loading';
 export { MaturityBadge } from './components/MaturityBadge';
 export { Modal } from './components/Modal';
 export { NoData } from './components/NoData';
+export { SiteMetadataSection } from './components/SiteMetadataSection';
 export { SVGIcon } from './components/SVGIcon';
 
 // Utils
@@ -28,7 +29,20 @@ export {
 export { useBodyScroll, useBreakpointDetect, useModalFocus, useOutsideClick } from './hooks';
 
 // Types
-export type { GithubRepository, Item, Organization, Repository } from './types/types';
+export type {
+  GithubRepository,
+  Item,
+  Organization,
+  Repository,
+  SiteAffiliation,
+  SiteEntry,
+  SiteEvidence,
+  SiteItemKind,
+  SiteItemMetadata,
+  SiteLicense,
+  SiteOrigin,
+  SiteProjectStatus,
+} from './types/types';
 export { SVGIconKind } from './types/types';
 
 // Site integration

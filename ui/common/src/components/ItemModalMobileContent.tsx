@@ -23,6 +23,7 @@ import { MaturityBadge } from './MaturityBadge';
 import { MobileMaturitySection } from './MobileMaturitySection';
 import { ParentProject } from './ParentProject';
 import { RepositoriesSection } from './RepositoriesSection';
+import { SiteMetadataSection } from './SiteMetadataSection';
 import { SVGIcon } from './SVGIcon';
 
 interface Props {
@@ -247,6 +248,7 @@ export const ItemModalMobileContent = (props: Props) => {
 
         {/* Description */}
         <div class={`mt-4 mb-3 text-muted ${Description}`}>{description()}</div>
+        <SiteMetadataSection metadata={itemInfo()!.site} />
         <div class={`mb-2 ${Section}`}>
           <div class="text-truncate">
             <small class="text-uppercase fw-semibold pe-1">{t('item.category')}:</small>

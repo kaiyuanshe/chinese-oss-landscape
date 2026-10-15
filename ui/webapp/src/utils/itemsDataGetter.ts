@@ -33,7 +33,14 @@ import {
 import checkIfCategoryInGroup from './checkIfCategoryInGroup';
 import filterData from './filterData';
 import search from './search';
-import { buildSiteLocalization, getLocalizedItemContent, SiteCatalogData, SiteLocalization } from './siteCatalog';
+import {
+  buildSiteLocalization,
+  getLocalizedItemContent,
+  getSiteItemMetadata,
+  getSiteStableId,
+  SiteCatalogData,
+  SiteLocalization,
+} from './siteCatalog';
 import { getSiteSortOptions } from './siteSort';
 import sortCategoriesByGroupOrder from './sortCategoriesByGroupOrder';
 import sortMenuOptions from './sortMenuOptions';
@@ -175,14 +182,15 @@ export class ItemsDataGetter {
     this.siteLocalization = buildSiteLocalization(siteCatalog);
     const extendedItems = this.extendItemsData(data.items, data.crunchbase_data, data.github_data).map((item) => {
       const localized = getLocalizedItemContent(this.siteLocalization, item);
+      const site = getSiteItemMetadata(this.siteLocalization, item);
       if (localized) {
         this.siteLocalization.legacyCategories[item.category] ||= localized.category || { 'zh-CN': item.category };
         this.siteLocalization.legacySubcategories[`${item.category}:${item.subcategory}`] ||= localized.subcategory || {
           'zh-CN': item.subcategory,
         };
-        return { ...item, localized };
+        return { ...item, localized, site, tag: site?.tag_ids || item.tag };
       }
-      return item;
+      return site ? { ...item, site, tag: site.tag_ids } : item;
     });
     // Search engine initialization
     search.init(extendedItems);
@@ -691,6 +699,11 @@ export class ItemsDataGetter {
     const classifyCardData: any = {};
     const menuData: { [key: string]: CardMenu | undefined } = {};
     const numItems: { [key: string]: number } = {};
+    const kindCounts: Record<string, number> = {};
+    for (const item of groupedItems[activeGroup] || []) {
+      const kind = item.site?.kind || 'software';
+      kindCounts[kind] = (kindCounts[kind] || 0) + 1;
+    }
 
     Object.keys(groupedItems).forEach((group: string) => {
       if (group === activeGroup) {
@@ -715,13 +728,14 @@ export class ItemsDataGetter {
       }
     });
 
-    return { grid: gridData, card: classifyCardData, menu: menuData, numItems: numItems };
+    return { grid: gridData, card: classifyCardData, menu: menuData, numItems, kindCounts };
   }
 
   // Get item by id
   public getItemById(id: string): Item | undefined {
     if (this.ready && this.landscapeData && this.landscapeData.items) {
-      return this.landscapeData.items.find((i: Item) => id === i.id);
+      const stableId = getSiteStableId(this.siteLocalization, { id });
+      return this.landscapeData.items.find((i: Item) => stableId === i.id || id === i.id);
     }
   }
 
@@ -792,7 +806,9 @@ export class ItemsDataGetter {
       const options: string[] = [];
       if (!isUndefined(allGroupedItems[group])) {
         allGroupedItems[group].forEach((i: Item) => {
-          if (i.repositories) {
+          if (i.site?.licenses?.length) {
+            i.site.licenses.forEach((license) => options.push(license.identifier || 'not-applicable'));
+          } else if (i.repositories) {
             i.repositories.forEach((r: Repository) => {
               if (r.license) {
                 options.push(r.license);

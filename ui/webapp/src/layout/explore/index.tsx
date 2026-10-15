@@ -1,5 +1,5 @@
 import { useLocation, useNavigate, useSearchParams } from '@solidjs/router';
-import { Loading, NoData, SVGIcon, SVGIconKind, useBreakpointDetect } from 'common';
+import { Loading, NoData, SVGIcon, SVGIconKind, useBreakpointDetect, useI18n } from 'common';
 import difference from 'lodash/difference';
 import isEmpty from 'lodash/isEmpty';
 import isUndefined from 'lodash/isUndefined';
@@ -68,6 +68,7 @@ const Explore = (props: Props) => {
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const { point } = useBreakpointDetect();
+  const { t } = useI18n();
   const state = () => location.state || {};
   const from = () => (state() as StateContent).from || undefined;
 
@@ -107,6 +108,7 @@ const Explore = (props: Props) => {
   const [classifyOptions, setClassifyOptions] = createSignal<ClassifyOption[]>(Object.values(ClassifyOption));
   const [sortOptions, setSortOptions] = createSignal<SortOption[]>(getSiteSortOptions(Object.values(SortOption)));
   const [numItems, setNumItems] = createSignal<{ [key: string]: number }>({});
+  const [kindCounts, setKindCounts] = createSignal<Record<string, number>>({});
   const [licenseOptions, setLicenseOptions] = createSignal<string[]>([]);
   const activeGroups = () => itemsDataGetter.getGroups();
 
@@ -188,6 +190,7 @@ const Explore = (props: Props) => {
     batch(() => {
       const data = itemsDataGetter.queryItems(currentFilters, selectedGroup() || ALL_OPTION, classify()!);
       checkVisibleItemsNumber(data.numItems);
+      setKindCounts(data.kindCounts);
       setGroupsData(data.grid);
       setCardData(data.card);
       setCardMenu(data.menu);
@@ -398,6 +401,7 @@ const Explore = (props: Props) => {
         batch(() => {
           const data = itemsDataGetter.queryItems(activeFilters(), selectedGroup() || ALL_OPTION, classify()!);
           checkVisibleItemsNumber(data.numItems);
+          setKindCounts(data.kindCounts);
           setGroupsData(data.grid);
           setCardData(data.card);
           setCardMenu(data.menu);
@@ -443,6 +447,7 @@ const Explore = (props: Props) => {
         const data = itemsDataGetter.queryItems(activeFilters(), selectedGroup() || ALL_OPTION, classify()!);
         setCardData(data.card);
         setCardMenu(data.menu);
+        setKindCounts(data.kindCounts);
       });
     })
   );
@@ -456,6 +461,7 @@ const Explore = (props: Props) => {
           batch(() => {
             const data = itemsDataGetter.queryItems({}, selectedGroup() || ALL_OPTION, classify()!);
             checkVisibleItemsNumber(data.numItems);
+            setKindCounts(data.kindCounts);
             setGroupsData(data.grid);
             setCardData(data.card);
             setCardMenu(data.menu);
@@ -507,6 +513,7 @@ const Explore = (props: Props) => {
         setActiveFilters(newFilters);
         const data = itemsDataGetter.queryItems(newFilters, selectedGroup() || ALL_OPTION, classify()!);
         checkVisibleItemsNumber(data.numItems);
+        setKindCounts(data.kindCounts);
         setGroupsData(data.grid);
         setCardData(data.card);
         setCardMenu(data.menu);
@@ -920,11 +927,23 @@ const Explore = (props: Props) => {
           <Loading spinnerClass="position-fixed top-50 start-50" transparentBg />
         </Show>
 
+        <div class="d-flex flex-wrap align-items-center gap-2 mb-3 text-muted" aria-live="polite">
+          <span class="fw-semibold">{numVisibleItems() || 0}</span>
+          <span>{t('results.items')}</span>
+          <For each={Object.entries(kindCounts())}>
+            {([kind, count]) => (
+              <span class="badge rounded-0 border text-muted">
+                {t(`item.kind.${kind}`)}: {count}
+              </span>
+            )}
+          </For>
+        </div>
+
         <Show when={numVisibleItems() === 0 && readyData()}>
           <div class="pt-5">
             <NoData>
               <>
-                <div class="fs-4">We couldn't find any items that match the criteria selected.</div>
+                <div class="fs-4">{t('search.noResults')}</div>
                 <p class="h6 my-4 lh-base">
                   You can update them and try again or{' '}
                   <button
@@ -933,7 +952,7 @@ const Explore = (props: Props) => {
                     onClick={resetFilters}
                     aria-label="Reset filters"
                   >
-                    reset all
+                    {t('filters.reset')}
                   </button>{' '}
                   the filters.
                 </p>

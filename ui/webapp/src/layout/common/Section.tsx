@@ -1,3 +1,4 @@
+import { resolveLocalizedText, useI18n } from 'common';
 import intersection from 'lodash/intersection';
 import isUndefined from 'lodash/isUndefined';
 import { For, Show } from 'solid-js';
@@ -21,6 +22,15 @@ interface Props {
 }
 
 const Section = (props: Props) => {
+  const { locale, t } = useI18n();
+  const getOptionLabel = (option: FilterOption): string =>
+    resolveLocalizedText(option.localizedName, locale()) || option.name;
+  const getSectionTitle = (): string => {
+    if (props.title) return props.title;
+    if (props.section?.localizedTitle)
+      return resolveLocalizedText(props.section.localizedTitle, locale()) || props.section.title;
+    return props.section?.title || t('filters.title');
+  };
   const onChange = (name: FilterCategory, value: string, checked: boolean, subOtps?: string[]) => {
     let tmpActiveFilters: string[] = props.activeFilters ? [...props.activeFilters] : [];
 
@@ -69,7 +79,7 @@ const Section = (props: Props) => {
               value={opt.value}
               labelClass={`mw-100 text-muted ${styles.label}`}
               class={isUndefined(props.inLine) ? 'my-2' : 'mt-2'}
-              label={opt.name}
+              label={getOptionLabel(opt)}
               device={props.device}
               checked={
                 !isUndefined(subOpts)
@@ -87,7 +97,7 @@ const Section = (props: Props) => {
                       value={subOpt.value}
                       labelClass={`mw-100 text-muted ${styles.label}`}
                       class={isUndefined(props.inLine) ? 'my-2' : 'mt-2'}
-                      label={subOpt.name}
+                      label={getOptionLabel(subOpt)}
                       device={props.device}
                       checked={(props.activeFilters || []).includes(subOpt.value)}
                       onChange={(value: string, checked: boolean) => {
@@ -110,14 +120,14 @@ const Section = (props: Props) => {
         <div class={props.colClass || 'col-12 col-sm-6 col-lg-4'}>
           <div class="d-flex flex-column h-100">
             <div class="d-flex flex-row align-items-center pb-2">
-              <small class={`fw-semibold me-2 ${styles.title}`}>{props.title || props.section!.title}</small>
+              <small class={`fw-semibold me-2 ${styles.title}`}>{getSectionTitle()}</small>
               <Show when={props.activeFilters && !isUndefined(props.resetFilter)}>
                 <button
                   class={`btn btn-sm btn-link text-muted lh-1 align-baseline p-0 ${styles.resetBtn}`}
                   onClick={() => props.resetFilter!(props.section?.value as FilterCategory)}
                   aria-label="Reset filter"
                 >
-                  (reset)
+                  ({t('filters.resetOne')})
                 </button>
               </Show>
             </div>

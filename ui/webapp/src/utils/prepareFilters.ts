@@ -1,3 +1,4 @@
+import type { SiteItemKind, SiteProjectStatus } from 'common';
 import { capitalizeFirstLetter, formatTAGName } from 'common';
 import isUndefined from 'lodash/isUndefined';
 
@@ -8,6 +9,26 @@ import itemsDataGetter from './itemsDataGetter';
 const cleanValue = (t: string): string => {
   // return encodeURIComponent(t);
   return t;
+};
+
+const KIND_LABELS: Record<SiteItemKind, { 'zh-CN': string; en: string }> = {
+  software: { 'zh-CN': '软件', en: 'Software' },
+  model_weights: { 'zh-CN': '模型权重', en: 'Model weights' },
+  dataset: { 'zh-CN': '数据集', en: 'Dataset' },
+  open_standard: { 'zh-CN': '开放标准', en: 'Open standard' },
+  community: { 'zh-CN': '社区 / 组织', en: 'Community / organization' },
+};
+
+const STATUS_LABELS: Record<SiteProjectStatus, { 'zh-CN': string; en: string }> = {
+  active: { 'zh-CN': '活跃', en: 'Active' },
+  archived: { 'zh-CN': '已归档', en: 'Archived' },
+  unknown: { 'zh-CN': '未知', en: 'Unknown' },
+};
+
+const subcategoryValue = (category: string, subcategory: string): string => `${category}::${subcategory}`;
+const splitSubcategoryValue = (value: string): [string, string] | undefined => {
+  const separator = value.indexOf('::');
+  return separator < 0 ? undefined : [value.slice(0, separator), value.slice(separator + 2)];
 };
 
 export interface FiltersPerGroup {
@@ -39,6 +60,8 @@ const prepareFilters = (items: Item[], group: string): PreparedFilters => {
   const filters: FilterSection[] = [];
 
   const maturityTypes: string[] = [];
+  const kinds: SiteItemKind[] = [];
+  const projectStatuses: SiteProjectStatus[] = [];
   const tags: string[] = [];
   const organizations: string[] = [];
   const licenses: string[] = [];
@@ -46,11 +69,14 @@ const prepareFilters = (items: Item[], group: string): PreparedFilters => {
   const companyTypes: string[] = [];
   const extraTypes: string[] = [];
   const categories: string[] = [];
+  const subcategories: string[] = [];
   let industry: string[] = [];
   let itemsWithoutMaturity: boolean = false;
   let nonOss: boolean = false;
 
   items.forEach((i: Item) => {
+    if (i.site?.kind) kinds.push(i.site.kind);
+    if (i.site?.project_status) projectStatuses.push(i.site.project_status);
     if (i.maturity) {
       maturityTypes.push(i.maturity);
     } else {
@@ -73,12 +99,14 @@ const prepareFilters = (items: Item[], group: string): PreparedFilters => {
 
     if (i.category && checkIfCategoryInGroup(i.category, group)) {
       categories.push(i.category);
+      subcategories.push(subcategoryValue(i.category, i.subcategory));
     }
 
     if (i.additional_categories) {
       i.additional_categories.forEach((ac) => {
         if (checkIfCategoryInGroup(ac.category, group)) {
           categories.push(ac.category);
+          subcategories.push(subcategoryValue(ac.category, ac.subcategory));
         }
       });
     }
@@ -101,7 +129,11 @@ const prepareFilters = (items: Item[], group: string): PreparedFilters => {
       }
     }
 
-    if (i.repositories) {
+    if (i.site?.licenses?.length) {
+      i.site.licenses.forEach((license) => {
+        licenses.push(license.identifier || 'not-applicable');
+      });
+    } else if (i.repositories) {
       i.repositories.forEach((r: Repository) => {
         if (r.license) {
           licenses.push(r.license);
@@ -115,6 +147,32 @@ const prepareFilters = (items: Item[], group: string): PreparedFilters => {
       nonOss = true;
     }
   });
+
+  if (kinds.length > 0) {
+    filters.push({
+      value: FilterCategory.Kind,
+      title: 'Object type',
+      localizedTitle: { 'zh-CN': '对象类型', en: 'Object type' },
+      options: [...new Set(kinds)].sort().map((kind) => ({
+        value: kind,
+        name: KIND_LABELS[kind].en,
+        localizedName: KIND_LABELS[kind],
+      })),
+    });
+  }
+
+  if (projectStatuses.length > 0) {
+    filters.push({
+      value: FilterCategory.ProjectStatus,
+      title: 'Maintenance status',
+      localizedTitle: { 'zh-CN': '维护状态', en: 'Maintenance status' },
+      options: [...new Set(projectStatuses)].sort().map((status) => ({
+        value: status,
+        name: STATUS_LABELS[status].en,
+        localizedName: STATUS_LABELS[status],
+      })),
+    });
+  }
 
   if (maturityTypes.length > 0) {
     filters.push({
@@ -134,6 +192,7 @@ const prepareFilters = (items: Item[], group: string): PreparedFilters => {
       options: [...new Set(tags)].sort().map((tag: string) => ({
         value: tag,
         name: formatTAGName(tag),
+        localizedName: itemsDataGetter.getSiteLocalization().tags[tag],
       })),
     });
   }
@@ -160,9 +219,28 @@ const prepareFilters = (items: Item[], group: string): PreparedFilters => {
         options: [...new Set(categories)].sort().map((cat: string) => ({
           value: cleanValue(cat),
           name: cat,
+          localizedName: itemsDataGetter.getSiteLocalization().legacyCategories[cat],
         })),
       });
     }
+  }
+
+  if (subcategories.length > 0) {
+    filters.push({
+      value: FilterCategory.Subcategory,
+      title: 'Subcategory',
+      localizedTitle: { 'zh-CN': '子分类', en: 'Subcategory' },
+      options: [...new Set(subcategories)].sort().map((value) => {
+        const parts = splitSubcategoryValue(value);
+        const category = parts?.[0] || '';
+        const subcategory = parts?.[1] || value;
+        return {
+          value,
+          name: subcategory,
+          localizedName: itemsDataGetter.getSiteLocalization().legacySubcategories[`${category}:${subcategory}`],
+        };
+      }),
+    });
   }
 
   if (licenses.length > 0) {
@@ -172,6 +250,7 @@ const prepareFilters = (items: Item[], group: string): PreparedFilters => {
       options: [...new Set(licenses)].sort().map((license: string) => ({
         value: cleanValue(license),
         name: license,
+        localizedName: license === 'not-applicable' ? { 'zh-CN': '不适用', en: 'Not applicable' } : undefined,
       })),
     });
   }

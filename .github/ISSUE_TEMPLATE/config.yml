@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Content maintenance guide
+    url: https://github.com/kaiyuanshe/chinese-oss-landscape/blob/main/docs/content-maintenance.md
+    about: Read the review rules before opening a content request.

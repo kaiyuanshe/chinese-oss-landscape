@@ -89,7 +89,7 @@ export const LocaleProvider: ParentComponent = (props) => {
   const value = useLocaleProvider();
   return (
     <LocaleContext.Provider value={value}>
-      <I18nProvider locale={value.locale()}>{props.children}</I18nProvider>
+      <I18nProvider locale={value.locale}>{props.children}</I18nProvider>
     </LocaleContext.Provider>
   );
 };

@@ -1,4 +1,4 @@
-import { formatProfitLabel, formatTAGName, SVGIcon, SVGIconKind, useI18n } from 'common';
+import { formatProfitLabel, SVGIcon, SVGIconKind, useI18n } from 'common';
 import isEmpty from 'lodash/isEmpty';
 import isUndefined from 'lodash/isUndefined';
 import startCase from 'lodash/startCase';
@@ -7,6 +7,7 @@ import { For, Match, Show, Switch } from 'solid-js';
 import { REGEX_UNDERSCORE } from '../../data';
 import { ActiveFilters, FilterCategory } from '../../types';
 import getFoundationNameLabel from '../../utils/getFoundationNameLabel';
+import { useSiteLocalization } from '../stores/siteLocalization';
 import styles from './ActiveFiltersList.module.css';
 
 interface Props {
@@ -29,6 +30,31 @@ interface FiltersPerCategoryProps extends FiltersProps {
 }
 
 const FiltersPerCategoryList = (props: FiltersProps) => {
+  const { t } = useI18n();
+  const { categoryName, subcategoryName, tagName } = useSiteLocalization();
+  const categoryLabel = () => {
+    const labels: Partial<Record<FilterCategory, string>> = {
+      [FilterCategory.Kind]: t('filters.kind'),
+      [FilterCategory.ProjectStatus]: t('filters.projectStatus'),
+      [FilterCategory.Subcategory]: t('filters.subcategory'),
+      [FilterCategory.Category]: t('filters.category'),
+      [FilterCategory.License]: t('filters.license'),
+      [FilterCategory.TAG]: t('filters.tag'),
+    };
+    return labels[props.category] || props.category;
+  };
+  const valueLabel = (value: string): string => {
+    if (props.category === FilterCategory.Kind) return t(`item.kind.${value}`);
+    if (props.category === FilterCategory.ProjectStatus) return t(`item.status.${value}`);
+    if (props.category === FilterCategory.TAG) return tagName(value);
+    if (props.category === FilterCategory.Category) return categoryName(value);
+    if (props.category === FilterCategory.Subcategory) {
+      const separator = value.indexOf('::');
+      return separator >= 0 ? subcategoryName(value.slice(0, separator), value.slice(separator + 2)) : value;
+    }
+    if (props.category === FilterCategory.License && value === 'not-applicable') return t('item.notApplicable');
+    return value;
+  };
   return (
     <For each={props.filters}>
       {(c: string) => {
@@ -39,24 +65,24 @@ const FiltersPerCategoryList = (props: FiltersProps) => {
           >
             <div class="d-flex flex-row align-items-baseline">
               <div>
-                <small class="text-uppercase fw-normal me-2">{props.category}:</small>
+                <small class="text-uppercase fw-normal me-2">{categoryLabel()}:</small>
                 <span
                   class={
                     [FilterCategory.Maturity, FilterCategory.OrgType].includes(props.category) ? 'text-uppercase' : ''
                   }
                 >
-                  <Switch fallback={<>{c}</>}>
+                  <Switch fallback={<>{valueLabel(c)}</>}>
                     <Match when={props.category === FilterCategory.OrgType}>
                       <>{formatProfitLabel(c)}</>
                     </Match>
                     <Match when={props.category === FilterCategory.TAG}>
-                      <span class="text-uppercase">{formatTAGName(c)}</span>
+                      <span class="text-uppercase">{valueLabel(c)}</span>
                     </Match>
                     <Match when={props.category === FilterCategory.InvestmentType}>
                       <>{startCase(c.replace(REGEX_UNDERSCORE, ' '))}</>
                     </Match>
                     <Match when={props.category === FilterCategory.License && c === 'non-oss'}>
-                      <span class="text-uppercase">Non open source</span>
+                      <span class="text-uppercase">{t('item.nonOpenSource')}</span>
                     </Match>
                     <Match when={props.category === FilterCategory.Maturity && c === `non-${getFoundationNameLabel()}`}>
                       <span class="text-uppercase">Non {getFoundationNameLabel()} project</span>

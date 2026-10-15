@@ -1,0 +1,25 @@
+name: Report a catalog correction
+description: Report an incorrect name, description, link, category, license, origin, or affiliation.
+title: "[Correction] "
+labels: [content, correction]
+body:
+  - type: input
+    id: item
+    attributes:
+      label: Stable ID or project URL
+    validations:
+      required: true
+  - type: textarea
+    id: fields
+    attributes:
+      label: Fields to correct
+      description: State the current value and the proposed value.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Public evidence
+      description: Provide official or otherwise verifiable URLs.
+    validations:
+      required: true

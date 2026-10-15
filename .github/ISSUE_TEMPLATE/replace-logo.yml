@@ -1,0 +1,24 @@
+name: Replace a project logo
+description: Report an official logo change or a missing logo source.
+title: "[Logo] "
+labels: [content, logo]
+body:
+  - type: input
+    id: item
+    attributes:
+      label: Stable ID
+    validations:
+      required: true
+  - type: input
+    id: source
+    attributes:
+      label: Official logo source URL
+    validations:
+      required: true
+  - type: textarea
+    id: rights
+    attributes:
+      label: Source and usage notes
+      description: Explain why the source is official and provide any required attribution.
+    validations:
+      required: true

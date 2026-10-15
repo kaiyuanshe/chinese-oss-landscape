@@ -77,12 +77,24 @@ const Card = (props: Props) => {
             <Show
               when={!isUndefined(props.item.maturity)}
               fallback={
-                <Show when={!isUndefined(props.item.member_subcategory)}>
-                  <div
-                    title={`${props.item.member_subcategory} ${locale() === 'zh-CN' ? '成员' : 'member'}`}
-                    class={`badge rounded-0 text-uppercase border me-2 ${styles.badgeOutlineDark}`}
-                  >
-                    {props.item.member_subcategory} {locale() === 'zh-CN' ? '成员' : 'member'}
+                <Show
+                  when={props.item.site?.kind}
+                  fallback={
+                    <Show when={!isUndefined(props.item.member_subcategory)}>
+                      <div
+                        title={`${props.item.member_subcategory} ${locale() === 'zh-CN' ? '成员' : 'member'}`}
+                        class={`badge rounded-0 text-uppercase border me-2 ${styles.badgeOutlineDark}`}
+                      >
+                        {props.item.member_subcategory} {locale() === 'zh-CN' ? '成员' : 'member'}
+                      </div>
+                    </Show>
+                  }
+                >
+                  <div class={`badge rounded-0 border me-2 ${styles.badgeOutlineDark}`}>
+                    {t(`item.kind.${props.item.site!.kind}`)}
+                  </div>
+                  <div class={`badge rounded-0 border me-2 ${styles.badgeOutlineDark}`}>
+                    {t(`item.status.${props.item.site!.project_status}`)}
                   </div>
                 </Show>
               }

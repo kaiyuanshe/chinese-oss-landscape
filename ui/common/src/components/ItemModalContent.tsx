@@ -28,6 +28,7 @@ import { MaturityBadge } from './MaturityBadge';
 import { MaturitySection } from './MaturitySection';
 import { ParentProject } from './ParentProject';
 import { RepositoriesSection } from './RepositoriesSection';
+import { SiteMetadataSection } from './SiteMetadataSection';
 import { SVGIcon } from './SVGIcon';
 
 interface Props {
@@ -471,6 +472,7 @@ export const ItemModalContent = (props: Props) => {
         </div>
         {/* Description */}
         <div class={`mt-4 text-muted ${Description}`}>{description()}</div>
+        <SiteMetadataSection metadata={itemInfo()!.site} />
 
         {/* Other links */}
         <Show when={!isUndefined(itemInfo()!.other_links)}>

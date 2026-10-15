@@ -21,6 +21,15 @@ const filterData = (items: Item[], activeFilters: ActiveFilters): Item[] => {
         }
       }
 
+      // Filter site object type and maintenance state.
+      if (activeFilters[FilterCategory.Kind]) {
+        if (!item.site || !activeFilters[FilterCategory.Kind].includes(item.site.kind)) return false;
+      }
+
+      if (activeFilters[FilterCategory.ProjectStatus]) {
+        if (!item.site || !activeFilters[FilterCategory.ProjectStatus].includes(item.site.project_status)) return false;
+      }
+
       // Filter Category
       if (activeFilters[FilterCategory.Category]) {
         const additional_categories = item.additional_categories
@@ -32,6 +41,16 @@ const filterData = (items: Item[], activeFilters: ActiveFilters): Item[] => {
           !activeFilters[FilterCategory.Category].includes(item.category) &&
           !activeFilters[FilterCategory.Category].some((c) => additional_categories.includes(c))
         ) {
+          return false;
+        }
+      }
+
+      if (activeFilters[FilterCategory.Subcategory]) {
+        const placements = [
+          ...(item.category ? [`${item.category}::${item.subcategory}`] : []),
+          ...(item.additional_categories || []).map((category) => `${category.category}::${category.subcategory}`),
+        ];
+        if (!activeFilters[FilterCategory.Subcategory].some((subcategory) => placements.includes(subcategory))) {
           return false;
         }
       }
@@ -67,7 +86,18 @@ const filterData = (items: Item[], activeFilters: ActiveFilters): Item[] => {
 
       // License License
       if (activeFilters[FilterCategory.License]) {
-        if (isUndefined(item.oss) && !activeFilters[FilterCategory.License].includes('non-oss')) {
+        if (item.site) {
+          const identifiers = item.site.licenses.map((license) => license.identifier || 'not-applicable');
+          const wantsOpenSource = activeFilters[FilterCategory.License].includes('oss');
+          const wantsNonOpenSource = activeFilters[FilterCategory.License].includes('non-oss');
+          const matchesSiteLicense = activeFilters[FilterCategory.License].some((license) =>
+            identifiers.includes(license)
+          );
+          const matchesOpenSource =
+            wantsOpenSource && item.site.licenses.some((license) => license.status === 'verified');
+          const matchesNonOpenSource = wantsNonOpenSource && item.site.licenses.length === 0;
+          if (!matchesSiteLicense && !matchesOpenSource && !matchesNonOpenSource) return false;
+        } else if (isUndefined(item.oss) && !activeFilters[FilterCategory.License].includes('non-oss')) {
           return false;
         } else {
           if (!isUndefined(item.oss)) {

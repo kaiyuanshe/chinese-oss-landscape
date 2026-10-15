@@ -1,3 +1,5 @@
+import type { SiteItemMetadata } from 'common';
+
 export interface BaseData {
   base_path?: string;
   finances_available: boolean;
@@ -83,6 +85,7 @@ export interface BaseItem {
   tag?: string[];
   additional_categories?: AdditionalCategory[];
   localized?: LocalizedItemContent;
+  site?: SiteItemMetadata;
   annotations?: Record<string, string>;
 }
 
@@ -283,6 +286,7 @@ export interface FilterSection {
   value: FilterCategory;
   placeholder?: string;
   title: string;
+  localizedTitle?: LocalizedText;
   options: FilterOption[];
   extra?: {
     [key: string]: string[];
@@ -301,6 +305,7 @@ export interface Option {
 }
 
 export interface FilterOption extends Option {
+  localizedName?: LocalizedText;
   suboptions?: FilterOption[];
 }
 
@@ -368,6 +373,9 @@ export interface StateContent {
 
 export enum FilterCategory {
   Maturity = 'project',
+  Kind = 'kind',
+  Subcategory = 'subcategory',
+  ProjectStatus = 'project-status',
   Organization = 'organization',
   License = 'license',
   Country = 'country',

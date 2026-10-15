@@ -1,4 +1,4 @@
-import { Loading, Modal, NoData, SVGIcon, SVGIconKind } from 'common';
+import { Loading, Modal, NoData, SVGIcon, SVGIconKind, useI18n } from 'common';
 import intersection from 'lodash/intersection';
 import isEmpty from 'lodash/isEmpty';
 import isUndefined from 'lodash/isUndefined';
@@ -44,6 +44,7 @@ interface Props {
 }
 
 const Filters = (props: Props) => {
+  const { t } = useI18n();
   const viewMode = useViewMode();
   const [disabledBtn, setDisabledBtn] = createSignal<boolean>(true);
   const [visibleFiltersModal, setVisibleFiltersModal] = createSignal<boolean>(false);
@@ -185,7 +186,7 @@ const Filters = (props: Props) => {
     <>
       <div class="position-relative">
         <button
-          title="Filters"
+          title={t('filters.title')}
           class={`position-relative btn btn-sm btn-secondary text-white btn-sm rounded-0 py-0 me-0 me-lg-4 ${styles.filterBtn} btnIconMobile`}
           classList={{ disabled: disabledBtn() }}
           onClick={() => setVisibleFiltersModal(true)}
@@ -207,7 +208,7 @@ const Filters = (props: Props) => {
         modalDialogClass={styles.modal}
         header={
           <div class="d-flex flex-row align-items-baseline">
-            <div>Filters</div>
+            <div>{t('filters.title')}</div>
             <Show when={!isEmpty(props.initialActiveFilters())}>
               <button
                 type="button"
@@ -219,7 +220,7 @@ const Filters = (props: Props) => {
                 }}
                 aria-label="Reset all filters"
               >
-                (reset all)
+                ({t('filters.reset')})
               </button>
             </Show>
           </div>
@@ -232,7 +233,7 @@ const Filters = (props: Props) => {
             <div>
               <button
                 type="button"
-                title="Apply filters"
+                title={t('filters.apply')}
                 class="btn btn-sm btn-secondary text-uppercase fw-semibold text-white rounded-0"
                 onClick={(e) => {
                   e.preventDefault();
@@ -241,7 +242,7 @@ const Filters = (props: Props) => {
                 }}
                 aria-label="Apply filters"
               >
-                Apply
+                {t('filters.apply')}
               </button>
             </div>
           </div>
@@ -325,12 +326,28 @@ const Filters = (props: Props) => {
               </Show>
             </div>
             <Show when={isEmpty(visibleTitles())}>
-              <NoData>There are no filters available that can be applied to the current set of items</NoData>
+              <NoData>{t('filters.noAvailable')}</NoData>
             </Show>
             <Show when={visibleTitles().includes(FilterTitle.Project)}>
               <div class={`border-bottom text-uppercase fw-semibold ${styles.title}`}>{FilterTitle.Project}</div>
 
               <div class="row g-4 g-lg-5 mb-4 mb-lg-5">
+                <Section
+                  title={t('filters.kind')}
+                  section={getSection(FilterCategory.Kind)}
+                  activeFilters={{ ...tmpActiveFilters() }[FilterCategory.Kind]}
+                  updateActiveFilters={updateActiveFilters}
+                  resetFilter={resetFilter}
+                  sectionClass={`overflow-auto visibleScroll ${styles.section}`}
+                />
+                <Section
+                  title={t('filters.projectStatus')}
+                  section={getSection(FilterCategory.ProjectStatus)}
+                  activeFilters={{ ...tmpActiveFilters() }[FilterCategory.ProjectStatus]}
+                  updateActiveFilters={updateActiveFilters}
+                  resetFilter={resetFilter}
+                  sectionClass={`overflow-auto visibleScroll ${styles.section}`}
+                />
                 <Section
                   title="Status"
                   section={getSectionInPredefinedFilters(
@@ -344,7 +361,7 @@ const Filters = (props: Props) => {
                   sectionClass={`overflow-auto visibleScroll ${styles.section}`}
                 />
                 <Section
-                  title="TAG"
+                  title={t('filters.tag')}
                   section={getSection(FilterCategory.TAG)}
                   activeFilters={{ ...tmpActiveFilters() }[FilterCategory.TAG]}
                   updateActiveFilters={updateActiveFilters}
@@ -353,7 +370,7 @@ const Filters = (props: Props) => {
                 />
                 <Show when={!isUndefined(getSection(FilterCategory.License))}>
                   <Section
-                    title="License"
+                    title={t('filters.license')}
                     section={getSectionInPredefinedFilters(
                       FilterCategory.License,
                       filtersOptions().itemsWithoutLicense
@@ -366,9 +383,17 @@ const Filters = (props: Props) => {
                   />
                 </Show>
                 <Section
-                  title="Category"
+                  title={t('filters.category')}
                   section={getSection(FilterCategory.Category)}
                   activeFilters={{ ...tmpActiveFilters() }[FilterCategory.Category]}
+                  updateActiveFilters={updateActiveFilters}
+                  resetFilter={resetFilter}
+                  sectionClass={`overflow-auto visibleScroll ${styles.section}`}
+                />
+                <Section
+                  title={t('filters.subcategory')}
+                  section={getSection(FilterCategory.Subcategory)}
+                  activeFilters={{ ...tmpActiveFilters() }[FilterCategory.Subcategory]}
                   updateActiveFilters={updateActiveFilters}
                   resetFilter={resetFilter}
                   sectionClass={`overflow-auto visibleScroll ${styles.section}`}

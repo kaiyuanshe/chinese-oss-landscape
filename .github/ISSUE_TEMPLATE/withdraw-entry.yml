@@ -1,0 +1,33 @@
+name: Withdraw or merge an entry
+description: Request a public withdrawal or replacement mapping.
+title: "[Withdrawal] "
+labels: [content, withdrawal]
+body:
+  - type: input
+    id: item
+    attributes:
+      label: Stable ID or legacy ID
+    validations:
+      required: true
+  - type: dropdown
+    id: reason
+    attributes:
+      label: Reason
+      options:
+        - duplicate
+        - no-longer-eligible
+        - merged
+        - incorrect-record
+        - other
+    validations:
+      required: true
+  - type: input
+    id: replacement
+    attributes:
+      label: Replacement stable ID (if applicable)
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Public evidence and public message
+    validations:
+      required: true

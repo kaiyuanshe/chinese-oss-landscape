@@ -1,4 +1,4 @@
-import { ItemModalContent, ItemModalMobileContent, Loading, Modal, NoData, useBreakpointDetect } from 'common';
+import { ItemModalContent, ItemModalMobileContent, Loading, Modal, NoData, useBreakpointDetect, useI18n } from 'common';
 import isNull from 'lodash/isNull';
 import isUndefined from 'lodash/isUndefined';
 import { batch, createEffect, createSignal, Show } from 'solid-js';
@@ -25,6 +25,7 @@ const ItemModal = () => {
   const [itemInfo, setItemInfo] = createSignal<Item | null | undefined>(undefined);
   const [parentInfo, setParentInfo] = createSignal<Item>();
   const { point } = useBreakpointDetect();
+  const { t } = useI18n();
   let activeRequestId = 0;
 
   const fetchItemInfo = async (itemId: string, requestId: number) => {
@@ -67,7 +68,7 @@ const ItemModal = () => {
   return (
     <Show when={!isUndefined(visibleItemId())}>
       <Modal
-        title="Item details"
+        title={t('search.openItem')}
         size="xl"
         open
         modalDialogClass={visibleEventContent() ? styles.visibleUpcomingEvent : ''}
@@ -89,8 +90,8 @@ const ItemModal = () => {
               <div class={`d-flex flex-column align-items-center justify-content-center p-5 ${styles.stateWrapper}`}>
                 <NoData>
                   <>
-                    <div class="fs-4">We couldn't find this item.</div>
-                    <p class="h6 mt-3 mb-0 lh-base">It may have been removed or the link may be incorrect.</p>
+                    <div class="fs-4">{t('error.pageNotFound')}</div>
+                    <p class="h6 mt-3 mb-0 lh-base">{t('error.pageNotFoundDetails')}</p>
                   </>
                 </NoData>
               </div>
