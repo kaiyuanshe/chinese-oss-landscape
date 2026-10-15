@@ -6,8 +6,9 @@ import sortBy from 'lodash/sortBy';
 import { createEffect, createSignal, For, Match, on, Show, Switch } from 'solid-js';
 import { css } from 'solid-styled-components';
 
+import { useI18n } from '../i18n';
 import { AdditionalCategory, Item, SecurityAudit, SVGIconKind } from '../types/types';
-import { cutString, getItemDescription } from '../utils';
+import { cutString, getItemDescription, getItemName } from '../utils';
 import { formatProfitLabel } from '../utils/formatProfitLabel';
 import { formatSummaryField } from '../utils/formatSummaryField';
 import { prettifyNumber } from '../utils/prettifyNumber';
@@ -185,11 +186,12 @@ const ClomonitorReport = css`
 export const ItemModalMobileContent = (props: Props) => {
   const itemInfo = () => props.item;
   const [description, setDescription] = createSignal<string>();
+  const { locale, t } = useI18n();
 
   createEffect(
-    on(itemInfo, () => {
+    on([itemInfo, locale], () => {
       if (!isUndefined(itemInfo()) && !isNull(itemInfo())) {
-        setDescription(getItemDescription(itemInfo()!));
+        setDescription(getItemDescription(itemInfo()!, locale()));
       } else {
         setDescription(undefined);
         if (props.onClose) props.onClose();
@@ -207,7 +209,7 @@ export const ItemModalMobileContent = (props: Props) => {
             </div>
 
             <div class={`p-3 ${ItemInfo}`}>
-              <div class={`fw-semibold text-truncate mb-1 ${Title}`}>{itemInfo()!.name}</div>
+              <div class={`fw-semibold text-truncate mb-1 ${Title}`}>{getItemName(itemInfo()!, locale())}</div>
 
               <div class={`d-flex flex-row flex-wrap overflow-hidden align-items-center ${Badges}`}>
                 <Show
@@ -247,12 +249,12 @@ export const ItemModalMobileContent = (props: Props) => {
         <div class={`mt-4 mb-3 text-muted ${Description}`}>{description()}</div>
         <div class={`mb-2 ${Section}`}>
           <div class="text-truncate">
-            <small class="text-uppercase fw-semibold pe-1">Category:</small>
-            {itemInfo()!.category}
+            <small class="text-uppercase fw-semibold pe-1">{t('item.category')}:</small>
+            {itemInfo()!.localized?.category?.[locale()] || itemInfo()!.category}
           </div>
           <div class="text-truncate">
-            <small class="text-uppercase fw-semibold pe-1">Subcategory:</small>
-            {itemInfo()!.subcategory}
+            <small class="text-uppercase fw-semibold pe-1">{t('item.subcategory')}:</small>
+            {itemInfo()!.localized?.subcategory?.[locale()] || itemInfo()!.subcategory}
           </div>
         </div>
 
@@ -281,7 +283,7 @@ export const ItemModalMobileContent = (props: Props) => {
 
         {/* Additional categories */}
         <Show when={!isUndefined(itemInfo()!.additional_categories) && !isEmpty(itemInfo()!.additional_categories)}>
-          <div class={`fw-bold text-uppercase my-3 ${TitleInSection}`}>Additional categories</div>
+          <div class={`fw-bold text-uppercase my-3 ${TitleInSection}`}>{t('item.additionalCategories')}</div>
           <div class="d-flex flex-column flex-sm-row align-items-start mb-1">
             <For each={itemInfo()!.additional_categories}>
               {(additional: AdditionalCategory) => {
@@ -301,7 +303,7 @@ export const ItemModalMobileContent = (props: Props) => {
           {/* Parent project */}
           <ParentProject
             parentInfo={props.parentInfo!}
-            projectName={itemInfo()!.name}
+            projectName={getItemName(itemInfo()!, locale())}
             class={SectionTitle}
             foundation={props.foundation}
             mobileVersion
@@ -321,17 +323,17 @@ export const ItemModalMobileContent = (props: Props) => {
 
         {/* Security audits */}
         <Show when={!isUndefined(itemInfo()!.audits) && !isEmpty(itemInfo()!.audits)}>
-          <div class={`text-uppercase mt-3 fw-semibold border-bottom ${SectionTitle}`}>Security audits</div>
+          <div class={`text-uppercase mt-3 fw-semibold border-bottom ${SectionTitle}`}>{t('item.securityAudits')}</div>
           <div class="w-100">
             <table class={`table table-sm table-striped table-bordered mt-3 ${TableLayout}`}>
               <thead class={`text-uppercase text-muted ${Thead}`}>
                 <tr>
                   <th class="text-center" scope="col">
-                    Date
+                    {t('item.date')}
                   </th>
 
                   <th class="text-center" scope="col">
-                    Vendor
+                    {t('item.vendor')}
                   </th>
                 </tr>
               </thead>
@@ -359,7 +361,7 @@ export const ItemModalMobileContent = (props: Props) => {
 
         {/* Organization */}
         <Show when={!props.hideOrganizationSection && !isUndefined(itemInfo()!.crunchbase_data)}>
-          <div class={`text-uppercase mt-3 fw-semibold border-bottom ${SectionTitle}`}>Organization</div>
+          <div class={`text-uppercase mt-3 fw-semibold border-bottom ${SectionTitle}`}>{t('item.organization')}</div>
           <div class={`fw-semibold text-truncate my-2 ${Text}`}>{itemInfo()!.crunchbase_data!.name}</div>
           <div class="d-flex flex-row align-items-center">
             <Show when={!isUndefined(itemInfo()!.crunchbase_data!.kind)}>

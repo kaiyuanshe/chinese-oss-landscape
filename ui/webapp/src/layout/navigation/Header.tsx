@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from '@solidjs/router';
-import { ExternalLink, Image, siteCapabilities, SVGIcon, SVGIconKind } from 'common';
+import { ExternalLink, Image, siteCapabilities, SVGIcon, SVGIconKind, useI18n } from 'common';
 import isUndefined from 'lodash/isUndefined';
 import { createMemo, For, Show } from 'solid-js';
 
@@ -15,6 +15,7 @@ import { useSetGroupActive } from '../stores/groupActive';
 import { useSetViewMode } from '../stores/viewMode';
 import EmbedModal from './EmbedModal';
 import styles from './Header.module.css';
+import LanguageSwitcher from './LanguageSwitcher';
 import SiteIdentity from './SiteIdentity';
 
 interface Props {
@@ -28,6 +29,7 @@ const Header = (props: Props) => {
   const setViewMode = useSetViewMode();
   const setSelectedGroup = useSetGroupActive();
   const isExploreActive = createMemo(() => isExploreSection(location.pathname));
+  const { t } = useI18n();
 
   const isActive = (path: string) => {
     return path === location.pathname;
@@ -53,7 +55,7 @@ const Header = (props: Props) => {
                 });
                 scrollToTop(false);
               }}
-              aria-label="返回中国开源地图"
+              aria-label={t('navigation.backToHome')}
             >
               <SiteIdentity logo={logo()!} />
             </button>
@@ -83,9 +85,9 @@ const Header = (props: Props) => {
                   scrollToTop(false);
                 }
               }}
-              aria-label='Go to "Explore" page'
+              aria-label={t('navigation.explore')}
             >
-              Explore
+              {t('navigation.explore')}
             </button>
 
             <For each={siteFeatures.navigation({ data: window.baseDS, statsVisible: props.statsVisible })}>
@@ -113,6 +115,7 @@ const Header = (props: Props) => {
             </div>
 
             <div class={`d-flex align-items-center ${styles.icons}`}>
+              <LanguageSwitcher />
               <Show when={siteCapabilities.embed}>
                 <EmbedModal />
               </Show>

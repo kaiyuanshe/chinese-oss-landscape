@@ -1,6 +1,6 @@
 import { useWindowScrollPosition } from '@solid-primitives/scroll';
 import { A, useLocation } from '@solidjs/router';
-import { ExternalLink, Image, siteCapabilities, SVGIcon, SVGIconKind, useBreakpointDetect } from 'common';
+import { ExternalLink, Image, siteCapabilities, SVGIcon, SVGIconKind, useBreakpointDetect, useI18n } from 'common';
 import isUndefined from 'lodash/isUndefined';
 import { createEffect, createSignal, on, Show } from 'solid-js';
 
@@ -24,6 +24,7 @@ const MobileHeader = (props: Props) => {
   const openMenu = useSetMobileTOCStatus();
   const logo = () => (window.baseDS.header ? window.baseDS.header!.logo : undefined);
   const { point } = useBreakpointDetect();
+  const { t } = useI18n();
   const [sticky, setSticky] = createSignal<boolean>(false);
   const scroll = useWindowScrollPosition();
   const y = () => scroll.y;
@@ -48,7 +49,7 @@ const MobileHeader = (props: Props) => {
               title="Index"
               class={`position-relative btn btn-sm btn-secondary text-white btn-sm rounded-0 p-0 ${styles.mobileBtn}`}
               onClick={() => openMenu(true)}
-              aria-label='Open "Table of contents"'
+              aria-label={t('navigation.menu')}
             >
               <SVGIcon kind={SVGIconKind.ToC} />
             </button>
@@ -56,7 +57,7 @@ const MobileHeader = (props: Props) => {
         </div>
         <div>
           <Show when={!isUndefined(logo())}>
-            <button class="btn btn-link" onClick={() => scrollToTop(true)} aria-label="Scroll to top">
+            <button class="btn btn-link" onClick={() => scrollToTop(true)} aria-label={t('navigation.backToHome')}>
               <SiteIdentity logo={logo()!} compact />
             </button>
           </Show>
@@ -69,7 +70,7 @@ const MobileHeader = (props: Props) => {
         <div class="container-fluid d-flex flex-column flex-lg-row align-items-center p-3 p-lg-4 mainPadding">
           <div class={`d-flex flex-row justify-content-between align-items-center ${styles.logoWrapper}`}>
             <Show when={!isUndefined(logo())}>
-              <A href={EXPLORE_PATH} class="me-2 text-decoration-none" aria-label="返回中国开源地图">
+              <A href={EXPLORE_PATH} class="me-2 text-decoration-none" aria-label={t('navigation.backToHome')}>
                 <SiteIdentity logo={logo()!} />
               </A>
             </Show>

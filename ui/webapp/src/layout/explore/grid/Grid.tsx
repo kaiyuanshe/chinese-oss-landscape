@@ -20,6 +20,7 @@ import buildNormalizedId from '../../../utils/normalizeId';
 import sortItemsByOrderValue from '../../../utils/sortItemsByOrderValue';
 import { useFeaturedItems } from '../../stores/featuredItems';
 import { useGridWidth } from '../../stores/gridWidth';
+import { useSiteLocalization } from '../../stores/siteLocalization';
 import { useSetVisibleZoom } from '../../stores/visibleZoomSection';
 import { useZoomLevel } from '../../stores/zoom';
 import styles from './Grid.module.css';
@@ -121,6 +122,7 @@ const Grid = (props: Props) => {
   const [grid, setGrid] = createSignal<GridCategoryLayout | undefined>();
   const gridWidth = useGridWidth();
   const [prevSubcategories, setPrevSubcategories] = createSignal<SubcategoryDetails[]>();
+  const { subcategoryName } = useSiteLocalization();
   const subcategories = () => props.subcategories;
   const data = () => props.initialCategoryData;
 
@@ -173,7 +175,7 @@ const Grid = (props: Props) => {
                         class={`d-flex align-items-center text-white w-100 fw-medium ${styles.subcatTitle}`}
                         style={{ 'background-color': props.backgroundColor }}
                       >
-                        <div class="text-truncate">{subcat.subcategoryName}</div>
+                        <div class="text-truncate">{subcategoryName(props.categoryName, subcat.subcategoryName)}</div>
                         <Show when={isSectionInGuide(props.categoryName, subcat.subcategoryName)}>
                           <div>
                             <A
@@ -201,7 +203,7 @@ const Grid = (props: Props) => {
                               });
                             }}
                             class={`btn btn-link text-white ps-1 pe-2 ${styles.btnIcon}`}
-                            aria-label={`Open ${subcat.subcategoryName} section on modal`}
+                            aria-label={`Open ${subcategoryName(props.categoryName, subcat.subcategoryName)} section on modal`}
                           >
                             <SVGIcon kind={SVGIconKind.MagnifyingGlass} />
                           </button>

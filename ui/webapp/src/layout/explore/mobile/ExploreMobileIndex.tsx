@@ -14,6 +14,7 @@ import ButtonToTopScroll from '../../common/ButtonToTopScroll';
 import { Sidebar } from '../../common/Sidebar';
 import { useUpdateActiveItemId } from '../../stores/activeItem';
 import { useGroupActive } from '../../stores/groupActive';
+import { useSiteLocalization } from '../../stores/siteLocalization';
 import { useViewMode } from '../../stores/viewMode';
 import Menu from '../card/Menu';
 import Card from './Card';
@@ -71,6 +72,7 @@ const ExploreMobileIndex = (props: Props) => {
   const menu = () => props.menu;
   const selectedViewMode = useViewMode();
   const selectedGroup = useGroupActive();
+  const { categoryName, subcategoryName } = useSiteLocalization();
 
   return (
     <div>
@@ -100,7 +102,7 @@ const ExploreMobileIndex = (props: Props) => {
                         class="d-flex flex-row align-items-center p-2 w-100"
                         style={{ 'background-color': COLORS[1] }}
                       >
-                        <div class="text-white text-nowrap text-truncate text-uppercase">{title}</div>
+                        <div class="text-white text-nowrap text-truncate text-uppercase">{categoryName(title)}</div>
                       </div>
                     </div>
                     <For each={menu()![title]}>
@@ -119,7 +121,9 @@ const ExploreMobileIndex = (props: Props) => {
                                 style={{ 'background-color': COLORS[0] }}
                               >
                                 <div class="text-white text-nowrap text-truncate">
-                                  {props.classify === ClassifyOption.TAG ? formatTAGName(subtitle) : subtitle}
+                                  {props.classify === ClassifyOption.TAG
+                                    ? formatTAGName(subtitle)
+                                    : subcategoryName(title, subtitle)}
                                 </div>
                               </div>
                             </div>
@@ -147,7 +151,7 @@ const ExploreMobileIndex = (props: Props) => {
                             class="d-flex flex-row align-items-center p-2 w-100"
                             style={{ 'background-color': COLORS[1] }}
                           >
-                            <div class="text-white text-nowrap text-truncate text-uppercase">{title}</div>
+                            <div class="text-white text-nowrap text-truncate text-uppercase">{categoryName(title)}</div>
                           </div>
                         </div>
                         <For each={menu()![title]}>
@@ -169,7 +173,9 @@ const ExploreMobileIndex = (props: Props) => {
                                     class="d-flex flex-row align-items-center p-2 w-100"
                                     style={{ 'background-color': COLORS[0] }}
                                   >
-                                    <div class="text-white text-nowrap text-truncate">{subtitle}</div>
+                                    <div class="text-white text-nowrap text-truncate">
+                                      {subcategoryName(title, subtitle)}
+                                    </div>
                                   </div>
                                 </div>
                                 <CardsList items={items()} sorted={props.sorted} direction={props.direction} />

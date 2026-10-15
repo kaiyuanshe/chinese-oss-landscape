@@ -33,6 +33,7 @@ import {
 import checkIfCategoryInGroup from './checkIfCategoryInGroup';
 import filterData from './filterData';
 import search from './search';
+import { buildSiteLocalization, getLocalizedItemContent, SiteCatalogData, SiteLocalization } from './siteCatalog';
 import { getSiteSortOptions } from './siteSort';
 import sortCategoriesByGroupOrder from './sortCategoriesByGroupOrder';
 import sortMenuOptions from './sortMenuOptions';
@@ -90,6 +91,7 @@ export class ItemsDataGetter {
   private landscapeData?: LandscapeData;
   private classifyAndSortOptions: { [key: string]: ClassifyAndSortOptions } | undefined;
   private allDataGrouped: { [key: string]: (Item | BaseItem)[] } | undefined;
+  private siteLocalization: SiteLocalization = buildSiteLocalization();
 
   // Subscribe to the updateStatus
   public subscribe(updateStatus: ItemsDataStatus) {
@@ -131,7 +133,16 @@ export class ItemsDataGetter {
       }
 
       const data = (await response.json()) as LandscapeData;
-      this.initialDataPreparation(data);
+      let siteCatalog: SiteCatalogData | undefined;
+      try {
+        const siteResponse = await fetch(
+          import.meta.env.MODE === 'development' ? '../../static/data/site.json' : './data/site.json'
+        );
+        if (siteResponse.ok) siteCatalog = (await siteResponse.json()) as SiteCatalogData;
+      } catch {
+        // The legacy data remains a valid Chinese fallback when the sidecar is unavailable.
+      }
+      this.initialDataPreparation(data, siteCatalog);
     } catch {
       this.setStatus('error');
     }
@@ -160,8 +171,19 @@ export class ItemsDataGetter {
     return this.groups;
   }
 
-  private initialDataPreparation(data: LandscapeData) {
-    const extendedItems = this.extendItemsData(data.items, data.crunchbase_data, data.github_data);
+  private initialDataPreparation(data: LandscapeData, siteCatalog?: SiteCatalogData) {
+    this.siteLocalization = buildSiteLocalization(siteCatalog);
+    const extendedItems = this.extendItemsData(data.items, data.crunchbase_data, data.github_data).map((item) => {
+      const localized = getLocalizedItemContent(this.siteLocalization, item);
+      if (localized) {
+        this.siteLocalization.legacyCategories[item.category] ||= localized.category || { 'zh-CN': item.category };
+        this.siteLocalization.legacySubcategories[`${item.category}:${item.subcategory}`] ||= localized.subcategory || {
+          'zh-CN': item.subcategory,
+        };
+        return { ...item, localized };
+      }
+      return item;
+    });
     // Search engine initialization
     search.init(extendedItems);
     this.landscapeData = {
@@ -179,6 +201,10 @@ export class ItemsDataGetter {
   /** Return the current full-data loading status. */
   public getStatus(): ItemsDataLoadStatus {
     return this.status;
+  }
+
+  public getSiteLocalization(): SiteLocalization {
+    return this.siteLocalization;
   }
 
   // Get all items

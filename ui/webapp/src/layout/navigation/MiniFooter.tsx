@@ -1,10 +1,11 @@
-import { ExternalLink } from 'common';
+import { ExternalLink, useI18n } from 'common';
 import isUndefined from 'lodash/isUndefined';
 import { Show } from 'solid-js';
 
 import styles from './Footer.module.css';
 
 const MiniFooter = () => {
+  const { t } = useI18n();
   return (
     <footer role="contentinfo" class={`bg-black text-white mt-4 ${styles.footer}`}>
       <div class="container-fluid">
@@ -16,7 +17,7 @@ const MiniFooter = () => {
                 <div class={`pb-2 ${styles.legend}`} innerHTML={window.baseDS.footer!.text} />
               </Show>
               <div class={styles.legend}>
-                Powered by{' '}
+                {t('footer.poweredBy')}{' '}
                 <ExternalLink
                   class="p-0 fw-semibold text-white text-underline"
                   href="https://github.com/cncf/landscape2"

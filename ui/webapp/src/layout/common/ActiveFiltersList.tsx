@@ -1,4 +1,4 @@
-import { formatProfitLabel, formatTAGName, SVGIcon, SVGIconKind } from 'common';
+import { formatProfitLabel, formatTAGName, SVGIcon, SVGIconKind, useI18n } from 'common';
 import isEmpty from 'lodash/isEmpty';
 import isUndefined from 'lodash/isUndefined';
 import startCase from 'lodash/startCase';
@@ -199,6 +199,7 @@ const FiltersPerCategory = (props: FiltersPerCategoryProps) => {
 
 const ActiveFiltersList = (props: Props) => {
   const initialActiveFilters = () => props.activeFilters;
+  const { t } = useI18n();
 
   return (
     <Show when={Object.keys(initialActiveFilters()).length > 0}>
@@ -206,13 +207,13 @@ const ActiveFiltersList = (props: Props) => {
         <div
           class={`d-flex flex-row align-items-center text-nowrap text-muted text-uppercase me-3 mt-2 ${styles.btnLegend}`}
         >
-          <small>Filters applied</small>
+          <small>{t('filters.applied')}</small>
           <button
             class={`btn btn-link btn-sm text-muted p-0 ps-1 ${styles.btnReset}`}
             onClick={() => props.resetFilters()}
             aria-label="Reset all filters"
           >
-            (reset all)
+            ({t('filters.reset')})
           </button>
           <small>:</small>
         </div>

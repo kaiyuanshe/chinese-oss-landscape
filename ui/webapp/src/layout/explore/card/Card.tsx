@@ -4,12 +4,14 @@ import {
   formatTAGName,
   FoundationBadge,
   getItemDescription,
+  getItemName,
   getMainTag,
   Image,
   MaturityBadge,
   prettifyNumber,
   SVGIcon,
   SVGIconKind,
+  useI18n,
 } from 'common';
 import isUndefined from 'lodash/isUndefined';
 import { createSignal, Match, onMount, Show, Switch } from 'solid-js';
@@ -27,12 +29,13 @@ interface Props {
 }
 
 const Card = (props: Props) => {
-  const [description, setDescription] = createSignal<string>();
   const [stars, setStars] = createSignal<number>();
   const [primaryRepoUrl, setPrimaryRepoUrl] = createSignal<string>();
+  const { locale, t } = useI18n();
+  const displayName = () => getItemName(props.item, locale());
+  const description = () => getItemDescription(props.item, locale());
 
   onMount(() => {
-    setDescription(getItemDescription(props.item));
     let starsCount: number | undefined;
 
     if (props.item.repositories) {
@@ -54,7 +57,7 @@ const Card = (props: Props) => {
       <div class="d-flex flex-row align-items-center">
         <div class={`d-flex align-items-center justify-content-center ${styles.logoWrapper}`}>
           <Image
-            name={props.item.name}
+            name={displayName()}
             class={`m-auto ${styles.logo} ${props.logoClass}`}
             logo={props.item.logo}
             enableLazyLoad
@@ -63,7 +66,7 @@ const Card = (props: Props) => {
         </div>
 
         <div class={`p-3 ms-2 ${styles.itemInfo}`}>
-          <CardTitle title={props.item.name} isVisible={props.isVisible} />
+          <CardTitle title={displayName()} isVisible={props.isVisible} />
           <Show when={props.item.crunchbase_data && props.item.crunchbase_data.name}>
             <div class={`text-muted text-truncate ${styles.name}`}>
               <small>{props.item.crunchbase_data!.name}</small>
@@ -76,10 +79,10 @@ const Card = (props: Props) => {
               fallback={
                 <Show when={!isUndefined(props.item.member_subcategory)}>
                   <div
-                    title={`${props.item.member_subcategory} member`}
+                    title={`${props.item.member_subcategory} ${locale() === 'zh-CN' ? '成员' : 'member'}`}
                     class={`badge rounded-0 text-uppercase border me-2 ${styles.badgeOutlineDark}`}
                   >
-                    {props.item.member_subcategory} member
+                    {props.item.member_subcategory} {locale() === 'zh-CN' ? '成员' : 'member'}
                   </div>
                 </Show>
               }
@@ -89,13 +92,13 @@ const Card = (props: Props) => {
             </Show>
 
             <Show when={!isUndefined(props.item.website)}>
-              <ExternalLink title="Website" class={`me-2 ${styles.link}`} href={props.item.website!}>
+              <ExternalLink title={t('item.website')} class={`me-2 ${styles.link}`} href={props.item.website!}>
                 <SVGIcon kind={SVGIconKind.World} />
               </ExternalLink>
             </Show>
 
             <Show when={!isUndefined(primaryRepoUrl())}>
-              <ExternalLink title="Repository" class={`me-2 ${styles.link}`} href={primaryRepoUrl()!}>
+              <ExternalLink title={t('item.repository')} class={`me-2 ${styles.link}`} href={primaryRepoUrl()!}>
                 <SVGIcon kind={SVGIconKind.GitHubCircle} />
               </ExternalLink>
             </Show>
@@ -154,7 +157,7 @@ const Card = (props: Props) => {
           <Switch>
             <Match when={!isUndefined(stars())}>
               <div class="d-flex flex-row align-items-baseline">
-                <small class={`me-1 ${styles.legend}`}>GitHub stars:</small>
+                <small class={`me-1 ${styles.legend}`}>GitHub {t('repository.stars')}:</small>
                 <div class="fw-semibold">{stars ? prettifyNumber(stars()!, 1) : '-'}</div>
               </div>
             </Match>
@@ -166,7 +169,7 @@ const Card = (props: Props) => {
                 props.item.crunchbase_data.funding > 0
               }
             >
-              <small class={`me-1 ${styles.legend}`}>Funding:</small>
+              <small class={`me-1 ${styles.legend}`}>{locale() === 'zh-CN' ? '融资' : 'Funding'}:</small>
               <div class="fw-semibold">{prettifyNumber(props.item.crunchbase_data!.funding!)}</div>
             </Match>
           </Switch>

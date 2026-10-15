@@ -1,4 +1,4 @@
-import { useOutsideClick } from 'common';
+import { useI18n, useOutsideClick } from 'common';
 import { Accessor, createSignal, For } from 'solid-js';
 
 import { BANNER_ID } from '../../data';
@@ -67,10 +67,11 @@ const Filters = (props: FiltersProps) => {
 };
 
 const FiltersInLine = (props: Props) => {
+  const { t } = useI18n();
   return (
     <>
       <div class="d-flex flex-row align-items-baseline my-2">
-        <div class={`text-uppercase text-primary fw-bold ${styles.title}`}>Filters</div>
+        <div class={`text-uppercase text-primary fw-bold ${styles.title}`}>{t('filters.title')}</div>
       </div>
       <div class="d-flex flex-row align-items-top">
         <For each={props.filters}>

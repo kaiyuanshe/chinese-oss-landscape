@@ -1,12 +1,25 @@
-import { FoundationBadge, Image, MaturityBadge, SVGIcon, SVGIconKind, useOutsideClick } from 'common';
+import {
+  FoundationBadge,
+  getItemName,
+  Image,
+  MaturityBadge,
+  SVGIcon,
+  SVGIconKind,
+  useI18n,
+  useOutsideClick,
+} from 'common';
 import isNull from 'lodash/isNull';
 import isUndefined from 'lodash/isUndefined';
 import { SearchResult } from 'minisearch';
 import { batch, createEffect, createSignal, For, on, onCleanup, onMount, Show } from 'solid-js';
 
 import { BANNER_ID, FOUNDATION } from '../../data';
+import { Item } from '../../types';
+import itemsDataGetter from '../../utils/itemsDataGetter';
 import searchEngine from '../../utils/search';
 import { useUpdateActiveItemId } from '../stores/activeItem';
+import { useLocale } from '../stores/locale';
+import { useSiteLocalization } from '../stores/siteLocalization';
 import HoverableItem from './HoverableItem';
 import styles from './Searchbar.module.css';
 
@@ -20,6 +33,9 @@ const MIN_CHARACTERS_SEARCH = 2;
 
 const Searchbar = (props: Props) => {
   const updateActiveItemId = useUpdateActiveItemId();
+  const { locale } = useLocale();
+  const { t } = useI18n();
+  const { categoryName, subcategoryName } = useSiteLocalization();
   const [inputEl, setInputEl] = createSignal<HTMLInputElement>();
   const [dropdownRef, setDropdownRef] = createSignal<HTMLInputElement>();
   const [value, setValue] = createSignal<string>('');
@@ -234,7 +250,7 @@ const Searchbar = (props: Props) => {
           autocorrect="off"
           autocapitalize="none"
           spellcheck={false}
-          placeholder={props.device === 'desktop' ? '' : 'Search items'}
+          placeholder={props.device === 'desktop' ? '' : t('search.placeholder')}
           onKeyDown={onKeyDown}
           onInput={(e) => setValue(e.target.value)}
         />
@@ -242,15 +258,19 @@ const Searchbar = (props: Props) => {
         {props.device === 'desktop' && (
           <Show when={value() == ''}>
             <div class={`position-absolute d-flex align-items-center ${styles.desktopPlaceholder}`}>
-              Type <small class={`rounded border mx-1 ${styles.desktopPlaceholderIcon}`}>/</small> to search items
+              <Show when={locale() === 'zh-CN'} fallback={<>Type</>}>
+                输入
+              </Show>
+              <small class={`rounded border mx-1 ${styles.desktopPlaceholderIcon}`}>/</small>
+              {locale() === 'zh-CN' ? '搜索项目' : 'to search items'}
             </div>
           </Show>
         )}
 
         <Show when={value() !== ''}>
           <button
-            title="Clear text"
-            aria-label="Clear search"
+            title={t('search.clear')}
+            aria-label={t('search.clear')}
             class={`btn btn-link text-muted lh-1 px-2 ${styles.btnIcon}`}
             onClick={cleanSearchValue}
           >
@@ -279,7 +299,7 @@ const Searchbar = (props: Props) => {
             when={itemsList()!.length > 0}
             fallback={
               <div class="p-4 text-center fst-italic text-muted">
-                <small>{error() || `We couldn't find any items that match that criteria.`}</small>
+                <small>{error() || t('search.noResults')}</small>
               </div>
             }
           >
@@ -297,7 +317,7 @@ const Searchbar = (props: Props) => {
                         onClick={() => {
                           openItemModal(item.id);
                         }}
-                        aria-label={`Open ${item.name} info`}
+                        aria-label={`${t('search.openItem')}: ${item.name}`}
                         role="option"
                         aria-selected={index() === highlightedItem()}
                         id={`sl-opt${index()}`}
@@ -312,7 +332,12 @@ const Searchbar = (props: Props) => {
                             class={`flex-grow-1 d-flex flex-column text-start justify-content-between h-100 ${styles.truncateWrapper}`}
                           >
                             <div class="d-flex flex-row align-items-baseline">
-                              <span class={`text-truncate fw-semibold ${styles.title}`}>{item.name}</span>
+                              <span class={`text-truncate fw-semibold ${styles.title}`}>
+                                {getItemName(
+                                  itemsDataGetter.getItemById(item.id) || (item as unknown as Item),
+                                  locale()
+                                )}
+                              </span>
                               <Show when={!isUndefined(item.maturity)}>
                                 <div class={`d-flex flex-nowrap position-relative ${styles.badges}`}>
                                   <FoundationBadge
@@ -325,9 +350,11 @@ const Searchbar = (props: Props) => {
                             </div>
                             <div class={`text-muted ${styles.legend}`}>
                               <span class="d-none d-md-block text-truncate">
-                                {item.category} / {item.subcategory}
+                                {categoryName(item.category)} / {subcategoryName(item.category, item.subcategory)}
                               </span>
-                              <span class="d-block d-md-none text-truncate">{item.subcategory}</span>
+                              <span class="d-block d-md-none text-truncate">
+                                {subcategoryName(item.category, item.subcategory)}
+                              </span>
                             </div>
                           </div>
                         </div>

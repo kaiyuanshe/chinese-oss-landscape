@@ -18,6 +18,7 @@ export {
   formatProfitLabel,
   formatTAGName,
   getItemDescription,
+  getItemName,
   getMainTag,
   prettifyNumber,
   sortObjectByValue,
@@ -32,3 +33,7 @@ export { SVGIconKind } from './types/types';
 
 // Site integration
 export { siteCapabilities } from './siteCapabilities';
+
+// Internationalization
+export type { Locale, LocalizedItemContent, LocalizedText } from './i18n';
+export { DEFAULT_LOCALE, I18nProvider, resolveLocalizedText, useI18n } from './i18n';

@@ -11,6 +11,7 @@ import buildNormalizedId from '../../../utils/normalizeId';
 import sortItems from '../../../utils/sortItems';
 import sortMaturityStatusTitles from '../../../utils/sortMenuOptions';
 import { useUpdateActiveItemId } from '../../stores/activeItem';
+import { useSiteLocalization } from '../../stores/siteLocalization';
 import Card from './Card';
 import styles from './Content.module.css';
 
@@ -65,6 +66,7 @@ const CardList = (props: ListProps) => {
 
 const Content = (props: Props) => {
   const bgColor = COLORS[0];
+  const { categoryName, subcategoryName } = useSiteLocalization();
   const data = () => props.data();
   const getTitles = (): string[] => sortMaturityStatusTitles(Object.keys(data()));
 
@@ -139,7 +141,7 @@ const Content = (props: Props) => {
                                     </div>
                                   </Show>
                                   <div class="text-white text-nowrap text-truncate">
-                                    {title} ({numItems()})
+                                    {categoryName(title)} ({numItems()})
                                   </div>
                                 </div>
                                 <div
@@ -162,8 +164,10 @@ const Content = (props: Props) => {
                                     </div>
                                   </Show>
                                   <div class="flex-grow-1 text-truncate">
-                                    {props.classify === ClassifyOption.TAG ? formatTAGName(subtitle) : subtitle} (
-                                    {items().length})
+                                    {props.classify === ClassifyOption.TAG
+                                      ? formatTAGName(subtitle)
+                                      : subcategoryName(title, subtitle)}{' '}
+                                    ({items().length})
                                   </div>
                                 </div>
                               </div>

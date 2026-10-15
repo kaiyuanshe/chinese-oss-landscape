@@ -1,4 +1,4 @@
-import { ExternalLink, Image, SVGIcon, SVGIconKind } from 'common';
+import { ExternalLink, Image, SVGIcon, SVGIconKind, useI18n } from 'common';
 import isEmpty from 'lodash/isEmpty';
 import isUndefined from 'lodash/isUndefined';
 import { JSXElement, Show } from 'solid-js';
@@ -6,6 +6,7 @@ import { JSXElement, Show } from 'solid-js';
 import styles from './Footer.module.css';
 
 const Footer = () => {
+  const { t } = useI18n();
   const foundationLink = () =>
     window.baseDS.footer && window.baseDS.footer!.links ? window.baseDS.footer!.links!.homepage : undefined;
 
@@ -131,7 +132,7 @@ const Footer = () => {
                 <div class={`pt-2 ${styles.legend}`} innerHTML={window.baseDS.footer!.text} />
               </Show>
               <div class={`pt-2 ${styles.legend}`}>
-                Powered by{' '}
+                {t('footer.poweredBy')}{' '}
                 <ExternalLink
                   class="p-0 fw-semibold text-white text-underline"
                   href="https://github.com/cncf/landscape2"

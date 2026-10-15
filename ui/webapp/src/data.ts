@@ -42,6 +42,7 @@ export const FINANCES_KIND_PARAM = 'kind';
 export const CLASSIFY_PARAM = 'classify';
 export const SORT_BY_PARAM = 'sort-by';
 export const SORT_DIRECTION_PARAM = 'sort-direction';
+export const LANGUAGE_PARAM = 'lang';
 
 export const REGEX_SPACE = / /g;
 export const REGEX_PLUS = /\+/g;

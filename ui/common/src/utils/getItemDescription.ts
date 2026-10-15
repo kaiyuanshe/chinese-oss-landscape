@@ -1,11 +1,14 @@
 import isUndefined from 'lodash/isUndefined';
 
+import { Locale, resolveLocalizedText } from '../i18n';
 import { Item, Repository } from '../types/types';
 import { cleanEmojis } from './cleanEmojis';
 
 // Get item's description
-export const getItemDescription = (item?: Item | null): string => {
+export const getItemDescription = (item?: Item | null, locale: Locale = 'zh-CN'): string => {
   if (item) {
+    const localizedDescription = resolveLocalizedText(item.localized?.description, locale);
+    if (localizedDescription) return localizedDescription;
     if (item.description && item.description !== '') {
       return item.description;
     } else if (item.repositories) {
@@ -28,5 +31,9 @@ export const getItemDescription = (item?: Item | null): string => {
     }
   }
 
-  return 'This item does not have a description available yet';
+  return locale === 'en' ? 'This item does not have a description available yet' : '暂无项目简介';
+};
+
+export const getItemName = (item: Item, locale: Locale = 'zh-CN'): string => {
+  return resolveLocalizedText(item.localized?.name, locale) || item.name;
 };

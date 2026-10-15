@@ -1,4 +1,4 @@
-import { NoData } from 'common';
+import { NoData, useI18n } from 'common';
 import isEmpty from 'lodash/isEmpty';
 import { createSignal, JSXElement, onMount, Show } from 'solid-js';
 
@@ -13,7 +13,9 @@ import { FullDataProvider, useFullDataStatus, useRetryFullData } from './stores/
 import { GridWidthProvider } from './stores/gridWidth';
 import { GroupActiveProvider } from './stores/groupActive';
 import { GuideFileProvider } from './stores/guideFile';
+import { LocaleProvider } from './stores/locale';
 import { MobileTOCProvider } from './stores/mobileTOC';
+import { SiteLocalizationProvider } from './stores/siteLocalization';
 import { EventsProvider } from './stores/upcomingEventData';
 import { ViewModeProvider } from './stores/viewMode';
 import { VisibleZoomSectionProvider } from './stores/visibleZoomSection';
@@ -35,35 +37,39 @@ const Layout = (props: Props) => {
   });
 
   return (
-    <FullDataProvider>
-      <ActiveItemProvider>
-        <ViewModeProvider>
-          <GroupActiveProvider>
-            <VisibleZoomSectionProvider>
-              <ZoomProvider>
-                <GridWidthProvider>
-                  <MobileTOCProvider>
-                    <GuideFileProvider>
-                      <FinancesDataProvider>
-                        <EventsProvider>
-                          <div class={`d-flex flex-column ${styles.container}`}>
-                            <MobileHeader statsVisible={statsVisible()} />
-                            <Header statsVisible={statsVisible()} />
-                            <FullDataContent>{props.children}</FullDataContent>
-                          </div>
-                          <FullDataModals />
-                          <UpcomingEvents />
-                        </EventsProvider>
-                      </FinancesDataProvider>
-                    </GuideFileProvider>
-                  </MobileTOCProvider>
-                </GridWidthProvider>
-              </ZoomProvider>
-            </VisibleZoomSectionProvider>
-          </GroupActiveProvider>
-        </ViewModeProvider>
-      </ActiveItemProvider>
-    </FullDataProvider>
+    <LocaleProvider>
+      <FullDataProvider>
+        <SiteLocalizationProvider>
+          <ActiveItemProvider>
+            <ViewModeProvider>
+              <GroupActiveProvider>
+                <VisibleZoomSectionProvider>
+                  <ZoomProvider>
+                    <GridWidthProvider>
+                      <MobileTOCProvider>
+                        <GuideFileProvider>
+                          <FinancesDataProvider>
+                            <EventsProvider>
+                              <div class={`d-flex flex-column ${styles.container}`}>
+                                <MobileHeader statsVisible={statsVisible()} />
+                                <Header statsVisible={statsVisible()} />
+                                <FullDataContent>{props.children}</FullDataContent>
+                              </div>
+                              <FullDataModals />
+                              <UpcomingEvents />
+                            </EventsProvider>
+                          </FinancesDataProvider>
+                        </GuideFileProvider>
+                      </MobileTOCProvider>
+                    </GridWidthProvider>
+                  </ZoomProvider>
+                </VisibleZoomSectionProvider>
+              </GroupActiveProvider>
+            </ViewModeProvider>
+          </ActiveItemProvider>
+        </SiteLocalizationProvider>
+      </FullDataProvider>
+    </LocaleProvider>
   );
 };
 
@@ -83,6 +89,7 @@ export default Layout;
 const FullDataContent = (props: Props) => {
   const fullDataStatus = useFullDataStatus();
   const retryFullData = useRetryFullData();
+  const { t } = useI18n();
 
   return (
     <Show
@@ -91,9 +98,9 @@ const FullDataContent = (props: Props) => {
         <main class="container-fluid px-3 px-lg-4 py-5">
           <NoData>
             <div class="d-flex flex-column align-items-center">
-              <div class="fs-5">We couldn't load the landscape data.</div>
+              <div class="fs-5">{t('error.loadData')}</div>
               <button type="button" class="btn btn-secondary mt-3" onClick={retryFullData}>
-                Try again
+                {t('error.tryAgain')}
               </button>
             </div>
           </NoData>

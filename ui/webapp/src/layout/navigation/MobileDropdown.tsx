@@ -1,10 +1,11 @@
 import { A } from '@solidjs/router';
-import { ExternalLink, SVGIcon, SVGIconKind, useOutsideClick } from 'common';
+import { ExternalLink, SVGIcon, SVGIconKind, useI18n, useOutsideClick } from 'common';
 import isUndefined from 'lodash/isUndefined';
 import { createSignal, For, Show } from 'solid-js';
 
 import { EXPLORE_PATH } from '../../data';
 import { siteFeatures } from '../../features';
+import LanguageSwitcher from './LanguageSwitcher';
 import styles from './MobileDropdown.module.css';
 
 interface Props {
@@ -16,6 +17,7 @@ const MobileDropdown = (props: Props) => {
   const [visibleDropdown, setVisibleDropdown] = createSignal<boolean>(false);
   const [ref, setRef] = createSignal<HTMLDivElement>();
   useOutsideClick([ref], [], visibleDropdown, () => setVisibleDropdown(false));
+  const { t } = useI18n();
 
   const closeDropdown = () => {
     setVisibleDropdown(false);
@@ -28,7 +30,7 @@ const MobileDropdown = (props: Props) => {
         classList={{ [styles.inSticky]: !isUndefined(props.inSticky) && props.inSticky }}
         type="button"
         onClick={() => setVisibleDropdown((prev) => !prev)}
-        aria-label="Mobile settings button"
+        aria-label={t('navigation.menu')}
         aria-expanded={visibleDropdown()}
       >
         <div class="d-flex align-items-center justify-content-center h-100 w-100">
@@ -44,10 +46,10 @@ const MobileDropdown = (props: Props) => {
             activeClass="activeLink"
             href={EXPLORE_PATH}
             onClick={closeDropdown}
-            aria-label="Go to Explore page"
+            aria-label={t('navigation.explore')}
             end
           >
-            Explore
+            {t('navigation.explore')}
           </A>
         </div>
         <For each={siteFeatures.navigation({ data: window.baseDS, statsVisible: props.statsVisible })}>
@@ -86,6 +88,9 @@ const MobileDropdown = (props: Props) => {
             </ExternalLink>
           </div>
         </Show>
+        <div class="dropdown-item mb-2">
+          <LanguageSwitcher />
+        </div>
       </div>
     </div>
   );

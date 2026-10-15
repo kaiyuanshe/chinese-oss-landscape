@@ -3,6 +3,23 @@ import type { Accessor, JSXElement } from 'solid-js';
 export { siteCapabilities } from '../../../common/src/siteCapabilities';
 export { capitalizeFirstLetter } from '../../../common/src/utils/capitalizeFirstLetter';
 
+export const useI18n = () => ({
+  locale: () => 'zh-CN' as const,
+  t: (key: string) =>
+    ({
+      'error.loadData': "We couldn't load the landscape data.",
+      'error.tryAgain': 'Try again',
+    })[key] || key,
+  text: (value: { 'zh-CN': string; en?: string } | undefined) => value?.['zh-CN'],
+});
+export const DEFAULT_LOCALE = 'zh-CN' as const;
+export type Locale = 'zh-CN' | 'en';
+export const I18nProvider = (props: { children: JSXElement; locale?: Locale }) => <>{props.children}</>;
+export const resolveLocalizedText = (value: { 'zh-CN': string; en?: string } | undefined, locale: Locale = 'zh-CN') =>
+  locale === 'en' && value?.en ? value.en : value?.['zh-CN'];
+export const getItemName = (item: Item) => String(item.name || item.id);
+export const getItemDescription = () => '';
+
 export enum SVGIconKind {
   CSV = 'csv',
   Download = 'download',

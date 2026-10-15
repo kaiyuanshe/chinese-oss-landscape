@@ -82,6 +82,20 @@ export interface BaseItem {
   maturity?: string;
   tag?: string[];
   additional_categories?: AdditionalCategory[];
+  localized?: LocalizedItemContent;
+  annotations?: Record<string, string>;
+}
+
+export interface LocalizedText {
+  'zh-CN': string;
+  en?: string;
+}
+
+export interface LocalizedItemContent {
+  name: LocalizedText;
+  description?: LocalizedText;
+  category?: LocalizedText;
+  subcategory?: LocalizedText;
 }
 
 export interface Featured {

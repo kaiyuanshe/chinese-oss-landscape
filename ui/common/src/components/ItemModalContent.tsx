@@ -6,9 +6,10 @@ import sortBy from 'lodash/sortBy';
 import { createEffect, createSignal, For, Match, on, Show, Switch } from 'solid-js';
 import { css } from 'solid-styled-components';
 
+import { useI18n } from '../i18n';
 import { siteCapabilities } from '../siteCapabilities';
 import { AdditionalCategory, Item, Repository, SecurityAudit, SVGIconKind } from '../types/types';
-import { cutString, getItemDescription } from '../utils';
+import { cutString, getItemDescription, getItemName } from '../utils';
 import { formatProfitLabel } from '../utils/formatProfitLabel';
 import { formatSummaryField } from '../utils/formatSummaryField';
 import { formatTAGName } from '../utils/formatTAGName';
@@ -217,12 +218,13 @@ export const ItemModalContent = (props: Props) => {
   const itemInfo = () => props.item;
   const [description, setDescription] = createSignal<string>();
   const [primaryRepo, setPrimaryRepo] = createSignal<Repository>();
+  const { locale, t } = useI18n();
 
   createEffect(
-    on(itemInfo, () => {
+    on([itemInfo, locale], () => {
       if (!isUndefined(itemInfo()) && !isNull(itemInfo())) {
         let primaryRepoTmp: Repository | undefined;
-        setDescription(getItemDescription(itemInfo()!));
+        setDescription(getItemDescription(itemInfo()!, locale()));
         if (!isUndefined(itemInfo()!.repositories)) {
           itemInfo()!.repositories!.forEach((repo: Repository) => {
             if (repo.primary) {
@@ -270,7 +272,7 @@ export const ItemModalContent = (props: Props) => {
 
           <div class={`d-flex flex-column justify-content-between ms-3 ${ItemInfo}`}>
             <div class="d-flex flex-row align-items-center me-5">
-              <div class={`fw-semibold text-truncate pe-2 ${Title}`}>{itemInfo()!.name}</div>
+              <div class={`fw-semibold text-truncate pe-2 ${Title}`}>{getItemName(itemInfo()!, locale())}</div>
               <div class="d-flex flex-row align-items-center ms-2">
                 <Show when={!isUndefined(itemInfo()!.maturity)}>
                   <FoundationBadge foundation={props.foundation} />
@@ -313,10 +315,14 @@ export const ItemModalContent = (props: Props) => {
               </div>
             </Show>
             <div class="d-flex flex-row align-items-center mb-1">
-              <div class={`d-none d-xl-flex badge rounded-0 ${BadgeOutlineDark}`}>{itemInfo()!.category}</div>
-              <div class={`badge ms-0 ms-xl-2 rounded-0 ${BadgeOutlineDark}`}>{itemInfo()!.subcategory}</div>
+              <div class={`d-none d-xl-flex badge rounded-0 ${BadgeOutlineDark}`}>
+                {itemInfo()!.localized?.category?.[locale()] || itemInfo()!.category}
+              </div>
+              <div class={`badge ms-0 ms-xl-2 rounded-0 ${BadgeOutlineDark}`}>
+                {itemInfo()!.localized?.subcategory?.[locale()] || itemInfo()!.subcategory}
+              </div>
               <Show when={!isUndefined(itemInfo()!.enduser) && itemInfo()!.enduser}>
-                <div class={`badge ms-0 ms-xl-2 me-3 rounded-0 ${BadgeOutlineDark}`}>End user</div>
+                <div class={`badge ms-0 ms-xl-2 me-3 rounded-0 ${BadgeOutlineDark}`}>{t('item.endUser')}</div>
               </Show>
 
               <div class="ms-auto">
@@ -491,7 +497,7 @@ export const ItemModalContent = (props: Props) => {
 
         {/* Additional categories */}
         <Show when={!isUndefined(itemInfo()!.additional_categories) && !isEmpty(itemInfo()!.additional_categories)}>
-          <div class={`fw-bold text-uppercase mt-4 mb-3 ${TitleInSection}`}>Additional categories</div>
+          <div class={`fw-bold text-uppercase mt-4 mb-3 ${TitleInSection}`}>{t('item.additionalCategories')}</div>
           <div class="d-flex flex-row flex-wrap align-items-center mb-2">
             <For each={itemInfo()!.additional_categories}>
               {(additional: AdditionalCategory) => {
@@ -506,7 +512,7 @@ export const ItemModalContent = (props: Props) => {
         </Show>
         {/* Additional tags */}
         <Show when={!isUndefined(itemInfo()!.tag) && itemInfo()!.tag!.length > 1}>
-          <div class={`fw-bold text-uppercase mt-4 mb-3 ${TitleInSection}`}>Additional tags</div>
+          <div class={`fw-bold text-uppercase mt-4 mb-3 ${TitleInSection}`}>{t('item.additionalTags')}</div>
           <div class="d-flex flex-row flex-wrap align-items-center mb-2">
             <For each={itemInfo()!.tag!}>
               {(tag, index) => {
@@ -526,7 +532,7 @@ export const ItemModalContent = (props: Props) => {
           {/* Parent project */}
           <ParentProject
             parentInfo={props.parentInfo!}
-            projectName={itemInfo()!.name}
+            projectName={getItemName(itemInfo()!, locale())}
             class={Fieldset}
             mobileVersion={false}
             foundation={props.foundation}
@@ -544,19 +550,19 @@ export const ItemModalContent = (props: Props) => {
         {/* Security audits */}
         <Show when={!isUndefined(itemInfo()!.audits) && !isEmpty(itemInfo()!.audits)}>
           <div class={`position-relative border ${Fieldset}`}>
-            <div class={`position-absolute px-2 bg-white fw-semibold ${FieldsetTitle}`}>Security audits</div>
+            <div class={`position-absolute px-2 bg-white fw-semibold ${FieldsetTitle}`}>{t('item.securityAudits')}</div>
             <div class="w-100">
               <table class={`table table-sm table-striped table-bordered mt-3 ${TableLayout}`}>
                 <thead class={`text-uppercase text-muted ${Thead}`}>
                   <tr>
                     <th class={`text-center ${AuditsCol}`} scope="col">
-                      Date
+                      {t('item.date')}
                     </th>
                     <th class={`text-center ${AuditsCol}`} scope="col">
-                      Type
+                      {t('item.type')}
                     </th>
                     <th class={`text-center ${AuditsColMd}`} scope="col">
-                      Vendor
+                      {t('item.vendor')}
                     </th>
                     <th class="text-center" scope="col">
                       Url
@@ -595,7 +601,7 @@ export const ItemModalContent = (props: Props) => {
         {/* Organization */}
         <Show when={!props.hideOrganizationSection && !isUndefined(itemInfo()!.crunchbase_data)}>
           <div class={`position-relative border ${Fieldset}`}>
-            <div class={`position-absolute px-2 bg-white fw-semibold ${FieldsetTitle}`}>Organization</div>
+            <div class={`position-absolute px-2 bg-white fw-semibold ${FieldsetTitle}`}>{t('item.organization')}</div>
             <div class="d-flex flex-row align-items-center">
               <div class={`fw-semibold text-truncate fs-6`}>{itemInfo()!.crunchbase_data!.name}</div>
 

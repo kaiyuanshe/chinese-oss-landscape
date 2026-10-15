@@ -17,7 +17,14 @@ jest.mock('../stores/financesData', () => ({ FinancesDataProvider: mockProvider 
 jest.mock('../stores/fullData', () => ({
   FullDataProvider: mockProvider,
   useFullDataStatus: () => mockFullDataStatus,
+  useFullDataReady: () => mockFullDataStatus() === 'ready',
   useRetryFullData: () => jest.fn(),
+}));
+jest.mock('../stores/locale', () => ({
+  LocaleProvider: mockProvider,
+}));
+jest.mock('../stores/siteLocalization', () => ({
+  SiteLocalizationProvider: mockProvider,
 }));
 jest.mock('../stores/gridWidth', () => ({ GridWidthProvider: mockProvider }));
 jest.mock('../stores/groupActive', () => ({ GroupActiveProvider: mockProvider }));

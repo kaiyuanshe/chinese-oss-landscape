@@ -5,6 +5,7 @@ import moment from 'moment';
 import { createSignal, For, onMount, Show } from 'solid-js';
 import { css } from 'solid-styled-components';
 
+import { useI18n } from '../i18n';
 import { siteCapabilities } from '../siteCapabilities';
 import { Repository, SVGIconKind } from '../types/types';
 import { prettifyNumber } from '../utils/prettifyNumber';
@@ -93,8 +94,9 @@ const formatRepoUrl = (url: string): string => {
 };
 
 const RepositoryInfo = (props: RepoProps) => {
+  const { locale, t } = useI18n();
   const formatDate = (date: string): string => {
-    return moment(date).format("MMM 'YY");
+    return locale() === 'en' ? moment(date).format("MMM 'YY") : moment(date).format('YYYY年MM月');
   };
 
   return (
@@ -118,7 +120,9 @@ const RepositoryInfo = (props: RepoProps) => {
           <Show when={props.repository.primary || !isUndefined(props.repository.github_data)}>
             <div class={`d-flex align-items-center flex-wrap flex-md-nowrap mt-2 mt-md-0 ${Badges}`}>
               <Show when={props.repository.primary}>
-                <div class={`me-2 badge rounded-0 text-uppercase ${BadgeOutlineDark} ${MiniBadge}`}>Primary</div>
+                <div class={`me-2 badge rounded-0 text-uppercase ${BadgeOutlineDark} ${MiniBadge}`}>
+                  {t('item.primary')}
+                </div>
               </Show>
               <Show when={!isUndefined(props.repository.license) || !isUndefined(props.repository.github_data)}>
                 <div class={`badge rounded-0 me-2 ${BadgeOutlineDark} ${MiniBadge}`}>
@@ -150,29 +154,29 @@ const RepositoryInfo = (props: RepoProps) => {
           <Box
             class={props.boxClass}
             value={prettifyNumber(props.repository.github_data!.stars, 1)}
-            legend="Stars"
-            description="Stars number"
+            legend={t('repository.stars')}
+            description={t('repository.stars')}
           />
 
           <Box
             class={props.boxClass}
             value={prettifyNumber(props.repository.github_data!.contributors.count)}
-            legend="Contributors"
-            description="Contributors number"
+            legend={t('repository.contributors')}
+            description={t('repository.contributors')}
           />
 
           <Box
             class={props.boxClass}
             value={formatDate(props.repository.github_data!.first_commit.ts)}
-            legend="First commit"
-            description="First commit date"
+            legend={t('repository.firstCommit')}
+            description={t('repository.firstCommit')}
           />
 
           <Box
             class={props.boxClass}
             value={formatDate(props.repository.github_data!.latest_commit.ts)}
-            legend="Latest commit"
-            description="Latest commit date"
+            legend={t('repository.latestCommit')}
+            description={t('repository.latestCommit')}
           />
 
           <Box
@@ -182,14 +186,14 @@ const RepositoryInfo = (props: RepoProps) => {
                 ? formatDate(props.repository.github_data!.latest_release!.ts)
                 : '-'
             }
-            legend="Latest release"
-            description="Latest release date"
+            legend={t('repository.latestRelease')}
+            description={t('repository.latestRelease')}
           />
         </div>
 
         <Show when={!isUndefined(props.repository.github_data!.participation_stats)}>
           <div class="mt-4">
-            <div class={`fw-semibold ${SubtitleInSection}`}>Participation stats</div>
+            <div class={`fw-semibold ${SubtitleInSection}`}>{t('repository.participation')}</div>
             <div class="mx-2 mx-md-0">
               <ParticipationStats initialStats={props.repository.github_data!.participation_stats} />
             </div>
@@ -202,7 +206,7 @@ const RepositoryInfo = (props: RepoProps) => {
           }
         >
           <div class="mt-4">
-            <div class={`fw-semibold ${SubtitleInSection}`}>Languages</div>
+            <div class={`fw-semibold ${SubtitleInSection}`}>{t('repository.languages')}</div>
             <LanguagesStats initialLanguages={props.repository.github_data!.languages!} boxClass={props.boxClass} />
           </div>
         </Show>
@@ -212,6 +216,7 @@ const RepositoryInfo = (props: RepoProps) => {
 };
 
 export const RepositoriesSection = (props: Props) => {
+  const { t } = useI18n();
   const [selectedRepo, setSelectedRepo] = createSignal<Repository | undefined>(undefined);
   const [repositoriesList, setRepositoriesList] = createSignal<Repository[]>([]);
 
@@ -230,12 +235,12 @@ export const RepositoriesSection = (props: Props) => {
   return (
     <Show when={repositoriesList().length > 0}>
       <div class={`position-relative ${props.class}`}>
-        <div class={` ${props.titleClass}`}>Repositories</div>
+        <div class={` ${props.titleClass}`}>{t('item.repositories')}</div>
         <select
           id="repo-select"
           class={`form-select form-select-md border-0 rounded-0 my-3 ${Select}`}
           value={selectedRepo() ? selectedRepo()!.url : undefined}
-          aria-label="Repositories select"
+          aria-label={t('item.repositories')}
           onChange={(e) => {
             const repo = repositoriesList().find((r) => r.url === e.currentTarget.value);
             setSelectedRepo(repo);

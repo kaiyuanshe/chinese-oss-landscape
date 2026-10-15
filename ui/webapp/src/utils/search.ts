@@ -25,7 +25,9 @@ class Search {
             break;
 
           case 'description':
-            if (item.description && item.description !== '') {
+            if (item.localized?.description) {
+              value = [item.localized.description['zh-CN'], item.localized.description.en].filter(Boolean).join(' ');
+            } else if (item.description && item.description !== '') {
               value = item.description;
             } else if (item.repositories) {
               for (let i = 0; i < item.repositories.length; i++) {
@@ -62,7 +64,11 @@ class Search {
             break;
 
           default:
-            value = item[fieldName];
+            if (fieldName === 'name' && item.localized?.name) {
+              value = [item.name, item.localized.name.en].filter(Boolean).join(' ');
+            } else {
+              value = item[fieldName];
+            }
             break;
         }
 
