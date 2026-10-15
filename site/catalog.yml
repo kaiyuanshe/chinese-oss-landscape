@@ -1219,6 +1219,10 @@ items:
   - id: apache-dubbo
     kind: software
     canonical_name: Apache Dubbo
+    logo:
+      path: apache-dubbo.png
+      source_url: https://github.com/apache/dubbo-logo/blob/master/DUBBO%20logo%E5%93%81%E7%89%8C%E8%89%B2.png
+      alt: Apache Dubbo logo
     aliases:
       - Dubbo
     name:
@@ -1297,6 +1301,10 @@ items:
   - id: apache-rocketmq
     kind: software
     canonical_name: Apache RocketMQ
+    logo:
+      path: apache-rocketmq.png
+      source_url: https://github.com/apache/rocketmq-site/blob/new-official-website/static/img/Apache_RocketMQ_logo.svg.png
+      alt: Apache RocketMQ logo
     aliases:
       - RocketMQ
     name:
@@ -1372,6 +1380,10 @@ items:
   - id: apache-seata
     kind: software
     canonical_name: Apache Seata (incubating)
+    logo:
+      path: apache-seata.png
+      source_url: https://github.com/apache/incubator-seata/blob/2.x/console/src/main/resources/static/console-fe/public/img/seata_logo.png
+      alt: Apache Seata logo
     aliases:
       - Seata
       - Fescar
@@ -1450,6 +1462,10 @@ items:
   - id: apache-brpc
     kind: software
     canonical_name: Apache bRPC
+    logo:
+      path: apache-brpc.png
+      source_url: https://github.com/apache/brpc/blob/master/docs/images/logo.png
+      alt: Apache bRPC logo
     aliases:
       - brpc
       - baidu-rpc
@@ -1528,6 +1544,10 @@ items:
   - id: apache-doris
     kind: software
     canonical_name: Apache Doris
+    logo:
+      path: apache-doris.png
+      source_url: https://github.com/apache/doris/blob/master/webroot/static/doris-logo.png
+      alt: Apache Doris logo
     aliases:
       - Doris
       - Palo
@@ -1604,6 +1624,10 @@ items:
   - id: apache-apisix
     kind: software
     canonical_name: Apache APISIX
+    logo:
+      path: apache-apisix.png
+      source_url: https://github.com/apache/apisix/blob/master/docs/assets/images/apisix.png
+      alt: Apache APISIX logo
     aliases:
       - APISIX
     name:
@@ -1677,6 +1701,10 @@ items:
   - id: apache-shardingsphere
     kind: software
     canonical_name: Apache ShardingSphere
+    logo:
+      path: apache-shardingsphere.jpg
+      source_url: https://github.com/apache/shardingsphere/blob/master/docs/blog/static/img/logo.jpg
+      alt: Apache ShardingSphere logo
     aliases:
       - ShardingSphere
       - Sharding-JDBC
@@ -1749,6 +1777,10 @@ items:
   - id: apache-skywalking
     kind: software
     canonical_name: Apache SkyWalking
+    logo:
+      path: apache-skywalking.svg
+      source_url: https://github.com/apache/skywalking-website/blob/master/static/assets/logo.svg
+      alt: Apache SkyWalking logo
     aliases:
       - SkyWalking
     name:
@@ -1822,6 +1854,10 @@ items:
   - id: apache-dolphinscheduler
     kind: software
     canonical_name: Apache DolphinScheduler
+    logo:
+      path: apache-dolphinscheduler.svg
+      source_url: https://github.com/apache/dolphinscheduler/blob/dev/dolphinscheduler-ui/src/assets/images/logo-dark.svg
+      alt: Apache DolphinScheduler logo
     aliases:
       - DolphinScheduler
       - EasyScheduler
@@ -1896,6 +1932,10 @@ items:
   - id: apache-echarts
     kind: software
     canonical_name: Apache ECharts
+    logo:
+      path: apache-echarts.png
+      source_url: https://github.com/apache/echarts/blob/master/asset/logo.png
+      alt: Apache ECharts logo
     aliases:
       - ECharts
     name:
@@ -1973,6 +2013,10 @@ items:
   - id: qwen2-5-7b-instruct
     kind: model_weights
     canonical_name: Qwen2.5-7B-Instruct
+    logo:
+      path: qwen.jpg
+      source_url: https://github.com/QwenLM/Qwen/blob/main/assets/logo.jpg
+      alt: Qwen logo
     aliases:
       - Qwen2.5-7B-Instruct
     name:
@@ -2054,6 +2098,10 @@ items:
   - id: kaiyuanshe
     kind: community
     canonical_name: 开源社
+    logo:
+      path: kaiyuanshe.png
+      source_url: https://kaiyuanshe.cn/brand
+      alt: 开源社 logo
     aliases:
       - KAIYUANSHE
     name:
@@ -2117,6 +2165,10 @@ items:
   - id: dragonfly
     kind: software
     canonical_name: Dragonfly
+    logo:
+      path: dragonfly.svg
+      source_url: https://github.com/dragonflydb/dragonfly/blob/main/.github/images/logo-full.svg
+      alt: Dragonfly logo
     aliases: []
     name:
       zh-CN: Dragonfly
@@ -2195,6 +2247,10 @@ items:
   - id: harbor
     kind: software
     canonical_name: Harbor
+    logo:
+      path: harbor.png
+      source_url: https://github.com/goharbor/website/blob/main/docs/img/readme/harbor_logo.png
+      alt: Harbor logo
     aliases: []
     name:
       zh-CN: Harbor
@@ -2272,6 +2328,10 @@ items:
   - id: tikv
     kind: software
     canonical_name: TiKV
+    logo:
+      path: tikv.png
+      source_url: https://github.com/tikv/tikv/blob/master/images/tikv-logo.png
+      alt: TiKV logo
     aliases: []
     name:
       zh-CN: TiKV
@@ -2350,6 +2410,10 @@ items:
   - id: kubeedge
     kind: software
     canonical_name: KubeEdge
+    logo:
+      path: kubeedge.png
+      source_url: https://github.com/kubeedge/kubeedge/blob/master/docs/images/kubeedge-logo-only.png
+      alt: KubeEdge logo
     aliases: []
     name:
       zh-CN: KubeEdge
@@ -2428,6 +2492,10 @@ items:
   - id: milvus
     kind: software
     canonical_name: Milvus
+    logo:
+      path: milvus.svg
+      source_url: https://github.com/milvus-io/milvus/blob/master/internal/http/webui/assets/milvus-logo-CDzTGerQ.svg
+      alt: Milvus logo
     aliases: []
     name:
       zh-CN: Milvus
@@ -2503,6 +2571,10 @@ items:
   - id: fate
     kind: software
     canonical_name: FATE
+    logo:
+      path: fate.png
+      source_url: https://github.com/FederatedAI/FATE/blob/master/doc/images/FATE_logo.png
+      alt: FATE logo
     aliases: []
     name:
       zh-CN: FATE
@@ -2582,6 +2654,10 @@ items:
   - id: openmldb
     kind: software
     canonical_name: OpenMLDB
+    logo:
+      path: openmldb.png
+      source_url: https://github.com/4paradigm/OpenMLDB/blob/main/docs/en/about/images/openmldb_logo.png
+      alt: OpenMLDB logo
     aliases: []
     name:
       zh-CN: OpenMLDB
@@ -2655,6 +2731,10 @@ items:
   - id: pikiwidb
     kind: software
     canonical_name: PikiwiDB
+    logo:
+      path: pikiwidb.jpg
+      source_url: https://github.com/OpenAtomFoundation/pikiwidb/blob/unstable/docs/images/pikiwidb-logo.png
+      alt: PikiwiDB logo
     aliases:
       - Pika
     name:
@@ -2736,6 +2816,10 @@ items:
   - id: tongsuo
     kind: software
     canonical_name: Tongsuo
+    logo:
+      path: tongsuo.png
+      source_url: https://github.com/Tongsuo-Project/Tongsuo/blob/master/tongsuo.png
+      alt: Tongsuo logo
     aliases:
       - 铜锁
       - BabaSSL
@@ -2818,6 +2902,10 @@ items:
   - id: vearch
     kind: software
     canonical_name: Vearch
+    logo:
+      path: vearch.png
+      source_url: https://github.com/vearch/vearch/blob/master/assets/vearch_logo.png
+      alt: Vearch logo
     aliases: []
     name:
       zh-CN: Vearch
@@ -2898,6 +2986,10 @@ items:
   - id: openstack-skyline
     kind: software
     canonical_name: OpenStack Skyline
+    logo:
+      path: openstack-skyline.png
+      source_url: https://github.com/openstack/skyline-apiserver/blob/master/doc/source/images/logo/skyline-logo.png
+      alt: OpenStack Skyline logo
     aliases:
       - Skyline
     name:
@@ -2997,6 +3089,10 @@ items:
   - id: openstack-venus
     kind: software
     canonical_name: OpenStack Venus
+    logo:
+      path: openstack-venus.svg
+      source_url: https://github.com/openstack/horizon/blob/master/openstack_dashboard/static/dashboard/img/logo.svg
+      alt: OpenStack Venus (OpenStack project mark; no Venus-specific logo published)
     aliases:
       - Venus
     name:
@@ -3080,6 +3176,10 @@ items:
   - id: paddlepaddle
     kind: software
     canonical_name: PaddlePaddle
+    logo:
+      path: paddlepaddle.png
+      source_url: https://github.com/PaddlePaddle/Paddle/blob/develop/doc/imgs/logo.png
+      alt: PaddlePaddle logo
     aliases: []
     name:
       zh-CN: PaddlePaddle
@@ -3152,6 +3252,10 @@ items:
   - id: ncnn
     kind: software
     canonical_name: ncnn
+    logo:
+      path: ncnn.png
+      source_url: https://github.com/Tencent/ncnn/blob/master/images/256-ncnn.png
+      alt: ncnn logo
     aliases: []
     name:
       zh-CN: ncnn
@@ -3227,6 +3331,10 @@ items:
   - id: cloudwego-kitex
     kind: software
     canonical_name: CloudWeGo Kitex
+    logo:
+      path: cloudwego.png
+      source_url: https://github.com/cloudwego/cloudwego.github.io/blob/main/assets/icons/logo.png
+      alt: CloudWeGo Kitex (CloudWeGo organization mark)
     aliases: []
     name:
       zh-CN: CloudWeGo Kitex
@@ -3302,6 +3410,10 @@ items:
   - id: tidb
     kind: software
     canonical_name: TiDB
+    logo:
+      path: tidb.png
+      source_url: https://github.com/pingcap/tidb/blob/master/docs/tidb-logo.png
+      alt: TiDB logo
     aliases: []
     name:
       zh-CN: TiDB
@@ -3376,6 +3488,10 @@ items:
   - id: tdengine
     kind: software
     canonical_name: TDengine TSDB OSS
+    logo:
+      path: tdengine.svg
+      source_url: https://github.com/taosdata/TDengine/blob/master/tdengine-logo.svg
+      alt: TDengine logo
     aliases: []
     name:
       zh-CN: TDengine TSDB OSS
@@ -3453,6 +3569,10 @@ items:
   - id: jumpserver
     kind: software
     canonical_name: JumpServer
+    logo:
+      path: jumpserver.png
+      source_url: https://github.com/jumpserver/jumpserver/blob/dev/apps/static/img/logo.png
+      alt: JumpServer logo
     aliases: []
     name:
       zh-CN: JumpServer
