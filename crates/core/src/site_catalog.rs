@@ -2,8 +2,8 @@
 //!
 //! This module is deliberately separate from [`crate::data`]. The latter
 //! parses the upstream Landscape2 YAML format; this contract keeps stable IDs,
-//! localization, evidence and asset-level licensing independent until the D2
-//! publishing adapter is ready.
+//! localization, evidence and asset-level licensing independent. The publishing
+//! adapter in [`projection`] exposes only approved public fields.
 
 use std::{
     collections::{HashMap, HashSet},
@@ -17,6 +17,8 @@ use clap::Args;
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 use url::Url;
+
+pub mod projection;
 
 const SCHEMA_VERSION: &str = "1";
 
@@ -163,6 +165,7 @@ impl SiteCatalog {
             legacy_ids.extend(item.legacy_ids.iter().map(String::as_str));
         }
         unique_ids(legacy_ids, "items.legacy_ids")?;
+        validate_replacements(&self.items)?;
 
         let mut mapped_legacy_ids = Vec::new();
         for (index, link) in self.legacy_links.iter().enumerate() {
@@ -196,7 +199,10 @@ impl SiteCatalog {
         Ok(())
     }
 
-    /// Return the entries that are allowed in the public site projection.
+    /// Filter source records by publication state for the publishing adapter.
+    ///
+    /// These are complete authoring records, not a public field whitelist. Never
+    /// serialize this iterator directly into public artifacts.
     pub fn public_items(&self) -> impl Iterator<Item = &SiteItem> {
         self.items.iter().filter(|item| item.is_public())
     }
@@ -618,6 +624,7 @@ fn validate_item(
             bail!("E_DUPLICATE items[{index}].placements: duplicate placement");
         }
     }
+    unique_ids(item.tag_ids.iter().map(String::as_str), &path("tag_ids"))?;
     for (tag_index, tag_id) in item.tag_ids.iter().enumerate() {
         if !tag_ids.contains(&tag_id.as_str()) {
             bail!(
@@ -668,9 +675,11 @@ fn validate_item(
     } else if is_public {
         bail!("E_ORIGIN {}: public item requires origin", path("origin"));
     }
-    for evidence_id in &item.status_evidence_ids {
-        require_evidence(evidence_id, evidence_ids, &path("status_evidence_ids"))?;
-    }
+    validate_evidence_refs(
+        &item.status_evidence_ids,
+        evidence_ids,
+        &path("status_evidence_ids"),
+    )?;
     if matches!(
         item.project_status,
         ProjectStatus::Active | ProjectStatus::Archived
@@ -726,7 +735,7 @@ fn validate_item(
         require_text(&review.reviewer_role, &path("review.reviewer_role"))?;
     }
     if let Some(logo) = &item.logo {
-        require_text(&logo.path, &path("logo.path"))?;
+        validate_logo_path(&logo.path, &path("logo.path"))?;
         require_text(&logo.source_url, &path("logo.source_url"))?;
         validate_http_url(&logo.source_url, &path("logo.source_url"))?;
         require_text(&logo.alt, &path("logo.alt"))?;
@@ -756,6 +765,36 @@ fn validate_publication_requirements(item: &SiteItem, index: usize, _item_ids: &
     Ok(())
 }
 
+fn validate_replacements(items: &[SiteItem]) -> Result<()> {
+    let by_id: HashMap<&str, &SiteItem> = items.iter().map(|item| (item.id.as_str(), item)).collect();
+    for (index, item) in items.iter().enumerate() {
+        let mut current = item;
+        let mut seen = HashSet::from([item.id.as_str()]);
+        while let Some(replacement_id) =
+            current.withdrawal.as_ref().and_then(|record| record.replacement_id.as_deref())
+        {
+            if !seen.insert(replacement_id) {
+                bail!("E_WITHDRAWAL items[{index}].withdrawal.replacement_id: replacement cycle");
+            }
+            let Some(replacement) = by_id.get(replacement_id) else {
+                bail!(
+                    "E_REFERENCE items[{index}].withdrawal.replacement_id: unknown replacement {replacement_id}"
+                );
+            };
+            if matches!(
+                replacement.publication_status,
+                PublicationStatus::Draft | PublicationStatus::InReview
+            ) {
+                bail!(
+                    "E_WITHDRAWAL items[{index}].withdrawal.replacement_id: replacement cannot expose an unpublished item"
+                );
+            }
+            current = replacement;
+        }
+    }
+    Ok(())
+}
+
 fn validate_licenses(item: &SiteItem, index: usize, evidence_ids: &[&str], is_public: bool) -> Result<()> {
     let path = |field: &str| format!("items[{index}].{field}");
     if item.kind == ItemKind::Community
@@ -769,65 +808,62 @@ fn validate_licenses(item: &SiteItem, index: usize, evidence_ids: &[&str], is_pu
             path("licenses")
         );
     }
-    let required_scope = expected_license_scope(item.kind);
-    if let Some(record) = item.licenses.iter().find(|record| record.scope == required_scope) {
-        for evidence_id in &record.evidence_ids {
-            require_evidence(evidence_id, evidence_ids, &path("licenses"))?;
-        }
-        if record.status == LicenseStatus::Verified {
-            if record.identifier.as_deref().unwrap_or("").trim().is_empty()
-                || record.osi_approved != Some(true)
-                || record.evidence_ids.is_empty()
-                || record.checked_at.is_none()
+    for (license_index, record) in item.licenses.iter().enumerate() {
+        let license_path = format!("items[{index}].licenses[{license_index}]");
+        validate_evidence_refs(
+            &record.evidence_ids,
+            evidence_ids,
+            &format!("{license_path}.evidence_ids"),
+        )?;
+        if record.scope == LicenseScope::Organization {
+            if item.kind != ItemKind::Community
+                || record.status != LicenseStatus::NotApplicable
+                || record.identifier.is_some()
+                || record.osi_approved.is_some()
+                || record.applies_to_entry.is_some()
+                || record.version.is_some()
             {
                 bail!(
-                    "E_LICENSE {}: verified license requires identifier, OSI approval, evidence and checked_at",
-                    path("licenses")
+                    "E_LICENSE {license_path}: organization license is only not_applicable to community identity"
                 );
             }
-            if let Some(entry_id) = &record.applies_to_entry
-                && !item.entries.iter().any(|entry| &entry.id == entry_id)
-            {
-                bail!(
-                    "E_REFERENCE {}.applies_to_entry: unknown entry {entry_id}",
-                    path("licenses")
-                );
-            }
-        }
-        if is_public
-            && item.kind != ItemKind::Community
-            && (record.status != LicenseStatus::Verified || record.osi_approved != Some(true))
-        {
-            bail!(
-                "E_LICENSE {}: public item requires a verified OSI-approved license",
-                path("licenses")
-            );
-        }
-        if is_public && item.kind != ItemKind::Community && record.applies_to_entry.is_none() {
-            bail!(
-                "E_LICENSE {}: public license must identify the covered entry",
-                path("licenses")
-            );
+        } else if record.status == LicenseStatus::NotApplicable {
+            bail!("E_LICENSE {license_path}: asset licenses cannot be not_applicable");
         }
         if let Some(entry_id) = &record.applies_to_entry {
             let Some(entry) = item.entries.iter().find(|entry| &entry.id == entry_id) else {
-                bail!(
-                    "E_REFERENCE {}.applies_to_entry: unknown entry {entry_id}",
-                    path("licenses")
-                );
+                bail!("E_REFERENCE {license_path}.applies_to_entry: unknown entry {entry_id}");
             };
-            if entry.role != expected_entry_role(item.kind) {
-                bail!(
-                    "E_LICENSE {}.applies_to_entry: entry role does not match license scope",
-                    path("licenses")
-                );
+            if entry.role != license_entry_role(record.scope) {
+                bail!("E_LICENSE {license_path}.applies_to_entry: entry role does not match license scope");
             }
         }
-    } else if is_public && item.kind != ItemKind::Community {
-        bail!(
-            "E_LICENSE {}: published item requires a license for its asset scope",
-            path("licenses")
-        );
+        if record.status == LicenseStatus::Verified
+            && (record.identifier.as_deref().unwrap_or("").trim().is_empty()
+                || record.osi_approved != Some(true)
+                || record.evidence_ids.is_empty()
+                || record.checked_at.is_none()
+                || record.applies_to_entry.is_none()
+                || record.version.as_deref().unwrap_or("").trim().is_empty())
+        {
+            bail!(
+                "E_LICENSE {license_path}: verified license requires identifier, OSI approval, evidence, checked_at, covered entry and asset version/snapshot"
+            );
+        }
+    }
+    if is_public && item.kind != ItemKind::Community {
+        let primary = item.entries.iter().find(|entry| entry.primary);
+        let covered = item.licenses.iter().any(|record| {
+            record.scope == expected_license_scope(item.kind)
+                && record.status == LicenseStatus::Verified
+                && primary.is_some_and(|entry| record.applies_to_entry.as_ref() == Some(&entry.id))
+        });
+        if !covered {
+            bail!(
+                "E_LICENSE {}: public item requires a verified license covering its primary asset entry",
+                path("licenses")
+            );
+        }
     }
     Ok(())
 }
@@ -845,24 +881,26 @@ fn validate_standard_policy(
         return Ok(());
     }
     let path = |field: &str| format!("items[{index}].{field}");
-    if !is_public {
-        return Ok(());
-    }
     let Some(policy) = &item.standard_policy else {
-        bail!(
-            "E_STANDARD {}: public standard requires implementation/patent policy",
-            path("standard_policy")
-        );
+        if is_public {
+            bail!(
+                "E_STANDARD {}: public standard requires implementation/patent policy",
+                path("standard_policy")
+            );
+        }
+        return Ok(());
     };
-    if policy.status != StandardPolicyStatus::Public || policy.evidence_ids.is_empty() {
+    if is_public && (policy.status != StandardPolicyStatus::Public || policy.evidence_ids.is_empty()) {
         bail!(
             "E_STANDARD {}: public standard requires a public policy with evidence",
             path("standard_policy")
         );
     }
-    for evidence_id in &policy.evidence_ids {
-        require_evidence(evidence_id, evidence_ids, &path("standard_policy.evidence_ids"))?;
-    }
+    validate_evidence_refs(
+        &policy.evidence_ids,
+        evidence_ids,
+        &path("standard_policy.evidence_ids"),
+    )?;
     if let Some(entry_id) = &policy.entry_id
         && !item.entries.iter().any(|entry| &entry.id == entry_id)
     {
@@ -883,13 +921,11 @@ fn validate_origin(origin: &Origin, index: usize, evidence_ids: &[&str], is_publ
     if is_public && origin.evidence_ids.is_empty() {
         bail!("E_ORIGIN items[{index}].origin.evidence_ids: at least one evidence is required");
     }
-    for evidence_id in &origin.evidence_ids {
-        require_evidence(
-            evidence_id,
-            evidence_ids,
-            &format!("items[{index}].origin.evidence_ids"),
-        )?;
-    }
+    validate_evidence_refs(
+        &origin.evidence_ids,
+        evidence_ids,
+        &format!("items[{index}].origin.evidence_ids"),
+    )?;
     let mut region_evidence = HashSet::new();
     for mapping in &origin.region_evidence {
         if !regions.contains(&mapping.region) || !region_evidence.insert(mapping.region) {
@@ -898,13 +934,11 @@ fn validate_origin(origin: &Origin, index: usize, evidence_ids: &[&str], is_publ
         if is_public && mapping.evidence_ids.is_empty() {
             bail!("E_ORIGIN items[{index}].origin.region_evidence: each region requires evidence");
         }
-        for evidence_id in &mapping.evidence_ids {
-            require_evidence(
-                evidence_id,
-                evidence_ids,
-                &format!("items[{index}].origin.region_evidence"),
-            )?;
-        }
+        validate_evidence_refs(
+            &mapping.evidence_ids,
+            evidence_ids,
+            &format!("items[{index}].origin.region_evidence"),
+        )?;
     }
     if is_public && region_evidence.len() != regions.len() {
         bail!("E_ORIGIN items[{index}].origin.region_evidence: every region requires evidence");
@@ -930,6 +964,26 @@ fn expected_license_scope(kind: ItemKind) -> LicenseScope {
         ItemKind::OpenStandard => LicenseScope::StandardText,
         ItemKind::Community => LicenseScope::Organization,
     }
+}
+
+fn license_entry_role(scope: LicenseScope) -> EntryRole {
+    match scope {
+        LicenseScope::SourceCode | LicenseScope::StandardImplementation => EntryRole::Repository,
+        LicenseScope::ModelWeights => EntryRole::Weights,
+        LicenseScope::Dataset => EntryRole::Dataset,
+        LicenseScope::StandardText => EntryRole::Specification,
+        LicenseScope::Organization => EntryRole::Official,
+    }
+}
+
+fn validate_logo_path(value: &str, path: &str) -> Result<()> {
+    require_text(value, path)?;
+    if value.chars().any(|character| character.is_control() || "\\:%?#".contains(character))
+        || value.split('/').any(|component| matches!(component, "" | "." | ".."))
+    {
+        bail!("E_LOGO_PATH {path}: expected a relative asset path without traversal or URL encoding");
+    }
+    Ok(())
 }
 
 fn validate_localized(value: &LocalizedText, path: &str) -> Result<()> {
@@ -975,6 +1029,14 @@ fn validate_http_url(value: &str, path: &str) -> Result<()> {
 fn require_evidence(id: &str, evidence_ids: &[&str], path: &str) -> Result<()> {
     if !evidence_ids.contains(&id) {
         bail!("E_REFERENCE {path}: unknown evidence {id}");
+    }
+    Ok(())
+}
+
+fn validate_evidence_refs(ids: &[String], evidence_ids: &[&str], path: &str) -> Result<()> {
+    unique_ids(ids.iter().map(String::as_str), path)?;
+    for id in ids {
+        require_evidence(id, evidence_ids, path)?;
     }
     Ok(())
 }
@@ -1041,6 +1103,125 @@ mod tests {
         no_primary.items[0].entries[0].primary = false;
         let error = no_primary.validate().unwrap_err().to_string();
         assert!(error.contains("E_PRIMARY"));
+    }
+
+    #[test]
+    fn validates_supplemental_license_scopes_and_all_references() {
+        let mut catalog = SiteCatalog::from_yaml(VALID).unwrap();
+        let mut code_entry = catalog.items[0].entries[0].clone();
+        code_entry.primary = false;
+        let code_license = catalog.items[0].licenses[0].clone();
+        catalog.items[1].entries.push(code_entry);
+        catalog.items[1].licenses.push(code_license);
+        catalog.validate().unwrap();
+
+        let mut invalid = catalog.clone();
+        invalid.items[1].licenses[1].evidence_ids = vec!["missing-evidence".to_string()];
+        assert!(invalid.validate().unwrap_err().to_string().contains("E_REFERENCE"));
+
+        let mut invalid = catalog.clone();
+        invalid.items[1].licenses[1].applies_to_entry = Some("weights".to_string());
+        assert!(invalid.validate().unwrap_err().to_string().contains("E_LICENSE"));
+
+        catalog.items[1].licenses[1].status = LicenseStatus::Unknown;
+        catalog.items[1].licenses[1].applies_to_entry = Some("missing-entry".to_string());
+        assert!(catalog.validate().unwrap_err().to_string().contains("E_REFERENCE"));
+    }
+
+    #[test]
+    fn requires_license_coverage_of_primary_asset_and_version() {
+        let mut catalog = SiteCatalog::from_yaml(VALID).unwrap();
+        let mut other_weights = catalog.items[1].entries[0].clone();
+        other_weights.id = "other-weights".to_string();
+        other_weights.primary = false;
+        catalog.items[1].entries.push(other_weights);
+        catalog.items[1].licenses[0].applies_to_entry = Some("other-weights".to_string());
+        assert!(catalog.validate().unwrap_err().to_string().contains("primary asset"));
+
+        let mut catalog = SiteCatalog::from_yaml(VALID).unwrap();
+        catalog.items[1].licenses[0].version = None;
+        assert!(catalog.validate().unwrap_err().to_string().contains("version/snapshot"));
+    }
+
+    #[test]
+    fn rejects_duplicate_tag_and_evidence_references() {
+        let mut catalog = SiteCatalog::from_yaml(VALID).unwrap();
+        catalog.items[0].tag_ids.push("compiler".to_string());
+        assert!(catalog.validate().unwrap_err().to_string().contains("E_DUPLICATE"));
+
+        let mut catalog = SiteCatalog::from_yaml(VALID).unwrap();
+        catalog.items[0].licenses[0].evidence_ids.push("ev-software-license".to_string());
+        assert!(catalog.validate().unwrap_err().to_string().contains("E_DUPLICATE"));
+
+        let mut catalog = SiteCatalog::from_yaml(VALID).unwrap();
+        catalog.items[0].origin.as_mut().unwrap().region_evidence[0]
+            .evidence_ids
+            .push("ev-software-origin".to_string());
+        assert!(catalog.validate().unwrap_err().to_string().contains("E_DUPLICATE"));
+    }
+
+    #[test]
+    fn checks_standard_policy_references_even_before_publication() {
+        let mut catalog = SiteCatalog::from_yaml(VALID).unwrap();
+        catalog.items[3].publication_status = PublicationStatus::Draft;
+        catalog.items[3].standard_policy.as_mut().unwrap().evidence_ids =
+            vec!["missing-evidence".to_string()];
+        assert!(catalog.validate().unwrap_err().to_string().contains("E_REFERENCE"));
+
+        let mut catalog = SiteCatalog::from_yaml(VALID).unwrap();
+        catalog.items[3].publication_status = PublicationStatus::InReview;
+        catalog.items[3].standard_policy.as_mut().unwrap().entry_id = Some("missing-entry".to_string());
+        assert!(catalog.validate().unwrap_err().to_string().contains("E_REFERENCE"));
+    }
+
+    #[test]
+    fn rejects_withdrawal_cycles_and_unpublished_replacements() {
+        let mut catalog = SiteCatalog::from_yaml(VALID).unwrap();
+        let withdrawal = |replacement_id: &str| WithdrawalRecord {
+            reason_code: "merged".to_string(),
+            public_message: "条目已合并".to_string(),
+            replacement_id: Some(replacement_id.to_string()),
+            effective_at: NaiveDate::from_ymd_opt(2026, 10, 15).unwrap(),
+        };
+        catalog.items[0].publication_status = PublicationStatus::Withdrawn;
+        catalog.items[0].withdrawal = Some(withdrawal("example-model"));
+        catalog.validate().unwrap();
+
+        catalog.items[1].publication_status = PublicationStatus::Draft;
+        assert!(catalog.validate().unwrap_err().to_string().contains("unpublished"));
+
+        catalog.items[1].publication_status = PublicationStatus::Withdrawn;
+        catalog.items[1].withdrawal = Some(withdrawal("example-software"));
+        assert!(catalog.validate().unwrap_err().to_string().contains("cycle"));
+    }
+
+    #[test]
+    fn rejects_logo_paths_outside_the_asset_directory() {
+        let mut catalog = SiteCatalog::from_yaml(VALID).unwrap();
+        catalog.items[0].logo = Some(LogoRecord {
+            path: "projects/compiler.svg".to_string(),
+            source_url: "https://example.org/software/brand".to_string(),
+            alt: "示例编译器".to_string(),
+        });
+        catalog.validate().unwrap();
+        for path in [
+            "../secret.svg",
+            "/tmp/logo.svg",
+            "projects/../secret.svg",
+            "projects\\secret.svg",
+            "https://example.org/logo.svg",
+            "%2e%2e/secret.svg",
+            "projects/logo.svg?version=1",
+            "projects/logo.svg#fragment",
+            "C:/logo.svg",
+            "projects//logo.svg",
+        ] {
+            catalog.items[0].logo.as_mut().unwrap().path = path.to_string();
+            assert!(
+                catalog.validate().unwrap_err().to_string().contains("E_LOGO_PATH"),
+                "{path}"
+            );
+        }
     }
 
     #[test]

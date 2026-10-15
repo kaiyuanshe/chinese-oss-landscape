@@ -86,7 +86,8 @@ pub mod base {
         #[serde(skip_serializing_if = "Option::is_none")]
         pub base_path: Option<String>,
 
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        // The browser iterates these arrays even when no items are published.
+        #[serde(default)]
         pub categories: Vec<Category>,
 
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -125,7 +126,7 @@ pub mod base {
         #[serde(skip_serializing_if = "Option::is_none")]
         pub images: Option<Images>,
 
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(default)]
         pub items: Vec<Item>,
 
         #[serde(skip_serializing_if = "Option::is_none")]
@@ -572,7 +573,7 @@ pub mod full {
         #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
         pub github_data: GithubData,
 
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(default)]
         pub items: Vec<Item>,
     }
 

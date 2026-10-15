@@ -1,0 +1,10 @@
+# Production content starts empty. Add reviewed entries in D3; test fixtures
+# remain under crates/core/testdata and are never selected automatically.
+schema_version: "1"
+content_version: d2-bootstrap
+taxonomy:
+  categories: []
+  tags: []
+evidence: []
+items: []
+legacy_links: []

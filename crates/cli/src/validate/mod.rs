@@ -83,9 +83,10 @@ pub async fn validate_settings(settings_source: &SettingsSource) -> Result<()> {
 /// Returns an error if the content source cannot be read or violates the contract.
 #[instrument(skip_all)]
 pub async fn validate_site_content(source: &SiteContentSource) -> Result<()> {
-    SiteCatalog::new(source)
+    let catalog = SiteCatalog::new(source)
         .await
         .context("the site content contract provided is not valid")?;
+    catalog.project().context("the site content cannot be projected unambiguously")?;
 
     println!("The site content contract provided is valid!");
     Ok(())
