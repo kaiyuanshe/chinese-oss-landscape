@@ -109,7 +109,7 @@ const ZoomModal = () => {
                   class={`text-white border border-3 border-white fw-semibold p-2 py-5 ${styles.catTitle}`}
                   style={{ 'background-color': visibleZoomSection()!.bgColor }}
                 >
-                  <div class="d-flex flex-row align-items-start justify-content-end">
+                  <div class="d-flex flex-row align-items-start justify-content-start">
                     <div>{visibleZoomSection()!.category}</div>
                   </div>
                 </div>

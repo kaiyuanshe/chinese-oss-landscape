@@ -2,7 +2,7 @@
 
 本仓库基于 [CNCF Landscape2](https://github.com/cncf/landscape2) 改造，生成可独立托管的静态全景图网站。前端使用 SolidJS、TypeScript 和 Vite；Rust 只负责构建时的数据校验、处理和静态文件生成，上线后无需 Rust 服务、数据库或 AWS。
 
-默认从 `site/catalog.yml` 构建本站内容，目前目录为空，等待 D3 核验并录入真实条目。原有 DEMO/CNCF 品牌和示例 Guide 仍保留；开源社品牌将在 B1 替换，默认中文的中英文界面尚未实现。
+默认从 `site/catalog.yml` 构建本站内容。D3 首批 30 个条目（28 个软件、1 个模型权重、1 个社区）已于 2026-10-15 获内容负责人批准，均为 `published`，默认构建会输出这 30 个条目。原有 DEMO/CNCF 品牌和示例 Guide 仍保留；开源社品牌将在 B1 替换，默认中文的中英文界面尚未实现。
 
 ## 本地构建、开发与预览
 
@@ -52,21 +52,50 @@ npm run dev -- --content-file crates/core/testdata/site-catalog-v1.yml --port 51
 
 ## 维护内容与部署
 
-| 位置                                       | 用途                                                                           |
-| ------------------------------------------ | ------------------------------------------------------------------------------ |
-| `site/catalog.yml`                         | 正式内容契约：稳定 ID、五类对象、分类/标签、双语文本、起源与许可依据；目前为空 |
-| `crates/core/testdata/site-catalog-v1.yml` | 五类合成条目夹具，仅用于验证与显式本地预览                                     |
-| `data.yml`                                 | 上游旧格式示例，保留兼容性参考，不参与默认站点构建                             |
-| `settings.yml`                             | 基金会名称、颜色、Logo、域名、发布子路径                                       |
-| `guide.yml`                                | 分类指南                                                                       |
-| `logos/`                                   | 旧格式示例使用的 Logo，不参与默认站点构建                                      |
-| `site/assets/logos/`                       | 本站条目 Logo；`missing-logo.svg` 是缺图占位，不代表项目或开源社品牌           |
-| `site/assets/`                             | 本站品牌资源；当前保留 CNCF Logo 的本地副本，待 B1 替换                        |
-| `ui/webapp/src/features/index.ts`          | 扩展页面注册入口                                                               |
-| `ui/common/src/siteCapabilities.ts`        | 本站首发界面能力开关                                                           |
-| `crates/cli/src/build/site_profile.rs`     | 首发数据投影与核心数据集，保留上游数据类型                                     |
-| `scripts/site.mjs`                         | 本站构建、开发、预览与校验的薄适配层                                           |
-| `dist/`                                    | 自动生成的最终静态站点，不提交到源码分支                                       |
+| 位置                                       | 用途                                                                      |
+| ------------------------------------------ | ------------------------------------------------------------------------- |
+| `site/catalog.yml`                         | 本站内容目录：D3 已批准条目、稳定 ID、分类/标签、双语文本、起源与许可依据 |
+| `crates/core/testdata/site-catalog-v1.yml` | 五类合成条目夹具，仅用于验证与显式本地预览                                |
+| `data.yml`                                 | 上游旧格式示例，保留兼容性参考，不参与默认站点构建                        |
+| `settings.yml`                             | 基金会名称、颜色、Logo、域名、发布子路径                                  |
+| `guide.yml`                                | 分类指南                                                                  |
+| `logos/`                                   | 旧格式示例使用的 Logo，不参与默认站点构建                                 |
+| `site/assets/logos/`                       | 本站条目 Logo；`missing-logo.svg` 是缺图占位，不代表项目或开源社品牌      |
+| `site/assets/`                             | 本站品牌资源；当前保留 CNCF Logo 的本地副本，待 B1 替换                   |
+| `ui/webapp/src/features/index.ts`          | 扩展页面注册入口                                                          |
+| `ui/common/src/siteCapabilities.ts`        | 本站首发界面能力开关                                                      |
+| `crates/cli/src/build/site_profile.rs`     | 首发数据投影与核心数据集，保留上游数据类型                                |
+| `scripts/site.mjs`                         | 本站构建、开发、预览与校验的薄适配层                                      |
+| `dist/`                                    | 自动生成的最终静态站点，不提交到源码分支                                  |
+
+### D3 内容维护
+
+本批按直接托管生态列出已批准条目，发起主体与当前基金会归属分别记录：
+
+| 直接托管生态或其他分组               | 数量 | 条目                                                                                                         |
+| ------------------------------------ | ---: | ------------------------------------------------------------------------------------------------------------ |
+| Apache                               |   10 | Dubbo、RocketMQ、Seata（孵化中）、bRPC、Doris、APISIX、ShardingSphere、SkyWalking、DolphinScheduler、ECharts |
+| CNCF                                 |    4 | Dragonfly、Harbor、TiKV、KubeEdge                                                                            |
+| LF AI & Data                         |    2 | Milvus、FATE                                                                                                 |
+| OpenAtom                             |    3 | PikiwiDB（原 Pika）、Tongsuo（铜锁密码库）、Vearch                                                           |
+| OpenInfra / OpenStack                |    2 | Skyline、Venus                                                                                               |
+| 公司相关软件及模型，未记录基金会托管 |    8 | OpenMLDB、PaddlePaddle、ncnn、CloudWeGo Kitex、TiDB、TDengine TSDB OSS、JumpServer、Qwen2.5-7B-Instruct      |
+| 社区/组织                            |    1 | 开源社                                                                                                       |
+
+CNCF、LF AI & Data、OpenInfra 均属于 LF 体系，以上按直接托管分组计数，合计 30 个唯一条目。历史发起方包括阿里、百度、腾讯、字节、京东、华为、微众、360、蚂蚁、VMware 中国研发团队、PingCAP、Zilliz、第四范式、九州云、涛思及个人开发者等；加入某个 Landscape 不等于加入该基金会，TiDB 的归属也不从 TiKV 继承。JumpServer 的个人发起与后续飞致云维护分开记录。
+
+分类与条目有中英文文案，保留官方原始入口、起源证据及当前归属。Skyline 的 API 服务和前端控制台分别绑定各自仓库的许可快照；Dubbo 的两个分类位置仍计一个项目。维护状态先记为 `unknown`，Venus 额外保留官方治理团队 `Inactive` 的状态证据与说明，不等同于项目归档。Logo 使用本地占位图。
+
+本批是数据试点，尚不代表完整的中国开源生态或港澳台覆盖。内容负责人基于已披露的依据与限制批准这 30 个条目，目录以 `content-owner` 记录审核角色和日期。Vearch 的大陆起源采用项目与早期跨国研究资料的联合判断，项目和原始研究团队的对应仍待补证；OpenMLDB 的地域辅助 PDF 仅取得官方检索摘录，完整原文复核待补。OpenDev 入口的许可实际从官方 GitHub 镜像固定快照核验，未独立比对两端同一提交。数据集、开放标准及归档、撤回等未覆盖的真实情形使用非发布测试夹具验证。
+
+编辑与审核按以下顺序进行：
+
+1. 在 `site/catalog.yml` 添加或更新条目及公开证据。首次分配的 `id` 不随名称、分类或版本变化；旧名放 `aliases`，只有确实存在的历史链接才放 `legacy_ids/legacy_links`。
+2. 许可证绑定实际资产入口和版本/提交快照。核验主项目、第三方文件和不同资产的许可范围；不要把软件许可自动用于权重或数据。社区身份使用 `organization/not_applicable`。
+3. 新条目先用 `in_review`，由内容负责人核对起源、地域与许可依据后填写 `review` 并改为 `published`。不能把自动校验通过或 DCO 签署当作内容批准。
+4. 更新 `content_version`，运行 `npm run validate` 和 `npm run build`，检查 `dist/data/site.json` 与页面。只有 `published/needs_review` 进入公开条目，待审条目及其独占证据不会出现在产物中。
+
+目前软件的许可记录以所列快照的主项目声明为范围，第三方文件遵循各自条款；ECharts 的 `Apache-2.0 AND BSD-3-Clause` 与 ncnn 的 `BSD-3-Clause AND BSD-2-Clause AND Zlib` 概括不同文件的累积要求，不表示可任选许可。TDengine 限 TSDB 开源源码，不包含商业产品；铜锁限密码库，不涵盖整个项目群。Qwen 的许可仅核验指定权重，不扩展到训练数据或整个模型系列。地域采用联合证据时须在起源说明中保留判断边界。
 
 配置好 `settings.yml` 的 `url` 和 `base_path`，构建后将 **`dist/` 的全部文件**交给任意静态托管平台。托管平台需要支持 SPA 回退：未知页面返回 `index.html`，同时正确提供 `assets/`、`data/`、`logos/` 等资源。域名根目录部署时删除 `base_path`。
 
