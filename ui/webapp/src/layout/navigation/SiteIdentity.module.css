@@ -1,0 +1,56 @@
+.identity {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.875rem;
+  color: #1e547e;
+  text-align: left;
+}
+
+.logo {
+  width: auto;
+  height: 40px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.title {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 1.05rem;
+  line-height: 1.2;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.subtitle {
+  font-size: 0.6rem;
+  font-weight: 400;
+  color: #495057;
+}
+
+.compact .logo {
+  height: 28px;
+}
+
+.compact .title {
+  font-size: 0.9rem;
+}
+
+@media only screen and (max-width: 575.98px) {
+  .identity {
+    gap: 0.625rem;
+  }
+
+  .logo {
+    height: 30px;
+  }
+
+  .title {
+    font-size: 0.95rem;
+  }
+
+  .subtitle {
+    font-size: 0.55rem;
+  }
+}

@@ -59,6 +59,9 @@ mod screenshot_server;
 mod site_content;
 mod site_profile;
 
+#[cfg(test)]
+mod settings_images_tests;
+
 pub use site_content::BuildDataSource;
 
 /// Maximum number of CLOMonitor reports summaries to fetch concurrently.
@@ -853,6 +856,11 @@ async fn prepare_settings_images(settings: &mut LandscapeSettings, output_dir: &
     // Other images
     if let Some(images) = &mut settings.images {
         images.favicon = process_image(images.favicon.as_ref(), output_dir).await?;
+        // Keep remote sharing images as external URLs, as before. Local images
+        // must be copied so the published page never refers to a source path.
+        if images.open_graph.as_ref().is_some_and(|location| Url::parse(location).is_err()) {
+            images.open_graph = process_image(images.open_graph.as_ref(), output_dir).await?;
+        }
     }
 
     Ok(())

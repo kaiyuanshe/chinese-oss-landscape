@@ -21,6 +21,7 @@ use regex::Regex;
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 use tracing::{debug, instrument};
+use url::Url;
 
 use crate::util::{is_url, normalize_name, validate_url};
 
@@ -466,9 +467,18 @@ impl LandscapeSettings {
     fn validate_images(&self) -> Result<()> {
         let Some(images) = &self.images else { return Ok(()) };
 
-        let urls = [("favicon", &images.favicon), ("open_graph", &images.open_graph)];
-        for (name, url) in urls {
-            validate_url(name, url.as_ref())?;
+        let locations = [("favicon", &images.favicon), ("open_graph", &images.open_graph)];
+        for (name, location) in locations {
+            if let Some(location) = location {
+                if location.trim().is_empty() {
+                    bail!("{name} path or url cannot be empty");
+                }
+                // Like header and footer logos, images may be local files.
+                // URL-shaped values must still pass the existing URL checks.
+                if is_url(location) || location.contains("://") || Url::parse(location).is_ok() {
+                    validate_url(name, Some(location))?;
+                }
+            }
         }
 
         Ok(())
@@ -1410,13 +1420,58 @@ mod tests {
     }
 
     #[test]
+    fn settings_validate_images_local_paths_succeed() {
+        let settings = LandscapeSettings {
+            images: Some(Images {
+                favicon: Some("site/assets/favicon.png".to_string()),
+                open_graph: Some("site/assets/share.png".to_string()),
+            }),
+            ..Default::default()
+        };
+
+        settings.validate_images().unwrap();
+    }
+
+    #[test]
+    fn settings_validate_images_reject_empty_locations_and_invalid_urls() {
+        for location in [
+            "",
+            "   ",
+            "https:// invalid-url",
+            "ftp://example.org/image.png",
+            "javascript:alert(1)",
+            "data:image/png;base64,example",
+        ] {
+            for images in [
+                Images {
+                    favicon: Some(location.to_string()),
+                    ..Default::default()
+                },
+                Images {
+                    open_graph: Some(location.to_string()),
+                    ..Default::default()
+                },
+            ] {
+                let settings = LandscapeSettings {
+                    images: Some(images),
+                    ..Default::default()
+                };
+                assert!(
+                    settings.validate_images().is_err(),
+                    "accepted invalid image: {location}"
+                );
+            }
+        }
+    }
+
+    #[test]
     #[should_panic(expected = "invalid favicon url")]
     fn settings_validate_images_invalid_favicon_url() {
         let settings = LandscapeSettings {
             foundation: "Foundation".to_string(),
             url: "https://example.url".to_string(),
             images: Some(Images {
-                favicon: Some("invalid-url".to_string()),
+                favicon: Some("https:// invalid-url".to_string()),
                 ..Default::default()
             }),
             ..Default::default()

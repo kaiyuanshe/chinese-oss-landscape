@@ -11,6 +11,7 @@ import Searchbar from '../common/Searchbar';
 import { useSetMobileTOCStatus } from '../stores/mobileTOC';
 import MobileDropdown from './MobileDropdown';
 import styles from './MobileHeader.module.css';
+import SiteIdentity from './SiteIdentity';
 
 const NAV_HEIGHT = 121;
 
@@ -56,7 +57,7 @@ const MobileHeader = (props: Props) => {
         <div>
           <Show when={!isUndefined(logo())}>
             <button class="btn btn-link" onClick={() => scrollToTop(true)} aria-label="Scroll to top">
-              <Image logo={logo()!} class={styles.stickyLogo} name="Landscape logo" height={35} />
+              <SiteIdentity logo={logo()!} compact />
             </button>
           </Show>
         </div>
@@ -68,8 +69,8 @@ const MobileHeader = (props: Props) => {
         <div class="container-fluid d-flex flex-column flex-lg-row align-items-center p-3 p-lg-4 mainPadding">
           <div class={`d-flex flex-row justify-content-between align-items-center ${styles.logoWrapper}`}>
             <Show when={!isUndefined(logo())}>
-              <A href={EXPLORE_PATH} class="me-4 me-xl-5" aria-label="Go to Explore page">
-                <Image class={styles.logo} logo={logo()!} name="Landscape logo" height={48} />
+              <A href={EXPLORE_PATH} class="me-2 text-decoration-none" aria-label="返回中国开源地图">
+                <SiteIdentity logo={logo()!} />
               </A>
             </Show>
             <div class="ms-auto d-flex d-lg-none">
@@ -100,7 +101,11 @@ const MobileHeader = (props: Props) => {
                     !isUndefined(window.baseDS.header!.links!.github)
                   }
                 >
-                  <ExternalLink class="btn btn-md text-dark fs-5 ms-2 px-0" href={window.baseDS.header!.links!.github!}>
+                  <ExternalLink
+                    class="btn btn-md text-dark fs-5 ms-2 px-0"
+                    href={window.baseDS.header!.links!.github!}
+                    label="中国开源地图源码仓库"
+                  >
                     <SVGIcon kind={SVGIconKind.GitHub} class={`position-relative ${styles.githubIcon}`} />
                   </ExternalLink>
                 </Show>
