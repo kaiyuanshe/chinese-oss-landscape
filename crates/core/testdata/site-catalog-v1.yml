@@ -1,0 +1,399 @@
+schema_version: '1'
+content_version: 2026-10-14-d1-fixture
+taxonomy:
+  categories:
+    - id: software
+      name:
+        zh-CN: 软件
+        en: Software
+      subcategories:
+        - id: compilers
+          name:
+            zh-CN: 编译器
+            en: Compilers
+        - id: platforms
+          name:
+            zh-CN: 平台
+            en: Platforms
+    - id: data-ai
+      name:
+        zh-CN: 数据与人工智能
+        en: Data and AI
+      subcategories:
+        - id: datasets
+          name:
+            zh-CN: 数据集
+            en: Datasets
+        - id: models
+          name:
+            zh-CN: 模型
+            en: Models
+    - id: standards-community
+      name:
+        zh-CN: 标准与社区
+        en: Standards and Community
+      subcategories:
+        - id: standards
+          name:
+            zh-CN: 开放标准
+            en: Open standards
+        - id: communities
+          name:
+            zh-CN: 社区与组织
+            en: Communities and organizations
+  tags:
+    - id: compiler
+      name:
+        zh-CN: 编译器
+        en: Compiler
+    - id: ai
+      name:
+        zh-CN: 人工智能
+        en: AI
+evidence:
+  - id: ev-software-origin
+    title: 示例软件发起公告
+    url: https://example.org/evidence/software-origin
+    publisher: 示例软件社区
+    claim: 项目由香港团队发起
+    checked_at: 2026-10-01
+    public: true
+  - id: ev-software-status
+    title: 示例软件维护页
+    url: https://example.org/software/status
+    publisher: 示例软件社区
+    claim: 项目仍在维护
+    checked_at: 2026-10-01
+    public: true
+  - id: ev-software-license
+    title: 示例软件许可证
+    url: https://example.org/software/license
+    publisher: 示例软件社区
+    claim: 源代码使用 Apache-2.0
+    checked_at: 2026-10-01
+    public: true
+  - id: ev-model-origin
+    title: 示例模型发布说明
+    url: https://example.org/evidence/model-origin
+    publisher: 示例模型团队
+    claim: 模型由中国大陆团队发起
+    checked_at: 2026-10-01
+    public: true
+  - id: ev-model-status
+    title: 示例模型归档说明
+    url: https://example.org/model/status
+    publisher: Overseas Foundation
+    claim: 模型版本已归档
+    checked_at: 2026-10-01
+    public: true
+  - id: ev-model-license
+    title: 示例模型权重许可证
+    url: https://example.org/model/license
+    publisher: 示例模型团队
+    claim: 权重使用 Apache-2.0
+    checked_at: 2026-10-01
+    public: true
+  - id: ev-dataset-origin
+    title: 示例数据集发起资料
+    url: https://example.org/evidence/dataset-origin
+    publisher: 示例数据集团队
+    claim: 数据集由台湾团队发起
+    checked_at: 2026-10-01
+    public: true
+  - id: ev-dataset-status
+    title: 示例数据集维护页
+    url: https://example.org/dataset/status
+    publisher: 示例数据集团队
+    claim: 数据集维护状态待复核
+    checked_at: 2026-10-01
+    public: true
+  - id: ev-dataset-license
+    title: 示例数据集许可证
+    url: https://example.org/dataset/license
+    publisher: 示例数据集团队
+    claim: 数据集使用 CC0-1.0
+    checked_at: 2026-10-01
+    public: true
+  - id: ev-standard-origin
+    title: 示例标准发起资料
+    url: https://example.org/evidence/standard-origin
+    publisher: 示例标准组织
+    claim: 标准由澳门团队发起
+    checked_at: 2026-10-01
+    public: true
+  - id: ev-standard-status
+    title: 示例标准维护页
+    url: https://example.org/standard/status
+    publisher: 示例标准组织
+    claim: 标准仍在维护
+    checked_at: 2026-10-01
+    public: true
+  - id: ev-standard-license
+    title: 示例标准正文许可
+    url: https://example.org/standard/license
+    publisher: 示例标准组织
+    claim: 标准正文使用 CC0-1.0
+    checked_at: 2026-10-01
+    public: true
+  - id: ev-standard-policy
+    title: 示例标准实施政策
+    url: https://example.org/standard/policy
+    publisher: 示例标准组织
+    claim: 标准实施和专利政策公开
+    checked_at: 2026-10-01
+    public: true
+  - id: ev-community-origin
+    title: 示例社区创建资料
+    url: https://example.org/evidence/community-origin
+    publisher: 示例社区
+    claim: 社区由中国大陆志愿者发起
+    checked_at: 2026-10-01
+    public: true
+  - id: ev-community-status
+    title: 示例社区活动页
+    url: https://example.org/community/activity
+    publisher: 示例社区
+    claim: 社区持续开展开源活动
+    checked_at: 2026-10-01
+    public: true
+items:
+  - id: example-software
+    kind: software
+    canonical_name: Example Compiler
+    name:
+      zh-CN: 示例编译器
+      en: Example Compiler
+    description:
+      zh-CN: 一个用于验证数据契约的示例编译器。
+      en: An example compiler used to verify the content contract.
+    placements:
+      - category_id: software
+        subcategory_id: compilers
+        primary: true
+    tag_ids: [compiler]
+    entries:
+      - id: source
+        role: repository
+        url: https://example.org/software/repository
+        primary: true
+        original: true
+        access: public
+    licenses:
+      - scope: source_code
+        applies_to_entry: source
+        version: 2.0
+        identifier: Apache-2.0
+        status: verified
+        osi_approved: true
+        evidence_ids: [ev-software-license]
+        checked_at: 2026-10-01
+    origin:
+      regions: [hong_kong]
+      statement: 项目由香港团队发起。
+      evidence_ids: [ev-software-origin]
+      checked_at: 2026-10-01
+      region_evidence:
+        - region: hong_kong
+          evidence_ids: [ev-software-origin]
+    publication_status: published
+    project_status: active
+    status_evidence_ids: [ev-software-status]
+    status_checked_at: 2026-10-01
+    review:
+      reviewed_at: 2026-10-02
+      reviewer_role: content-editor
+  - id: example-model
+    kind: model_weights
+    canonical_name: Example Model
+    name:
+      zh-CN: 示例模型
+      en: Example Model
+    description:
+      zh-CN: 一个由中国团队发起并由海外基金会维护的示例模型权重。
+      en: Example model weights founded in China and maintained by an overseas foundation.
+    placements:
+      - category_id: data-ai
+        subcategory_id: models
+        primary: true
+    tag_ids: [ai]
+    entries:
+      - id: weights
+        role: weights
+        url: https://example.org/model/weights
+        primary: true
+        original: true
+        access: public
+      - id: model-card
+        role: documentation
+        url: https://example.org/model/card
+        primary: false
+        original: true
+        access: public
+    licenses:
+      - scope: model_weights
+        applies_to_entry: weights
+        version: 1.0
+        identifier: Apache-2.0
+        status: verified
+        osi_approved: true
+        evidence_ids: [ev-model-license]
+        checked_at: 2026-10-01
+    origin:
+      regions: [mainland]
+      statement: 模型由中国大陆团队发起。
+      evidence_ids: [ev-model-origin]
+      checked_at: 2026-10-01
+      region_evidence:
+        - region: mainland
+          evidence_ids: [ev-model-origin]
+    affiliation:
+      current_foundation:
+        name: Overseas Foundation
+        url: https://example.org/overseas-foundation
+      as_of: 2026-10-01
+    publication_status: published
+    project_status: archived
+    status_evidence_ids: [ev-model-status]
+    status_checked_at: 2026-10-01
+    review:
+      reviewed_at: 2026-10-02
+      reviewer_role: content-editor
+  - id: example-dataset
+    kind: dataset
+    canonical_name: Example Dataset
+    name:
+      zh-CN: 示例数据集
+    description:
+      zh-CN: 一个支持中文回退的示例数据集。
+    placements:
+      - category_id: data-ai
+        subcategory_id: datasets
+        primary: true
+    entries:
+      - id: dataset
+        role: dataset
+        url: https://example.org/dataset/download
+        primary: true
+        original: true
+        access: public
+    licenses:
+      - scope: dataset
+        applies_to_entry: dataset
+        version: 1.0
+        identifier: CC0-1.0
+        status: verified
+        osi_approved: true
+        evidence_ids: [ev-dataset-license]
+        checked_at: 2026-10-01
+    origin:
+      regions: [taiwan, mainland]
+      statement: 数据集由台湾和中国大陆团队联合发起。
+      evidence_ids: [ev-dataset-origin]
+      checked_at: 2026-10-01
+      region_evidence:
+        - region: taiwan
+          evidence_ids: [ev-dataset-origin]
+        - region: mainland
+          evidence_ids: [ev-dataset-origin]
+    publication_status: needs_review
+    project_status: unknown
+    status_evidence_ids: [ev-dataset-status]
+    status_checked_at: 2026-10-01
+    review:
+      reviewed_at: 2026-10-02
+      reviewer_role: content-editor
+  - id: example-standard
+    kind: open_standard
+    canonical_name: Example Exchange Specification
+    name:
+      zh-CN: 示例交换规范
+      en: Example Exchange Specification
+    description:
+      zh-CN: 一个包含公开实施和专利政策的示例开放标准。
+      en: An example open standard with public implementation and patent policy.
+    placements:
+      - category_id: standards-community
+        subcategory_id: standards
+        primary: true
+    entries:
+      - id: specification
+        role: specification
+        url: https://example.org/standard/specification
+        primary: true
+        original: true
+        access: public
+      - id: policy
+        role: documentation
+        url: https://example.org/standard/policy
+        primary: false
+        original: true
+        access: public
+    licenses:
+      - scope: standard_text
+        applies_to_entry: specification
+        version: 1.0
+        identifier: CC0-1.0
+        status: verified
+        osi_approved: true
+        evidence_ids: [ev-standard-license]
+        checked_at: 2026-10-01
+    origin:
+      regions: [macau]
+      statement: 标准由澳门团队发起。
+      evidence_ids: [ev-standard-origin]
+      checked_at: 2026-10-01
+      region_evidence:
+        - region: macau
+          evidence_ids: [ev-standard-origin]
+    standard_policy:
+      status: public
+      entry_id: policy
+      evidence_ids: [ev-standard-policy]
+    publication_status: published
+    project_status: active
+    status_evidence_ids: [ev-standard-status]
+    status_checked_at: 2026-10-01
+    review:
+      reviewed_at: 2026-10-02
+      reviewer_role: content-editor
+  - id: example-community
+    kind: community
+    canonical_name: Example Open Source Community
+    name:
+      zh-CN: 示例开源社区
+      en: Example Open Source Community
+    description:
+      zh-CN: 一个持续组织开源协作活动的示例社区。
+      en: An example community that organizes open source collaboration.
+    placements:
+      - category_id: standards-community
+        subcategory_id: communities
+        primary: true
+    entries:
+      - id: official
+        role: official
+        url: https://example.org/community
+        primary: true
+        original: true
+        access: public
+    licenses:
+      - scope: organization
+        status: not_applicable
+    origin:
+      regions: [mainland]
+      statement: 社区由中国大陆志愿者发起。
+      evidence_ids: [ev-community-origin]
+      checked_at: 2026-10-01
+      region_evidence:
+        - region: mainland
+          evidence_ids: [ev-community-origin]
+    publication_status: published
+    project_status: active
+    status_evidence_ids: [ev-community-status]
+    status_checked_at: 2026-10-01
+    review:
+      reviewed_at: 2026-10-02
+      reviewer_role: content-editor
+legacy_links:
+  - legacy_id: software--compilers--example-compiler
+    item_id: example-software

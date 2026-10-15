@@ -136,6 +136,12 @@ try {
       ]) {
         await generate(["validate", kind, `--${kind}-file`, file]);
       }
+      await generate([
+        "validate",
+        "site-content",
+        "--content-file",
+        "crates/core/testdata/site-catalog-v1.yml",
+      ]);
       break;
     default:
       throw new Error("Usage: npm run build | dev | preview | validate");
