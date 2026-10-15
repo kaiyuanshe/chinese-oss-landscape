@@ -97,7 +97,7 @@ evidence:
     title: 示例数据集发起资料
     url: https://example.org/evidence/dataset-origin
     publisher: 示例数据集团队
-    claim: 数据集由台湾团队发起
+    claim: 数据集由台湾和中国大陆团队联合发起
     checked_at: 2026-10-01
     public: true
   - id: ev-dataset-status
@@ -111,7 +111,7 @@ evidence:
     title: 示例数据集许可证
     url: https://example.org/dataset/license
     publisher: 示例数据集团队
-    claim: 数据集使用 CC0-1.0
+    claim: 数据集使用 Apache-2.0
     checked_at: 2026-10-01
     public: true
   - id: ev-standard-origin
@@ -132,7 +132,7 @@ evidence:
     title: 示例标准正文许可
     url: https://example.org/standard/license
     publisher: 示例标准组织
-    claim: 标准正文使用 CC0-1.0
+    claim: 标准正文使用 Apache-2.0
     checked_at: 2026-10-01
     public: true
   - id: ev-standard-policy
@@ -280,7 +280,7 @@ items:
       - scope: dataset
         applies_to_entry: dataset
         version: 1.0
-        identifier: CC0-1.0
+        identifier: Apache-2.0
         status: verified
         osi_approved: true
         evidence_ids: [ev-dataset-license]
@@ -332,7 +332,7 @@ items:
       - scope: standard_text
         applies_to_entry: specification
         version: 1.0
-        identifier: CC0-1.0
+        identifier: Apache-2.0
         status: verified
         osi_approved: true
         evidence_ids: [ev-standard-license]

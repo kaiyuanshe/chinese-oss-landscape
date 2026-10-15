@@ -21,7 +21,7 @@ use headless_chrome::{
     types::PrintToPdfOptions,
 };
 use landscape2_core::{
-    data::{self, CrunchbaseData, DataSource, GithubData, Item, LandscapeData},
+    data::{self, CrunchbaseData, GithubData, Item, LandscapeData},
     datasets::{Datasets, NewDatasetsInput, embed::EmbedView, full::Full},
     guide::{GuideSource, LandscapeGuide},
     settings::{self, Analytics, Colors, LandscapeSettings, LogosViewbox, Osano, SettingsSource},
@@ -56,7 +56,10 @@ mod github;
 mod logos;
 mod projects;
 mod screenshot_server;
+mod site_content;
 mod site_profile;
+
+pub use site_content::BuildDataSource;
 
 /// Maximum number of CLOMonitor reports summaries to fetch concurrently.
 const CLOMONITOR_MAX_CONCURRENCY: usize = 10;
@@ -112,7 +115,7 @@ pub struct BuildArgs {
 
     /// Data source.
     #[command(flatten)]
-    pub data_source: DataSource,
+    pub data_source: BuildDataSource,
 
     /// Guide source.
     #[command(flatten)]
@@ -148,11 +151,13 @@ pub async fn build(args: &BuildArgs) -> Result<()> {
     // Check required web assets are present
     check_web_assets()?;
 
-    // Setup output directory, creating it when needed
-    setup_output_dir(&args.output_dir, args.site_profile)?;
-
-    // Get landscape data from the source provided
-    let mut landscape_data = LandscapeData::new(&args.data_source).await?;
+    // Validate and project site content before creating any public files.
+    let mut site = site_content::load(args).await?;
+    let mut landscape_data = if let Some(projection) = &mut site {
+        std::mem::take(&mut projection.engine_data)
+    } else {
+        LandscapeData::new(&args.data_source.legacy_source()).await?
+    };
 
     // Get landscape settings from the source provided
     let mut settings = LandscapeSettings::new(&args.settings_source).await?;
@@ -160,18 +165,31 @@ pub async fn build(args: &BuildArgs) -> Result<()> {
     if args.site_profile {
         site_profile::project(&mut landscape_data, &mut settings);
     }
+    if site.is_some() {
+        // The site taxonomy is authoritative; legacy display overrides must not
+        // hide approved placements or add unrelated categories and tags.
+        settings.categories = None;
+        settings.groups = None;
+        settings.tags = None;
+    }
+
+    setup_output_dir(&args.output_dir, args.site_profile)?;
 
     // Prepare guide and copy it to the output directory
     let guide = prepare_guide(&args.guide_source, &args.output_dir).await?;
 
     // Prepare items logos and copy them to the output directory
-    prepare_items_logos(
-        &args.logos_source,
-        &settings.logos_viewbox,
-        &mut landscape_data,
-        &args.output_dir,
-    )
-    .await?;
+    if site.is_some() {
+        site_content::prepare_logos(args, &settings.logos_viewbox, &mut landscape_data).await?;
+    } else {
+        prepare_items_logos(
+            &args.logos_source,
+            &settings.logos_viewbox,
+            &mut landscape_data,
+            &args.output_dir,
+        )
+        .await?;
+    }
 
     // Fetch some settings images and update their urls to the local copy
     prepare_settings_images(&mut settings, &args.output_dir).await?;
@@ -224,7 +242,7 @@ pub async fn build(args: &BuildArgs) -> Result<()> {
         settings.osano.as_ref(),
         &args.output_dir,
     )?;
-    copy_webapp_assets(&args.output_dir)?;
+    copy_webapp_assets(&args.output_dir, site.is_some())?;
 
     if !args.site_profile {
         render_embed_item_html(settings.colors.as_ref(), &args.output_dir)?;
@@ -245,7 +263,11 @@ pub async fn build(args: &BuildArgs) -> Result<()> {
     }
 
     // Copy data sources files to the output directory
-    copy_data_sources_files(args, &args.output_dir).await?;
+    if let Some(projection) = &mut site {
+        site_content::write_public_files(projection, &landscape_data, &args.output_dir)?;
+    } else {
+        copy_data_sources_files(args, &args.output_dir).await?;
+    }
 
     let duration = start.elapsed().as_secs_f64();
     info!("landscape website built! (took: {:.3}s)", duration);
@@ -437,10 +459,15 @@ fn copy_embed_assets(output_dir: &Path) -> Result<()> {
 
 /// Copy web application assets files to the output directory.
 #[instrument(skip_all, err)]
-fn copy_webapp_assets(output_dir: &Path) -> Result<()> {
+fn copy_webapp_assets(output_dir: &Path, site_content: bool) -> Result<()> {
     debug!("copying web application assets to output directory");
 
     for path in WebappAssets::iter() {
+        // Vite may have copied development data from static/. Only compiled
+        // application assets belong in the catalog's publication boundary.
+        if site_content && !site_content::is_application_asset(&path) {
+            continue;
+        }
         if path == "index.html" || path == ".keep" {
             // This file is a template that will be rendered later on
             continue;

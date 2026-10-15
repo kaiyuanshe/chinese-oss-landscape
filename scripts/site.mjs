@@ -36,7 +36,35 @@ for (const signal of ["SIGINT", "SIGTERM"]) {
 
 const generate = (args) =>
   run("cargo", ["run", "--locked", "--bin", "landscape2", "--", ...args]);
-const build = () =>
+const parseBuildArgs = (args, allowViteArgs = false) => {
+  let contentFile = "site/catalog.yml";
+  let contentFileProvided = false;
+  const viteArgs = [];
+  for (let index = 0; index < args.length; index += 1) {
+    const argument = args[index];
+    if (
+      argument === "--content-file" ||
+      argument.startsWith("--content-file=")
+    ) {
+      if (contentFileProvided)
+        throw new Error("--content-file may only be provided once");
+      contentFileProvided = true;
+      contentFile =
+        argument === "--content-file"
+          ? args[++index]
+          : argument.slice("--content-file=".length);
+      if (!contentFile || contentFile.startsWith("--"))
+        throw new Error("--content-file requires a file path");
+    } else if (allowViteArgs) {
+      viteArgs.push(argument);
+    } else {
+      throw new Error(`Unsupported build argument: ${argument}`);
+    }
+  }
+  return { contentFile, viteArgs };
+};
+
+const build = (contentFile) =>
   replaceSiteOutput(output, async (staging) => {
     await generate([
       "build",
@@ -45,10 +73,10 @@ const build = () =>
       "settings.yml",
       "--guide-file",
       "guide.yml",
-      "--data-file",
-      "data.yml",
+      "--content-file",
+      contentFile,
       "--logos-path",
-      "logos",
+      "site/assets/logos",
       "--cache-dir",
       ".cache",
       "--output-dir",
@@ -93,13 +121,16 @@ const prepareDevelopmentData = async () => {
 };
 
 try {
-  const [command, ...viteArgs] = process.argv.slice(2);
+  const [command, ...args] = process.argv.slice(2);
   switch (command) {
-    case "build":
-      await build();
+    case "build": {
+      const { contentFile } = parseBuildArgs(args);
+      await build(contentFile);
       break;
-    case "dev":
-      await build();
+    }
+    case "dev": {
+      const { contentFile, viteArgs } = parseBuildArgs(args, true);
+      await build(contentFile);
       await prepareDevelopmentData();
       await run(
         process.execPath,
@@ -107,6 +138,7 @@ try {
         webapp,
       );
       break;
+    }
     case "preview": {
       const base = JSON.parse(
         await readFile(path.join(output, "data/base.json"), "utf8"),
@@ -122,26 +154,29 @@ try {
           `${(base.base_path || "").replace(/\/+$/, "")}/`,
           "--host",
           "127.0.0.1",
-          ...viteArgs,
+          ...args,
         ],
         webapp,
       );
       break;
     }
     case "validate":
+      if (args.some((argument) => argument !== "--legacy-data"))
+        throw new Error("Usage: npm run validate [-- --legacy-data]");
       for (const [kind, file] of [
-        ["data", "data.yml"],
         ["settings", "settings.yml"],
         ["guide", "guide.yml"],
       ]) {
         await generate(["validate", kind, `--${kind}-file`, file]);
       }
-      await generate([
-        "validate",
-        "site-content",
-        "--content-file",
+      for (const file of [
+        "site/catalog.yml",
         "crates/core/testdata/site-catalog-v1.yml",
-      ]);
+      ]) {
+        await generate(["validate", "site-content", "--content-file", file]);
+      }
+      if (args.includes("--legacy-data"))
+        await generate(["validate", "data", "--data-file", "data.yml"]);
       break;
     default:
       throw new Error("Usage: npm run build | dev | preview | validate");
