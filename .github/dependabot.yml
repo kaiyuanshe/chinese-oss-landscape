@@ -1,40 +1,57 @@
 version: 2
 
-multi-ecosystem-groups:
-  backend:
-    schedule:
-      interval: "monthly"
-  frontend:
-    schedule:
-      interval: "monthly"
-  infra:
-    schedule:
-      interval: "monthly"
-
 updates:
   - package-ecosystem: "cargo"
     directory: "/"
-    patterns:
-      - "*"
+    schedule:
+      interval: "monthly"
+    commit-message:
+      prefix: "build(deps)"
+    # Keep minor/major migrations separate, including breaking 0.x minor releases.
+    groups:
+      rust-patches:
+        patterns: ["*"]
+        update-types: ["patch"]
     ignore:
       - dependency-name: "markdown"
       - dependency-name: "usvg"
-    multi-ecosystem-group: "backend"
+      - dependency-name: "rand"
+        versions: [">=0.9"]
+      # octorust 0.10 uses this client/middleware pair.
+      - dependency-name: "reqwest"
+        versions: [">=0.13"]
+      - dependency-name: "reqwest-middleware"
+        versions: [">=0.5"]
 
   - package-ecosystem: "docker"
     directory: "/crates/cli"
-    patterns:
-      - "*"
-    multi-ecosystem-group: "infra"
+    schedule:
+      interval: "monthly"
+    commit-message:
+      prefix: "build(deps)"
 
   - package-ecosystem: "github-actions"
     directory: "/"
-    patterns:
-      - "*"
-    multi-ecosystem-group: "infra"
+    schedule:
+      interval: "monthly"
+    commit-message:
+      prefix: "ci(deps)"
+    groups:
+      actions-compatible:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
 
   - package-ecosystem: "npm"
-    directory: "/ui"
-    patterns:
-      - "*"
-    multi-ecosystem-group: "frontend"
+    directories:
+      - "/ui/webapp"
+      - "/ui/common"
+      - "/ui/embed"
+      - "/ui/embed-item"
+    schedule:
+      interval: "monthly"
+    commit-message:
+      prefix: "build(deps)"
+    groups:
+      frontend-patches:
+        patterns: ["*"]
+        update-types: ["patch"]

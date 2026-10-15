@@ -1,15 +1,17 @@
 # Build CLI tool
-FROM rust:1.96.1-alpine3.24 as builder
+FROM rust:1.99.0-alpine3.24 AS builder
 RUN apk --no-cache add musl-dev perl make libconfig-dev openssl-dev yarn
 WORKDIR /landscape2
 COPY crates crates
 COPY ui ui
+COPY site/brand.json site/brand.json
+COPY scripts/site-brand.mjs scripts/site-brand.mjs
 COPY Cargo.* ./
 WORKDIR /landscape2/crates/cli
 RUN cargo build --release --locked
 
 # Final stage
-FROM alpine:3.24.1
+FROM alpine:3.24.2
 RUN addgroup -S landscape2 && adduser -S landscape2 -G landscape2
 RUN apk --no-cache add bash chromium font-noto
 USER landscape2

@@ -1,0 +1,9 @@
+.git
+.cache
+target
+target-*
+dist
+.site-build-*
+**/node_modules
+**/dist
+ui/webapp/static
