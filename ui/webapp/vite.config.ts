@@ -8,7 +8,10 @@ import { defineConfig, loadEnv } from 'vite';
 import { ViteEjsPlugin } from 'vite-plugin-ejs';
 import solid from 'vite-plugin-solid';
 
+import { renderSiteMetadata } from '../../scripts/site-brand.mjs';
+
 const projectDir = fileURLToPath(new URL('.', import.meta.url));
+const brand = JSON.parse(fs.readFileSync(path.resolve(projectDir, '../../site/brand.json'), 'utf8'));
 const bootstrapDir = [
   path.resolve(projectDir, 'node_modules/bootstrap'),
   path.resolve(projectDir, '../../node_modules/bootstrap'),
@@ -37,7 +40,14 @@ export default defineConfig(({ mode }) => ({
     },
   },
   plugins: [
-    ViteEjsPlugin(),
+    ViteEjsPlugin(({ mode }) => {
+      const developmentData = path.resolve(projectDir, 'static/data/base.json');
+      const base =
+        mode === 'development' && fs.existsSync(developmentData)
+          ? JSON.parse(fs.readFileSync(developmentData, 'utf8'))
+          : {};
+      return { siteMetadata: renderSiteMetadata(brand, base, { development: mode === 'development' }) };
+    }),
     solid(),
     {
       name: 'inject-css-preload',

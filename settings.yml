@@ -9,7 +9,8 @@
 #
 # foundation: <FOUNDATION_NAME>
 #
-foundation: DEMO
+foundation: 开源社
+description: 发现源于中国的开源软件、模型权重、数据集、开放标准与社区，了解项目来源、许可与当前归属。
 
 # Url (required)
 #
@@ -72,8 +73,14 @@ base_path: /chinese-oss-landscape
 #   color4: <COLOR4>  # Categories titles in filters, fieldset in filters modal
 #   color4: <COLOR5>  # Categories and subcategories frames (odd)
 #   color5: <COLOR6>  # Categories and subcategories frames (even)
-# youtube: "https://www.youtube.com/c/cloudnativefdn"
-logo: "https://raw.githubusercontent.com/cncf/artwork/master/other/cncf/horizontal/white/cncf-white.svg"
+colors:
+  color1: "rgba(46, 112, 159, 1)"
+  color2: "rgba(30, 84, 126, 1)"
+  color3: "rgba(46, 112, 159, 1)"
+  color4: "rgba(30, 84, 126, 0.85)"
+  color5: "rgba(46, 112, 159, 0.8)"
+  color6: "rgba(30, 84, 126, 0.75)"
+  color7: "rgba(220, 237, 249, 1)"
 
 # Grid items size (optional)
 #
@@ -121,8 +128,24 @@ groups:
 #
 header:
   links:
-    github: "https://github.com/cncf/landscape2"
-  logo: "site/assets/cncf-landscape-horizontal-color.svg"
+    github: "https://github.com/kaiyuanshe/chinese-oss-landscape"
+  logo: "site/assets/brand/kaiyuanshe-horizontal.png"
+
+footer:
+  links:
+    homepage: "https://kaiyuanshe.cn/"
+    github: "https://github.com/kaiyuanshe/chinese-oss-landscape"
+  logo: "site/assets/brand/kaiyuanshe-horizontal-white.png"
+  text: |
+    **中国开源地图 · Chinese Open Source Landscape**
+
+    由[开源社](https://kaiyuanshe.cn/)维护，持续收录源于中国的开源条目。收录不代表认证、隶属或质量背书；历史起源与当前维护组织、基金会归属分别记录。
+
+    Maintained by [KAIYUANSHE](https://kaiyuanshe.cn/). Inclusion does not imply certification, affiliation or endorsement. Historical origin and current stewardship are recorded separately.
+
+    [开源社官网 / Website](https://kaiyuanshe.cn/) · [网站源码 / Source](https://github.com/kaiyuanshe/chinese-oss-landscape) · [收录建议与纠错 / Feedback](https://github.com/kaiyuanshe/chinese-oss-landscape/issues)
+
+    项目代码、编辑数据与商标素材分别适用各自权利条款。Project code, editorial content and trademarks remain subject to their respective terms.
 
 # Images (optional)
 #
@@ -132,6 +155,9 @@ header:
 #   favicon: <FAVICON_URL>
 #   open_graph: <OPEN_GRAPH_IMAGE_URL>
 #
+images:
+  favicon: "site/assets/brand/favicon.png"
+  open_graph: "site/assets/brand/social.png"
 
 # Name of the members category (optional)
 #

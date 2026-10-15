@@ -14,6 +14,8 @@ fn main() -> Result<()> {
     println!("cargo:rerun-if-changed=../../ui/kiosk/kiosk.html");
     println!("cargo:rerun-if-changed=../../ui/webapp/src");
     println!("cargo:rerun-if-changed=../../ui/webapp/index.html");
+    println!("cargo:rerun-if-changed=../../site/brand.json");
+    println!("cargo:rerun-if-changed=../../scripts/site-brand.mjs");
 
     for package in ["common", "embed", "embed-item", "webapp"] {
         for file in ["package.json", "yarn.lock", "vite.config.ts", "tsconfig.json"] {

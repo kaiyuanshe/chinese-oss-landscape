@@ -15,6 +15,7 @@ import { useSetGroupActive } from '../stores/groupActive';
 import { useSetViewMode } from '../stores/viewMode';
 import EmbedModal from './EmbedModal';
 import styles from './Header.module.css';
+import SiteIdentity from './SiteIdentity';
 
 interface Props {
   statsVisible: boolean;
@@ -44,7 +45,7 @@ const Header = (props: Props) => {
         <Show when={!isUndefined(logo())}>
           <div class={`d-flex flex-row justify-content-between align-items-center me-3 ${styles.logoWrapper}`}>
             <button
-              class="btn btn-link p-0 pe-3 me-2 me-xl-5"
+              class="btn btn-link text-decoration-none p-0 me-2"
               onClick={() => {
                 resetDefaultExploreValues();
                 navigate(prepareLink(EXPLORE_PATH), {
@@ -52,9 +53,9 @@ const Header = (props: Props) => {
                 });
                 scrollToTop(false);
               }}
-              aria-label='Go to "Explore" page'
+              aria-label="返回中国开源地图"
             >
-              <Image class={styles.logo} logo={logo()!} name="Landscape logo" height={48} />
+              <SiteIdentity logo={logo()!} />
             </button>
           </div>
         </Show>
@@ -128,6 +129,7 @@ const Header = (props: Props) => {
                 <ExternalLink
                   class={`btn btn-md text-dark ms-3 px-0 ${styles.btnLink}`}
                   href={window.baseDS.header!.links!.github!}
+                  label="中国开源地图源码仓库"
                 >
                   <SVGIcon kind={SVGIconKind.GitHub} class={`position-relative ${styles.linkIcon}`} />
                 </ExternalLink>

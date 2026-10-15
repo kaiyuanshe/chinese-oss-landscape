@@ -76,7 +76,7 @@ const MobileDropdown = (props: Props) => {
           <div class="dropdown-item mb-2">
             <ExternalLink
               class="text-decoration-none fw-semibold d-inline-block w-100"
-              label="Open GitHub link"
+              label="中国开源地图源码仓库"
               href={window.baseDS.header!.links!.github!}
             >
               <div class="d-flex align-items-center">

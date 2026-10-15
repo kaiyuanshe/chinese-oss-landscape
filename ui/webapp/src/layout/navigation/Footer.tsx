@@ -21,7 +21,11 @@ const Footer = () => {
             </ExternalLink>
           </Show>
           <Show when={!isUndefined(links!.github)}>
-            <ExternalLink class={`me-3 me-lg-0 ms-0 ms-lg-3 ps-0 pe-2 ${styles.link}`} href={links!.github as string}>
+            <ExternalLink
+              class={`me-3 me-lg-0 ms-0 ms-lg-3 ps-0 pe-2 ${styles.link}`}
+              href={links!.github as string}
+              label="中国开源地图源码仓库"
+            >
               <SVGIcon kind={SVGIconKind.GitHub} />
             </ExternalLink>
           </Show>
@@ -97,15 +101,15 @@ const Footer = () => {
                         when={!isUndefined(foundationLink())}
                         fallback={
                           <div class={styles.logoWrapper}>
-                            <Image class={styles.logo} name="Logo" logo={window.baseDS.footer!.logo!} height={34} />
+                            <Image class={styles.logo} name="开源社" logo={window.baseDS.footer!.logo!} height={34} />
                           </div>
                         }
                       >
-                        <ExternalLink href={foundationLink()!}>
+                        <ExternalLink href={foundationLink()!} label="开源社官网">
                           <div class={styles.logoWrapper}>
                             <Image
                               class={`pe-none ${styles.logo}`}
-                              name="Logo"
+                              name="开源社"
                               logo={window.baseDS.footer!.logo!}
                               height={34}
                             />

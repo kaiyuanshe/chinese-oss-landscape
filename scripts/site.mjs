@@ -3,6 +3,7 @@ import { cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { applySiteMetadata } from "./site-brand.mjs";
 import { replaceSiteOutput } from "./site-output.mjs";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
@@ -94,10 +95,16 @@ const build = (contentFile) =>
     );
     const indexPath = path.join(staging, "index.html");
     const html = await readFile(indexPath, "utf8");
+    const brand = JSON.parse(
+      await readFile(path.join(root, "site/brand.json"), "utf8"),
+    );
     // Keep asset/data links valid after refreshing nested SPA routes.
     await writeFile(
       indexPath,
-      html.replace("<head>", `<head><base href="${escapedPath}">`),
+      applySiteMetadata(html, brand, base).replace(
+        "<head>",
+        `<head><base href="${escapedPath}">`,
+      ),
     );
   });
 

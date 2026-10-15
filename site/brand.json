@@ -1,0 +1,14 @@
+{
+  "name": {
+    "zh-CN": "中国开源地图",
+    "en": "Chinese Open Source Landscape"
+  },
+  "title": {
+    "zh-CN": "中国开源地图 · 开源社",
+    "en": "Chinese Open Source Landscape · KAIYUANSHE"
+  },
+  "description": {
+    "zh-CN": "发现源于中国的开源软件、模型权重、数据集、开放标准与社区，了解项目来源、许可与当前归属。",
+    "en": "Discover open source software, model weights, datasets, open standards, and communities originating in China, with project sources, licenses, and current affiliations."
+  }
+}

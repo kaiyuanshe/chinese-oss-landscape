@@ -20,7 +20,7 @@ const features: SiteFeature[] = [
     routes: [{ path: GUIDE_PATH, component: lazy(() => import('../layout/guide')) }],
     navigation: {
       path: GUIDE_PATH,
-      label: 'Guide',
+      label: '关于 / About',
       visible: ({ data }) => Object.keys(data.guide_summary || {}).length > 0,
     },
   },
