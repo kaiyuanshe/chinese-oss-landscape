@@ -8,7 +8,9 @@
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 use landscape2::build::{BuildArgs, build};
-use landscape2::validate::{Target, ValidateArgs, validate_data, validate_guide, validate_settings};
+use landscape2::validate::{
+    Target, ValidateArgs, validate_data, validate_guide, validate_settings, validate_site_content,
+};
 use tracing_subscriber::EnvFilter;
 
 /// CLI arguments.
@@ -56,6 +58,7 @@ async fn main() -> Result<()> {
             Target::Data(src) => validate_data(src).await?,
             Target::Guide(src) => validate_guide(src).await?,
             Target::Settings(src) => validate_settings(src).await?,
+            Target::SiteContent(src) => validate_site_content(src).await?,
         },
     }
 

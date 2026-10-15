@@ -17,6 +17,8 @@ npm run preview
 
 `npm run build` 从本仓库源码编译生成器，自动安装并编译四个 UI 包，以 `--site-profile` 生成首发网站。该模式跳过 GitHub、Crunchbase、CLOMonitor 数据采集和采集缓存，不要求这些服务的凭证；首次构建仍需要下载开发依赖。本站适配层设置页面基础路径以支持子页面刷新。
 
+`npm run validate` 还会校验 `crates/core/testdata/site-catalog-v1.yml` 中的 D1 五类对象契约。该文件是合成测试夹具，不是发布数据；D2 才会把经审核的本站目录投影为生成器输入。
+
 每次先在独立临时目录生成，成功后替换完整的 `dist/`，避免旧 CSV、嵌入页面或截图残留。生成失败保留原来的 `dist/`。这是本地构建产物替换，不替代生产托管的版本切换与回滚。
 
 `npm run preview` 预览 `dist/` 中已经完成数据注入的站点，默认端口 8000。它根据生成的数据读取 `base_path`，当前地址为 `http://127.0.0.1:8000/chinese-oss-landscape/`。直接预览 `ui/webapp/dist` 会得到尚未渲染的数据模板，不能作为最终站点使用。

@@ -10,5 +10,6 @@ pub mod datasets;
 pub mod games;
 pub mod guide;
 pub mod settings;
+pub mod site_catalog;
 pub mod stats;
 mod util;
