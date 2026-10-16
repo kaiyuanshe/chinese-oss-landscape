@@ -1,1 +1,0 @@
-import{ae as b,ag as m,g as o}from"./index-V9rOskz7.js";var e,s;function n(){if(s)return e;s=1;var t=b(),u=m(),a="[object Number]";function i(r){return typeof r=="number"||u(r)&&t(r)==a}return e=i,e}var N=n();const f=o(N);export{f as i};
