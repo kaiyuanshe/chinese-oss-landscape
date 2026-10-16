@@ -3692,9 +3692,9 @@ items:
     kind: software
     canonical_name: OpenAtom openKylin
     logo:
-      path: missing-logo.svg
-      source_url: https://www.openkylin.top/about/brand-cn.html
-      alt: OpenAtom openKylin official logo pending local capture
+      path: openkylin.png
+      source_url: https://www.openkylin.top/upload/202209/1664440595.png
+      alt: openKylin logo
     aliases:
       - openKylin
       - 开放麒麟
