@@ -1,9 +1,9 @@
 {
   "format_version": 1,
-  "source_sha": "e4c77d42875ac9ae182c3a2ab85ba248707ee5cc",
+  "source_sha": "e696dc22658e4c16ebed671baa7c91f37e363799",
   "content_version": "2026-10-16-c1-release-candidate",
   "schema_version": "1",
-  "generated_at": "2026-10-16T04:25:05.837Z",
+  "generated_at": "2026-10-16T04:31:55.300Z",
   "target_url": "http://127.0.0.1:8000",
   "base_path": "/chinese-oss-landscape",
   "toolchain": {
@@ -19,7 +19,7 @@
     {
       "path": "404.html",
       "size": 13579,
-      "sha256": "32a384e9455e77d653bb44ad2f4b05dba5823eb967477e8980e86a0ca06b6501"
+      "sha256": "8b4a848c5047503bc1249fbaa86615b9d141d915ff7fa78f3386f494b5747a23"
     },
     {
       "path": "assets/apexcharts.esm-CbohxJco.js",
@@ -139,12 +139,12 @@
     {
       "path": "data/base.json",
       "size": 10514,
-      "sha256": "aa666f1323f5efab3cef3f1e038e1a825b186d4a5a156aff445a74a644cdbf20"
+      "sha256": "5553bc5671ea1a55a237f2896c10acd7e577f0c243048ac6aaabd74adcf00410"
     },
     {
       "path": "data/full.json",
       "size": 18108,
-      "sha256": "d03cb55d066229ca8e49f48a8053844f5ea5c3fc03558832847351663dfe0ab0"
+      "sha256": "33fe2632c5c1afe6e385ee1555fc5dce43273878ab39f8727e20aaccda1cc9b8"
     },
     {
       "path": "data/guide.json",
@@ -153,8 +153,8 @@
     },
     {
       "path": "data/site.json",
-      "size": 147281,
-      "sha256": "986abdde4fbe4d732be0815d88c2307df0ad0dcda5974dc60d3f1febfa7fa2bc"
+      "size": 147250,
+      "sha256": "da3fe42c0f88ccb0b018c4f3a4498d98854a1b7f254c6aa55605916d58a408b7"
     },
     {
       "path": "fonts/orbitron-medium-webfont.ttf",
@@ -194,7 +194,7 @@
     {
       "path": "index.html",
       "size": 13579,
-      "sha256": "32a384e9455e77d653bb44ad2f4b05dba5823eb967477e8980e86a0ca06b6501"
+      "sha256": "8b4a848c5047503bc1249fbaa86615b9d141d915ff7fa78f3386f494b5747a23"
     },
     {
       "path": "logos/0c25e21e0ae9941e507a3f90651a9647875a46b17d32b7990644ad16a33ba25a.png",
@@ -250,11 +250,6 @@
       "path": "logos/3c6416e650d31a4274113568ed2661c89fbd355525070c3faa8a96517c9b1109.png",
       "size": 7016,
       "sha256": "3c6416e650d31a4274113568ed2661c89fbd355525070c3faa8a96517c9b1109"
-    },
-    {
-      "path": "logos/48a2922580eff578c2db0b7342a0195688d14c05fcf81a54c1adde4e953f6670.svg",
-      "size": 344,
-      "sha256": "48a2922580eff578c2db0b7342a0195688d14c05fcf81a54c1adde4e953f6670"
     },
     {
       "path": "logos/6209c86115d1182e03d9a9be6bb114547885c9213dedcd232b7843f399c8b737.png",
@@ -342,6 +337,11 @@
       "sha256": "e0c78ddc6f27e7c8f14be58ffaea7c205106a6322c45d64aff1a75816d80ee56"
     },
     {
+      "path": "logos/e3810d6de055d9784377a3fbdb6043760cd980120baf7ac9d56fa038a35b915e.png",
+      "size": 100373,
+      "sha256": "e3810d6de055d9784377a3fbdb6043760cd980120baf7ac9d56fa038a35b915e"
+    },
+    {
       "path": "logos/e7d02229f793459c8042ff94e67e7989863ebcd9c777700b6f4fbe3ed547d0c9.svg",
       "size": 5718,
       "sha256": "e7d02229f793459c8042ff94e67e7989863ebcd9c777700b6f4fbe3ed547d0c9"
@@ -353,10 +353,10 @@
     },
     {
       "path": "sources/data.yml",
-      "size": 15003,
-      "sha256": "f4538c578b5ac175b2be259d32d24cb0ce70fc0018ff8521c7d86a1b453829e0"
+      "size": 15000,
+      "sha256": "a5dc8f12e6734c72de48f5799ce47a507fabbd5d6d9238544a9b61bfc95d7f70"
     }
   ],
-  "artifact_bytes": 4220589,
-  "artifact_sha256": "d3c070378e4ed02902bca75ab936b4f0238c9636b321b3becae7e8568e62c984"
+  "artifact_bytes": 4320584,
+  "artifact_sha256": "0cbb19445bd8f31185a04c4167da378d8824baf0d50686e1cdb10df0508586d0"
 }

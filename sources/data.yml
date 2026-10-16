@@ -195,7 +195,7 @@ landscape:
     items:
     - name: openkylin
       homepage_url: https://www.openkylin.top/
-      logo: missing-logo.svg
+      logo: openkylin.png
       description: 由开放原子开源基金会孵化及运营的开源桌面操作系统社区，面向个人用户与开发者，支持多种处理器架构。
       repo_url: https://atomgit.com/openkylin
       license: MulanPSL-2.0
