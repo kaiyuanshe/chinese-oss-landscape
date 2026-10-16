@@ -25,7 +25,7 @@
   "devDependencies": {
     "@types/lodash": "^4.17.24",
     "@types/sanitize-html": "^2.16.1",
-    "esbuild": "^0.25.12",
+    "esbuild": "^0.28.2",
     "esbuild-plugin-solid-js": "^1.0.1",
     "eslint": "^9.39.4",
     "eslint-plugin-prettier": "^5.5.5",
