@@ -114,6 +114,11 @@ const build = (contentFile) =>
         `<head><base href="${escapedPath}">`,
       ),
     );
+  }).catch((error) => {
+    console.error(
+      "Site build failed. dist was not updated; preview will still show the previous successful build, if one exists.",
+    );
+    throw error;
   });
 
 const prepareDevelopmentData = async () => {

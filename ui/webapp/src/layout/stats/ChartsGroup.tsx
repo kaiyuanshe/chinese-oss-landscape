@@ -67,6 +67,7 @@ const ChartsGroup = (props: Props) => {
           },
         },
         events: {
+          // @ts-expect-error ApexCharts 8.3.1 omits the range return supported by Toolbar.getBeforeZoomRange.
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           beforeZoom: (chartContext: any, opt: any) => {
             const minDate = chartContext.ctx.data.twoDSeriesX[0];

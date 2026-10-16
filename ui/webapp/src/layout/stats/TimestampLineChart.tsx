@@ -59,7 +59,6 @@ const TimestampLineChart = (props: Props) => {
         size: [6],
         colors: ['var(--color-stats-1)'],
         strokeWidth: 3,
-        radius: 3,
       },
       grid: { borderColor: 'var(--bs-gray-200)' },
       dataLabels: {
