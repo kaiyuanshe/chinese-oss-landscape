@@ -1,23 +1,22 @@
 import intersection from 'lodash/intersection';
 
-import { Group } from '../types';
+import type { Group } from '../types';
 
 const ALL_GROUP = 'all';
 
 /**
- * Sort category names using the order configured for the selected group.
+ * Use taxonomy order for all categories and a group's configured order otherwise.
  */
 const sortCategoriesByGroupOrder = (categories: string[], group: string): string[] => {
-  if (group === ALL_GROUP || !window.baseDS.groups) {
+  const configuredCategories =
+    group === ALL_GROUP
+      ? window.baseDS.categories.map((category) => category.name)
+      : window.baseDS.groups?.find((item: Group) => item.normalized_name === group)?.categories;
+  if (!configuredCategories) {
     return categories;
   }
 
-  const selectedGroup = window.baseDS.groups.find((item: Group) => item.normalized_name === group);
-  if (!selectedGroup) {
-    return categories;
-  }
-
-  const orderedCategories = intersection(selectedGroup.categories, categories);
+  const orderedCategories = intersection(configuredCategories, categories);
   const remainingCategories = categories.filter((category: string) => !orderedCategories.includes(category));
 
   return [...orderedCategories, ...remainingCategories];

@@ -4,6 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { applySiteMetadata } from "./site-brand.mjs";
+import { reconcileWebappAssets } from "./site-assets.mjs";
 import { replaceSiteOutput } from "./site-output.mjs";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
@@ -83,6 +84,13 @@ const build = (contentFile) =>
       "--output-dir",
       staging,
     ]);
+
+    const assetRepair = await reconcileWebappAssets(staging, path.join(webapp, "dist"));
+    if (assetRepair.repaired) {
+      console.warn(
+        `Repaired stale webapp entry references: ${assetRepair.missing.join(", ")}`,
+      );
+    }
 
     const base = JSON.parse(
       await readFile(path.join(staging, "data/base.json"), "utf8"),
