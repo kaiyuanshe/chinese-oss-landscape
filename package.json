@@ -10,6 +10,10 @@
     "dev": "node scripts/site.mjs dev",
     "preview": "node scripts/site.mjs preview",
     "validate": "node scripts/site.mjs validate",
-    "test:site": "node --test scripts/site-output.test.mjs scripts/site-brand.test.mjs"
+    "release:check": "node scripts/release.mjs check",
+    "release:manifest": "node scripts/release.mjs manifest",
+    "release:verify": "node scripts/release.mjs verify",
+    "release:rehearse": "node scripts/release.mjs rehearse",
+    "test:site": "node --test scripts/site-output.test.mjs scripts/site-brand.test.mjs scripts/site-assets.test.mjs"
   }
 }

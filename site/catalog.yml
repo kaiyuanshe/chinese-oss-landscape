@@ -1,9 +1,9 @@
-# D3 pilot: 30 entries approved by the content owner on 2026-10-15.
+# C1 release candidate: 31 entries approved by the content owner on 2026-10-16.
 # Only approved entries are included in the default published artifacts.
 # License records cover the stated source assets, not every dependency or commercial product.
 # No private material or individual contact information belongs in this catalog.
 schema_version: "1"
-content_version: 2026-10-15-d3-approved
+content_version: 2026-10-16-c1-release-candidate
 taxonomy:
   categories:
     - id: application-development
@@ -64,6 +64,15 @@ taxonomy:
           name:
             zh-CN: 时序数据库
             en: Time series databases
+    - id: system-software
+      name:
+        zh-CN: 系统软件
+        en: System software
+      subcategories:
+        - id: operating-systems
+          name:
+            zh-CN: 操作系统
+            en: Operating systems
     - id: cloud-native
       name:
         zh-CN: 云原生与运维
@@ -564,6 +573,41 @@ evidence:
     publisher: Open Source Initiative
     claim: GPL-3.0-only 对应的许可证获 OSI 认可；具体版本选择和资产范围须以项目许可证为准。
     checked_at: "2026-10-15"
+    public: true
+  - id: ev-osi-mulan-psl-2-0
+    title: Mulan Permissive Software License, Version 2 的 OSI 认可记录
+    url: https://opensource.org/license/mulanpsl-2-0
+    publisher: Open Source Initiative
+    claim: Mulan Permissive Software License, Version 2.0 is an OSI-approved open source license.
+    checked_at: "2026-10-16"
+    public: true
+  - id: ev-openkylin-origin
+    title: openKylin official brand guide
+    url: https://www.openkylin.top/about/brand_specifications-cn.html
+    publisher: OpenAtom openKylin
+    claim: Official project materials identify OpenAtom openKylin as an open source project incubated and operated by the OpenAtom Foundation and created by Chinese ecosystem organizations and contributors.
+    checked_at: "2026-10-16"
+    public: true
+  - id: ev-openkylin-atomgit
+    title: openKylin joins AtomGit
+    url: https://news.atomgit.com/news/b0e03b40566c65fcd3f5eff718e7098c
+    publisher: AtomGit
+    claim: AtomGit identifies https://atomgit.com/openkylin as the openKylin project address and links it to the official openKylin website.
+    checked_at: "2026-10-16"
+    public: true
+  - id: ev-openkylin-license
+    title: openKylin official brand page license notice
+    url: https://www.openkylin.top/about/brand-cn.html
+    publisher: OpenAtom openKylin
+    claim: The official openKylin brand page states that the project follows Mulan Permissive Software License 2.
+    checked_at: "2026-10-16"
+    public: true
+  - id: ev-openkylin-status
+    title: openKylin official community website
+    url: https://www.openkylin.top/
+    publisher: OpenAtom openKylin
+    claim: The official openKylin website presents the current community, source, release and download entry points, supporting an active public project presence at the review date.
+    checked_at: "2026-10-16"
     public: true
   - id: ev-dragonfly-1
     title: "CNCF 2019 annual report: Growth in China"
@@ -3644,4 +3688,95 @@ items:
       reviewed_at: "2026-10-15"
       reviewer_role: content-owner
     project_status: unknown
+  - id: openkylin
+    kind: software
+    canonical_name: OpenAtom openKylin
+    logo:
+      path: missing-logo.svg
+      source_url: https://www.openkylin.top/about/brand-cn.html
+      alt: OpenAtom openKylin official logo pending local capture
+    aliases:
+      - openKylin
+      - 开放麒麟
+    name:
+      zh-CN: 开放麒麟
+      en: OpenAtom openKylin
+    description:
+      zh-CN: 由开放原子开源基金会孵化及运营的开源桌面操作系统社区，面向个人用户与开发者，支持多种处理器架构。
+      en: >-
+        An open desktop operating system community incubated and operated by the OpenAtom Foundation,
+        serving users and developers across multiple processor architectures.
+    placements:
+      - category_id: system-software
+        subcategory_id: operating-systems
+        primary: true
+    tag_ids:
+      - security
+    entries:
+      - id: source
+        role: repository
+        url: https://atomgit.com/openkylin
+        title: AtomGit 源代码组织
+        primary: true
+        original: true
+        access: public
+      - id: official
+        role: official
+        url: https://www.openkylin.top/
+        title: 官方网站
+        primary: false
+        original: true
+        access: public
+      - id: downloads
+        role: documentation
+        url: https://www.openkylin.top/downloads
+        title: 官方下载
+        primary: false
+        original: true
+        access: public
+    licenses:
+      - scope: source_code
+        applies_to_entry: source
+        version: >-
+          Project-level brand materials state MulanPSL2; AtomGit organization contains multiple repositories,
+          so this record covers the published project source entry and does not assert one license for every dependency or package.
+        identifier: MulanPSL-2.0
+        status: verified
+        osi_approved: true
+        evidence_ids:
+          - ev-openkylin-license
+          - ev-osi-mulan-psl-2-0
+        checked_at: "2026-10-16"
+    origin:
+      regions:
+        - mainland
+      statement: >-
+        openKylin is an open source operating system community incubated and operated by the OpenAtom Foundation.
+        Official project materials and the AtomGit announcement identify the project and its mainland China
+        community origin; current foundation stewardship is recorded separately.
+      evidence_ids:
+        - ev-openkylin-origin
+        - ev-openkylin-atomgit
+      checked_at: "2026-10-16"
+      region_evidence:
+        - region: mainland
+          evidence_ids:
+            - ev-openkylin-origin
+            - ev-openkylin-atomgit
+    affiliation:
+      current_maintainer:
+        name: openKylin community
+        url: https://www.openkylin.top/
+      current_foundation:
+        name: OpenAtom Foundation
+        url: https://openatom.cn/
+      as_of: "2026-10-16"
+    publication_status: published
+    review:
+      reviewed_at: "2026-10-16"
+      reviewer_role: content-owner
+    project_status: active
+    status_evidence_ids:
+      - ev-openkylin-status
+    status_checked_at: "2026-10-16"
 legacy_links: []

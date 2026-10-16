@@ -1,6 +1,6 @@
 # Project logo assets
 
-The published project logos are stored locally so builds do not depend on third-party image hosts. Each catalog item records the same public source in its `logo.source_url` field. Sources were checked on 2026-10-15 and are official project repositories, official foundation repositories, or official project sites.
+The published project logos are stored locally so builds do not depend on third-party image hosts. Each catalog item records the same public source in its `logo.source_url` field. Sources are official project repositories, official foundation repositories, or official project sites; check dates and capture notes are recorded per item.
 
 | Item | Local file | Official source | SHA-256 | Notes |
 | --- | --- | --- | --- | --- |
@@ -34,5 +34,6 @@ The published project logos are stored locally so builds do not depend on third-
 | `tidb` | `tidb.png` | [https://github.com/pingcap/tidb/blob/master/docs/tidb-logo.png](https://github.com/pingcap/tidb/blob/master/docs/tidb-logo.png) | `68fe231403731c316d9be2464b16c7bc320b083d5c658b2143fa0fa08538fe12` |  |
 | `tdengine` | `tdengine.svg` | [https://github.com/taosdata/TDengine/blob/master/tdengine-logo.svg](https://github.com/taosdata/TDengine/blob/master/tdengine-logo.svg) | `9c7944d639e9afe4f217d4bb0478e9a046658b7e19154b8b5fde819a093e5c83` |  |
 | `jumpserver` | `jumpserver.png` | [https://github.com/jumpserver/jumpserver/blob/dev/apps/static/img/logo.png](https://github.com/jumpserver/jumpserver/blob/dev/apps/static/img/logo.png) | `8db1a2e0e168bad8296558880260d07581e10c073ca71be7485a68cf899665ba` |  |
+| `openkylin` | `missing-logo.svg` | [https://www.openkylin.top/about/brand-cn.html](https://www.openkylin.top/about/brand-cn.html) | `ece1800b918f09c3616074983034ab465722da32aa86797cdf463ff5802cbe88` | Official PNG/SVG downloads were verified on 2026-10-16, but the current environment could not capture the binary asset. The release candidate uses the reviewed placeholder until the official file is added. |
 
 Logo files are stored locally; the Apache DolphinScheduler SVG was normalized to static presentation attributes because the site build rejects CSS-based SVGs. No visual recoloring or third-party logo substitution is performed. `openstack-venus.svg` and `cloudwego.png` are explicit organization-level fallbacks because their project repositories do not publish a project-specific mark. Replace those files and update the catalog source when an official project mark becomes available.

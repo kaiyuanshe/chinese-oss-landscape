@@ -34,6 +34,14 @@ jobs:
         run: npm run validate
       - name: Build the complete static site
         run: npm run build
+      - name: Prepare and verify release candidate
+        run: |
+          cp dist/index.html dist/404.html
+          touch dist/.nojekyll
+          npm run release:check
+          npm run release:manifest
+          npm run release:verify
+          npm run release:rehearse
 
   lint-and-test-webapp:
     runs-on:

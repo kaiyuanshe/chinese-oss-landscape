@@ -34,6 +34,14 @@ jobs:
         run: |
           cp dist/index.html dist/404.html
           touch dist/.nojekyll
+      - name: Check release candidate content
+        run: npm run release:check
+      - name: Create release manifest
+        run: npm run release:manifest
+      - name: Verify release artifact
+        run: npm run release:verify
+      - name: Rehearse promotion and rollback
+        run: npm run release:rehearse
       - name: Upload static site
         uses: actions/upload-artifact@v7
         with:
