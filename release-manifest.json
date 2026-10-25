@@ -1,9 +1,9 @@
 {
   "format_version": 1,
-  "source_sha": "e696dc22658e4c16ebed671baa7c91f37e363799",
+  "source_sha": "b1246a5972a7051447b98a6942f61ca812f6cf40",
   "content_version": "2026-10-16-c1-release-candidate",
   "schema_version": "1",
-  "generated_at": "2026-10-16T04:31:55.300Z",
+  "generated_at": "2026-10-25T11:28:43.593Z",
   "target_url": "http://127.0.0.1:8000",
   "base_path": "/chinese-oss-landscape",
   "toolchain": {
