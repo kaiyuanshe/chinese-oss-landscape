@@ -16,7 +16,7 @@ import Card from './Card';
 import styles from './Content.module.css';
 
 interface Props {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // oxlint-disable-next-line typescript/no-explicit-any
   data: Accessor<any>;
   classify: ClassifyOption;
   sorted: SortOption;
@@ -90,7 +90,7 @@ const Content = (props: Props) => {
   const countItems = (content: { [key: string]: unknown }): number => {
     let numItems: number = 0;
     Object.keys(content).forEach((subtitle: string) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // oxlint-disable-next-line typescript/no-explicit-any
       numItems += (content as any)[subtitle].length;
     });
     return numItems;
@@ -105,7 +105,7 @@ const Content = (props: Props) => {
         <Match when={!Array.isArray(data())}>
           <For each={getTitles()}>
             {(title: string) => {
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              // oxlint-disable-next-line typescript/no-explicit-any
               const content = () => (data() as any)[title] as { [key: string]: unknown } | (BaseItem | Item)[];
               const numItems = () => countItems(content() as { [key: string]: unknown });
 
@@ -115,7 +115,7 @@ const Content = (props: Props) => {
                     <Match when={!Array.isArray(content())}>
                       <For each={getSubtitles(content() as { [key: string]: unknown }, title)}>
                         {(subtitle: string) => {
-                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                          // oxlint-disable-next-line typescript/no-explicit-any
                           const items = () => (content() as any)[subtitle];
                           if (items().length === 0) return null;
 

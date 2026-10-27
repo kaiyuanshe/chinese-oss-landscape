@@ -6,6 +6,7 @@ fn main() -> Result<()> {
     // Tell Cargo to rerun this build script if the source changes
     println!("cargo:rerun-if-changed=../../ui/common/src");
     println!("cargo:rerun-if-changed=../../ui/common/tsup.config.ts");
+    println!("cargo:rerun-if-changed=../../ui/common/tsconfig.build.json");
     println!("cargo:rerun-if-changed=../../ui/embed/src");
     println!("cargo:rerun-if-changed=../../ui/embed/embed.html");
     println!("cargo:rerun-if-changed=../../ui/embed-item/public/embed-item.js");

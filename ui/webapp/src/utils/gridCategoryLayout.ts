@@ -83,10 +83,10 @@ export default function getGridCategoryLayout(input: GetGridCategoryLayoutInput)
   }
 
   // Calculate columns width percentage from the subcategory weight in the row
-  const totalItemsCount = subcategories.reduce((t, s) => (t += s.normalizedItemsCount), 0);
+  const totalItemsCount = subcategories.reduce((t, s) => t + s.normalizedItemsCount, 0);
   const weights = new Map(subcategories.map((s) => [s.name, s.normalizedItemsCount / totalItemsCount]));
   for (const row of rows) {
-    const rowWeights = row.reduce((t, c) => (t += weights.get(c.subcategoryName)!), 0);
+    const rowWeights = row.reduce((t, c) => t + weights.get(c.subcategoryName)!, 0);
     for (const col of row) {
       col.percentage = (weights.get(col.subcategoryName)! / rowWeights) * 100;
     }

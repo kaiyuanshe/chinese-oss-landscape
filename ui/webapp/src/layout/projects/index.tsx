@@ -85,35 +85,39 @@ const Projects = () => {
   };
 
   const sortItems = (items: Item[]) => {
-    const direction = selectedSortOption().direction;
+    const initialSortOption = selectedSortOption();
+    const initialDirection = initialSortOption.direction;
 
     const getValue = (date: string | undefined): number => {
       if (date) {
         return new Date(date).valueOf();
       } else {
-        return direction === SortDirection.Asc ? Number.MAX_SAFE_INTEGER : Number.MIN_SAFE_INTEGER;
+        return initialDirection === SortDirection.Asc ? Number.MAX_SAFE_INTEGER : Number.MIN_SAFE_INTEGER;
       }
     };
 
-    switch (selectedSortOption().by) {
+    switch (initialSortOption.by) {
       case 'name':
-        return orderBy(items, [(i: Item) => i.name.toLowerCase()], [direction]);
+        return orderBy(items, [(i: Item) => i.name.toLowerCase()], [initialDirection]);
 
       case 'sandbox_at':
-        return orderBy(items, [(i: Item) => getValue(getSandboxDate(i))], [direction]);
+        return orderBy(items, [(i: Item) => getValue(getSandboxDate(i))], [initialDirection]);
 
       case 'first_commit':
-        return orderBy(items, [(i: Item) => getValue(getFirstCommitTimestamp(i))], [direction]);
+        return orderBy(items, [(i: Item) => getValue(getFirstCommitTimestamp(i))], [initialDirection]);
 
       case 'num_audits':
-        return orderBy(items, [(i: Item) => (i.audits ? i.audits.length : 0)], [direction]);
+        return orderBy(items, [(i: Item) => (i.audits ? i.audits.length : 0)], [initialDirection]);
 
       case 'last_audit':
-        return orderBy(items, [(i: Item) => getValue(getLastAuditDate(i.audits))], [direction]);
+        return orderBy(items, [(i: Item) => getValue(getLastAuditDate(i.audits))], [initialDirection]);
 
       default:
-        // eslint-disable-next-line solid/reactivity
-        return orderBy(items, [(i: Item) => getValue(i[selectedSortOption().by as keyof Item] as string)], [direction]);
+        return orderBy(
+          items,
+          [(i: Item) => getValue(i[initialSortOption.by as keyof Item] as string)],
+          [initialDirection]
+        );
     }
   };
 

@@ -577,7 +577,7 @@ const Explore = (props: Props) => {
 
     window.addEventListener(
       'resize',
-      // eslint-disable-next-line solid/reactivity
+
       throttle(() => checkContainerWidth(), 400),
       { passive: true }
     );
@@ -743,7 +743,7 @@ const Explore = (props: Props) => {
             >
               <For each={Object.keys(ViewMode)}>
                 {(mode) => {
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  // oxlint-disable-next-line typescript/no-explicit-any
                   const value = (ViewMode as any)[mode];
 
                   return (

@@ -64,9 +64,7 @@ const filterFinances = (
   data: (FundingData | AcquisitionData)[],
   activeFilters: ActiveFilters
 ): (FundingData | AcquisitionData)[] => {
-  let filteredData: (FundingData | AcquisitionData)[] = [];
-
-  filteredData = data.filter((item: FundingData | AcquisitionData) => {
+  const filteredData = data.filter((item: FundingData | AcquisitionData) => {
     if (activeFilters[FilterCategory.Organization]) {
       if (
         isUndefined((item as FundingData).organization_name) ||
@@ -370,7 +368,7 @@ const Finances = () => {
               >
                 <For each={Object.keys(FinancesKind)}>
                   {(kind) => {
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    // oxlint-disable-next-line typescript/no-explicit-any
                     const value = (FinancesKind as any)[kind];
 
                     return (

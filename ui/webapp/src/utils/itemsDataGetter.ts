@@ -648,7 +648,7 @@ export class ItemsDataGetter {
   // Prepare menu options
   private getMenuOptions = (data: unknown, classify: ClassifyOption) => {
     const menu: CardMenu = {};
-    let options: string[] = [];
+    let options: string[];
     switch (classify) {
       case ClassifyOption.None:
         return;
@@ -695,7 +695,7 @@ export class ItemsDataGetter {
 
     const gridData = this.prepareGridData(groupedItems, true, activeCategoryFilters);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // oxlint-disable-next-line typescript/no-explicit-any
     const classifyCardData: any = {};
     const menuData: { [key: string]: CardMenu | undefined } = {};
     const numItems: { [key: string]: number } = {};
@@ -825,7 +825,7 @@ export class ItemsDataGetter {
   }
 
   public getLogoItem(itemName: string, category?: string, subcategory?: string): string | undefined | null {
-    let item: Item | undefined = window.baseDS.items.find((i: Item) => i.name === itemName && i.category === category);
+    let item: Item | undefined;
     if (!isUndefined(subcategory) && !isUndefined(category)) {
       item = window.baseDS.items.find(
         (i: Item) =>

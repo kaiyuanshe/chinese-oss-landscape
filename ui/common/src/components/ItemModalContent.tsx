@@ -860,8 +860,9 @@ export const ItemModalContent = (props: Props) => {
             <div class={`position-absolute px-2 bg-white fw-semibold ${FieldsetTitle}`}>CLOMonitor report summary</div>
             <div class="my-2 d-flex justify-content-center w-100 align-items-center">
               <ExternalLink
-                href={`https://clomonitor.io/projects/${props.foundation.toLowerCase()}/${itemInfo()!
-                  .clomonitor_name!}`}
+                href={`https://clomonitor.io/projects/${props.foundation.toLowerCase()}/${
+                  itemInfo()!.clomonitor_name!
+                }`}
               >
                 <Image
                   name={`CLOMonitor report summary for ${itemInfo()!.name}`}

@@ -667,16 +667,16 @@ const App = () => {
       if (isMultiCategorySelection()) {
         return;
       }
-      const currentKey = key();
-      if (typeof currentKey === 'undefined') {
+      const initialKey = key();
+      if (typeof initialKey === 'undefined') {
         return;
       }
-      const currentClassifyBy = classifyBy();
-      const currentSelections = selectedSubcategories();
+      const initialClassifyBy = classifyBy();
+      const initialSelections = selectedSubcategories();
 
       async function fetchData() {
         try {
-          fetch(`${origin()}/data/embed_${currentClassifyBy}_${currentKey}.json`)
+          fetch(`${origin()}/data/embed_${initialClassifyBy}_${initialKey}.json`)
             .then((res) => {
               if (res.ok) {
                 return res.json();
@@ -684,7 +684,7 @@ const App = () => {
               throw new Error('Something went wrong');
             })
             .then((res) => {
-              setData(filterBySelectedSubcategories(res, currentClassifyBy, currentSelections));
+              setData(filterBySelectedSubcategories(res, initialClassifyBy, initialSelections));
             })
             .catch(() => {
               setData(null);
