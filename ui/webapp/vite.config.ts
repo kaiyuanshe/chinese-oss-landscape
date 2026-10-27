@@ -25,20 +25,6 @@ const scssIncludePaths = [
 
 export default defineConfig(({ mode }) => ({
   base: '', // Default '/', static path
-  build: {
-    rollupOptions: {
-      // make sure to externalize deps that shouldn't be bundled
-      // into your library
-      external: ['apexcharts'],
-      output: {
-        // Provide global variables to use in the UMD build
-        // for externalized deps
-        globals: {
-          apexcharts: 'Apexcharts',
-        },
-      },
-    },
-  },
   plugins: [
     ViteEjsPlugin(({ mode }) => {
       const developmentData = path.resolve(projectDir, 'static/data/base.json');

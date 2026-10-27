@@ -17,15 +17,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout this repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@v7.0.1
       - name: Setup Node
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@v7.1.0
         with:
-          node-version: 24
+          node-version: 26.12.1
       - name: Setup Rust
-        uses: dtolnay/rust-toolchain@master
+        uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master
         with:
-          toolchain: 1.96.1
+          toolchain: 1.99.1
       - name: Install Yarn
         run: npm install --global yarn@1.22.22
       - name: Build this repository's landscape
@@ -43,7 +43,7 @@ jobs:
       - name: Rehearse promotion and rollback
         run: npm run release:rehearse
       - name: Upload static site
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: landscape-site
           path: dist

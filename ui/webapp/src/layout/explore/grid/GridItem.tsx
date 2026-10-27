@@ -26,7 +26,6 @@ const DEFAULT_DROPDOWN_HEIGHT = 213 + 10; // Height + arrow with gap
 const DEFAULT_MARGIN = 35;
 
 const GridItem = (props: Props) => {
-  let ref;
   const fullDataReady = useFullDataReady();
   const { getEffectiveFeatured } = useFeaturedItems();
   const [wrapper, setWrapper] = createSignal<HTMLDivElement>();
@@ -174,7 +173,6 @@ const GridItem = (props: Props) => {
         <div class="position-absolute opacity-100">
           <Show when={visibleDropdown()}>
             <div
-              ref={ref}
               role="complementary"
               class={`dropdown-menu rounded-0 p-3 popover show ${styles.dropdown} ${
                 styles[`${tooltipAlignment()}Aligned`]

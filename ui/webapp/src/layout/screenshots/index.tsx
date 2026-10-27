@@ -42,8 +42,8 @@ const Screenshots = (props: Props) => {
               const activeGroups = itemsDataGetter.getGroups();
               if (activeGroups && !activeGroups.includes(group.normalized_name)) return null;
               const colorsList = () => generateColorsArray(group.categories.length);
-              const groupData = groupsData()![group.normalized_name];
-              const categories = getCategoriesWithItems(groupData);
+              const initialGroupData = groupsData()![group.normalized_name];
+              const categories = getCategoriesWithItems(initialGroupData);
 
               return (
                 <div class={styles.group}>
@@ -56,16 +56,16 @@ const Screenshots = (props: Props) => {
                         !isUndefined(props.initialData.categories_overridden) &&
                         props.initialData.categories_overridden.includes(cat);
                       const subcategories: SubcategoryDetails[] = [];
-                      Object.keys(groupData![cat]).forEach((subcat: string) => {
-                        if (groupData![cat][subcat].items.length !== 0) {
+                      Object.keys(initialGroupData![cat]).forEach((subcat: string) => {
+                        if (initialGroupData![cat][subcat].items.length !== 0) {
                           subcategories.push({
                             name: subcat,
-                            itemsCount: groupData![cat][subcat].itemsCount,
-                            itemsFeaturedCount: groupData![cat][subcat].itemsFeaturedCount,
+                            itemsCount: initialGroupData![cat][subcat].itemsCount,
+                            itemsFeaturedCount: initialGroupData![cat][subcat].itemsFeaturedCount,
                           });
                         }
                       });
-                      const catData = groupData[cat];
+                      const catData = initialGroupData[cat];
                       const bgColor = () => colorsList()[index()];
 
                       return (

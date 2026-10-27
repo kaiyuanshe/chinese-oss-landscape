@@ -1,8 +1,10 @@
+import { describe, expect, it, vi } from 'vitest';
+
 import { siteFeatures } from '.';
 import { createGroupAliasRoutes } from './groupAliases';
 import { createFeatureRegistry, FeatureContext, SiteFeature } from './registry';
 
-jest.mock('../utils/getFoundationNameLabel', () => ({ __esModule: true, default: () => 'demo' }));
+vi.mock('../utils/getFoundationNameLabel', () => ({ __esModule: true, default: () => 'demo' }));
 
 const context: FeatureContext = {
   data: { foundation: 'DEMO', finances_available: false, categories: [], items: [] },

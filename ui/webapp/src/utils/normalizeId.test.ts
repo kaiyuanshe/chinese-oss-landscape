@@ -1,3 +1,5 @@
+import { beforeEach, describe, expect, it } from 'vitest';
+
 import buildNormalizedId from './normalizeId';
 
 // Mock window.baseDS for testing

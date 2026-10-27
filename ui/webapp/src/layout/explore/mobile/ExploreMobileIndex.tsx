@@ -157,9 +157,9 @@ const ExploreMobileIndex = (props: Props) => {
                         <For each={menu()![title]}>
                           {(subtitle: string) => {
                             const items = () =>
-                              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                              // oxlint-disable-next-line typescript/no-explicit-any
                               (cardData() as any)[title] && (cardData() as any)[title][subtitle]
-                                ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                ? // oxlint-disable-next-line typescript/no-explicit-any
                                   (cardData() as any)[title][subtitle]
                                 : [];
                             if (items().length === 0) return null;
@@ -196,7 +196,7 @@ const ExploreMobileIndex = (props: Props) => {
                     return (
                       <For each={menu()![title]}>
                         {(subtitle: string) => {
-                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                          // oxlint-disable-next-line typescript/no-explicit-any
                           const items = () => ((cardData() as any)[subtitle] ? (cardData() as any)[subtitle] : []);
                           if (items().length === 0) return null;
 
@@ -236,7 +236,7 @@ const ExploreMobileIndex = (props: Props) => {
                     return (
                       <For each={menu()![title]}>
                         {(subtitle: string) => {
-                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                          // oxlint-disable-next-line typescript/no-explicit-any
                           const items = () => ((cardData() as any)[subtitle] ? (cardData() as any)[subtitle] : []);
                           if (items().length === 0) return null;
 

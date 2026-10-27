@@ -1,4 +1,5 @@
 import { createRoot, createSignal } from 'solid-js';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useModalFocus } from '../useModalFocus';
 
@@ -13,10 +14,10 @@ describe('useModalFocus', () => {
     animationFrameCallbacks = new Map();
     disposeTestRoot = undefined;
     nextAnimationFrameId = 0;
-    window.cancelAnimationFrame = jest.fn((animationFrameId: number) => {
+    window.cancelAnimationFrame = vi.fn((animationFrameId: number) => {
       animationFrameCallbacks.delete(animationFrameId);
     });
-    window.requestAnimationFrame = jest.fn((callback: FrameRequestCallback) => {
+    window.requestAnimationFrame = vi.fn((callback: FrameRequestCallback) => {
       nextAnimationFrameId += 1;
       animationFrameCallbacks.set(nextAnimationFrameId, callback);
       return nextAnimationFrameId;
@@ -35,8 +36,8 @@ describe('useModalFocus', () => {
     const childModal = document.createElement('div');
     const childCloseButton = document.createElement('button');
     const childModalTrigger = document.createElement('button');
-    const onChildClose = jest.fn();
-    const onParentClose = jest.fn();
+    const onChildClose = vi.fn();
+    const onParentClose = vi.fn();
 
     markVisible(childCloseButton);
     markVisible(childModalTrigger);
@@ -97,7 +98,7 @@ describe('useModalFocus', () => {
 
     disposeTestRoot = createRoot((disposeRoot) => {
       const [open] = createSignal(true);
-      useModalFocus(() => modal, open, jest.fn());
+      useModalFocus(() => modal, open, vi.fn());
       return disposeRoot;
     });
 
@@ -122,5 +123,5 @@ const runAnimationFrames = (animationFrameCallbacks: Map<number, FrameRequestCal
 };
 
 const markVisible = (element: HTMLElement) => {
-  jest.spyOn(element, 'getClientRects').mockReturnValue([{} as DOMRect] as unknown as DOMRectList);
+  vi.spyOn(element, 'getClientRects').mockReturnValue([{} as DOMRect] as unknown as DOMRectList);
 };

@@ -152,7 +152,9 @@ const App = () => {
       <Show when={motdVisible() && !isUndefined(motdContent())}>
         <div class={`position-fixed start-0 end-0 ${styles.alertWrapper}`} style={{ top: '0px' }}>
           <div
-            ref={motdRef}
+            ref={(element) => {
+              motdRef = element;
+            }}
             class={`alert w-100 d-flex align-items-center rounded-0 m-0 px-3 px-lg-4 py-2 lh-base ${styles.alert} ${styles.motd} ${styles.motdAlert}`}
           >
             {/* eslint-disable solid/no-innerhtml */}

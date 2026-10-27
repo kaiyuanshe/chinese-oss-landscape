@@ -29,7 +29,7 @@ const SubcategoryGrid = (props: Props) => {
   onMount(() => {
     window.addEventListener(
       'resize',
-      // eslint-disable-next-line solid/reactivity
+
       throttle(() => handler(), 400),
       { passive: true }
     );

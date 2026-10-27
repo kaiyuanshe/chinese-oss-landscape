@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'vitest';
+
 import type { BaseData, Group } from '../types';
 import sortCategoriesByGroupOrder from './sortCategoriesByGroupOrder';
 

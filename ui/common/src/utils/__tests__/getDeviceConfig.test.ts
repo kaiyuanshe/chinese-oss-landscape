@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'vitest';
+
 import { Breakpoint } from '../../types/types';
 import { getDeviceConfig } from '../getDeviceConfig';
 

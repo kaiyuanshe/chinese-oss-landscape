@@ -1,11 +1,11 @@
 import isUndefined from 'lodash/isUndefined';
 import sortBy from 'lodash/sortBy';
 import moment from 'moment';
-import { SolidApexCharts } from 'solid-apexcharts';
 import { createSignal, onMount, Show } from 'solid-js';
 
 import rgba2hex from '../../utils/rgba2hex';
 import HeatMapChart from './HeatMapChart';
+import { SolidApexCharts } from './SolidApexCharts';
 
 interface Props {
   data: { [key: string]: number };
@@ -68,7 +68,7 @@ const ChartsGroup = (props: Props) => {
         },
         events: {
           // @ts-expect-error ApexCharts 8.3.1 omits the range return supported by Toolbar.getBeforeZoomRange.
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          // oxlint-disable-next-line typescript/no-explicit-any
           beforeZoom: (chartContext: any, opt: any) => {
             const minDate = chartContext.ctx.data.twoDSeriesX[0];
             const maxDate = chartContext.ctx.data.twoDSeriesX[chartContext.ctx.data.twoDSeriesX.length - 1];

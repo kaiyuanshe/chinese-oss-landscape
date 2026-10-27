@@ -1,9 +1,11 @@
+import { describe, expect, it, vi } from 'vitest';
+
 import { Item, SortDirection, SortOption } from '../types';
 import { ItemsDataGetter } from './itemsDataGetter';
 import { getSiteSortState } from './siteSort';
 
-jest.mock('./getFoundationNameLabel', () => ({ __esModule: true, default: () => 'demo' }));
-jest.mock('./search', () => ({ __esModule: true, default: { init: jest.fn() } }));
+vi.mock('./getFoundationNameLabel', () => ({ __esModule: true, default: () => 'demo' }));
+vi.mock('./search', () => ({ __esModule: true, default: { init: vi.fn() } }));
 
 describe('site sorting policy', () => {
   it('offers only name sorting even when legacy project data has dates, repositories and funding', () => {

@@ -1,19 +1,20 @@
 import { render } from 'solid-js/web';
+import { afterEach, beforeEach, describe, expect, it, type MockedFunction, vi } from 'vitest';
 
 import getDownloadBlob from '../../../utils/getDownloadBlob';
 import isDownloadAvailable from '../../../utils/isDownloadAvailable';
 import DownloadDropdown from '../DownloadDropdown';
 
-jest.mock('../../../utils/getDownloadBlob');
-jest.mock('../../../utils/isDownloadAvailable');
-jest.mock('../../../data', () => ({ BANNER_ID: 'banner' }));
-jest.mock('../../../utils/downloadDocument', () => ({
+vi.mock('../../../utils/getDownloadBlob');
+vi.mock('../../../utils/isDownloadAvailable');
+vi.mock('../../../data', () => ({ BANNER_ID: 'banner' }));
+vi.mock('../../../utils/downloadDocument', () => ({
   getDownloadDocumentName: ({ doc, format }: { doc: string; format: string }) => `${doc}.${format}`,
   getDownloadDocumentUrl: ({ doc, format }: { doc: string; format: string }) => `./docs/${doc}.${format}`,
 }));
 
-const getDownloadBlobMock = getDownloadBlob as jest.MockedFunction<typeof getDownloadBlob>;
-const isDownloadAvailableMock = isDownloadAvailable as jest.MockedFunction<typeof isDownloadAvailable>;
+const getDownloadBlobMock = getDownloadBlob as MockedFunction<typeof getDownloadBlob>;
+const isDownloadAvailableMock = isDownloadAvailable as MockedFunction<typeof isDownloadAvailable>;
 
 describe('DownloadDropdown', () => {
   const originalCreateObjectURL = window.URL.createObjectURL;
@@ -34,7 +35,7 @@ describe('DownloadDropdown', () => {
     window.URL.createObjectURL = originalCreateObjectURL;
     window.URL.revokeObjectURL = originalRevokeObjectURL;
     document.body.replaceChildren();
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   it('should show available formats and recover from a failed availability check', async () => {
@@ -56,12 +57,12 @@ describe('DownloadDropdown', () => {
   it('should disable duplicate downloads and clean up a generated link', async () => {
     const blob = new Blob(['items'], { type: 'text/csv' });
     const download = createDeferredPromise<Blob>();
-    const anchorClick = jest.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation();
+    const anchorClick = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
 
     isDownloadAvailableMock.mockResolvedValue(false);
     getDownloadBlobMock.mockReturnValue(download.promise);
-    window.URL.createObjectURL = jest.fn(() => 'blob:items');
-    window.URL.revokeObjectURL = jest.fn();
+    window.URL.createObjectURL = vi.fn(() => 'blob:items');
+    window.URL.revokeObjectURL = vi.fn();
     dispose = render(() => <DownloadDropdown />, container);
     await flushPromises();
 

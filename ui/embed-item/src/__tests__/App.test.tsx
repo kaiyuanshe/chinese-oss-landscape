@@ -1,11 +1,12 @@
 import { render } from 'solid-js/web';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import App from '../App';
 
-const mockFetchItems = jest.fn<Promise<void>, unknown[]>();
-const mockGetItemById = jest.fn();
+const mockFetchItems = vi.fn<(...arguments_: unknown[]) => Promise<void>>();
+const mockGetItemById = vi.fn();
 
-jest.mock('../utils/itemsDataGetter', () => ({
+vi.mock('../utils/itemsDataGetter', () => ({
   __esModule: true,
   default: {
     fetchItems: (...arguments_: unknown[]) => mockFetchItems(...arguments_),
@@ -13,8 +14,8 @@ jest.mock('../utils/itemsDataGetter', () => ({
   },
 }));
 
-jest.mock('../common/ItemModal', () => {
-  const { createEffect } = jest.requireActual<typeof import('solid-js')>('solid-js');
+vi.mock('../common/ItemModal', async () => {
+  const { createEffect } = await vi.importActual<typeof import('solid-js')>('solid-js');
 
   return {
     __esModule: true,

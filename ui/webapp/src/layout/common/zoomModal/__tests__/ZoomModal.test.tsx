@@ -1,44 +1,41 @@
 import { Accessor, JSXElement } from 'solid-js';
 import { render } from 'solid-js/web';
+import { afterEach, beforeEach, describe, expect, it, type MockedFunction, vi } from 'vitest';
 
 import itemsDataGetter from '../../../../utils/itemsDataGetter';
 import ZoomModal from '../index';
 
 let mockInitialRefs: Accessor<HTMLElement>[] | undefined;
 
-jest.mock(
-  '@solid-primitives/resize-observer',
-  () => ({
-    createElementSize: () => ({ width: null }),
-  }),
-  { virtual: true }
-);
-jest.mock('../../../../data', () => ({
+vi.mock('@solid-primitives/resize-observer', () => ({
+  createElementSize: () => ({ width: null }),
+}));
+vi.mock('../../../../data', () => ({
   ITEM_VIEW: 'item-view',
   ZOOM_LEVELS: { 10: [100, 100] },
 }));
-jest.mock('../../../../utils/itemsDataGetter', () => ({
+vi.mock('../../../../utils/itemsDataGetter', () => ({
   __esModule: true,
   default: {
-    getItemsBySection: jest.fn(),
+    getItemsBySection: vi.fn(),
   },
 }));
-jest.mock('../../../explore/grid/GridItem', () => ({
+vi.mock('../../../explore/grid/GridItem', () => ({
   __esModule: true,
   default: () => globalThis.document.createElement('div'),
 }));
-jest.mock('../../../stores/fullData', () => ({
+vi.mock('../../../stores/fullData', () => ({
   useFullDataReady: () => () => true,
 }));
-jest.mock('../../../stores/visibleZoomSection', () => ({
-  useSetVisibleZoom: () => jest.fn(),
+vi.mock('../../../stores/visibleZoomSection', () => ({
+  useSetVisibleZoom: () => vi.fn(),
   useVisibleZoom: () => () => ({
     bgColor: '#000',
     category: 'Category',
     subcategory: 'Subcategory',
   }),
 }));
-jest.mock('../../FullScreenModal', () => ({
+vi.mock('../../FullScreenModal', () => ({
   __esModule: true,
   default: (props: { children: JSXElement; initialRefs?: Accessor<HTMLElement>[] }) => {
     mockInitialRefs = props.initialRefs;
@@ -46,7 +43,7 @@ jest.mock('../../FullScreenModal', () => ({
   },
 }));
 
-const getItemsBySectionMock = itemsDataGetter.getItemsBySection as jest.MockedFunction<
+const getItemsBySectionMock = itemsDataGetter.getItemsBySection as MockedFunction<
   typeof itemsDataGetter.getItemsBySection
 >;
 

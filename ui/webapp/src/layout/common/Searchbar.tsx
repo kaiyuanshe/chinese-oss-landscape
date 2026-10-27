@@ -102,7 +102,7 @@ const Searchbar = (props: Props) => {
 
   const onSearch = async (text: string) => {
     await searchEngine
-      .searchTerm(text) /* eslint-disable solid/reactivity */
+      .searchTerm(text)
       .then((filteredItems) => {
         if (filteredItems.length > 0) {
           const isInputFocused = inputEl() === document.activeElement;

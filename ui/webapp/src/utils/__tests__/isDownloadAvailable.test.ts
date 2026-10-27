@@ -1,6 +1,8 @@
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import isDownloadAvailable from '../isDownloadAvailable';
 
-const fetchMock = jest.fn();
+const fetchMock = vi.fn();
 
 describe('isDownloadAvailable', () => {
   beforeAll(() => {

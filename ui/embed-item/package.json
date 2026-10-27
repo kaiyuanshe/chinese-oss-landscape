@@ -8,29 +8,34 @@
     "dev": "vite",
     "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,json,css,scss,md}\"",
     "format:diff": "prettier --list-different \"src/**/*.{js,jsx,ts,tsx,json,css,scss,md}\"",
-    "lint": "eslint src --max-warnings 0",
-    "lint:fix": "eslint src --max-warnings 0 --fix",
+    "lint": "oxlint --config ../../.oxlintrc.json --deny-warnings src && eslint src --max-warnings 0",
+    "lint:fix": "oxlint --config ../../.oxlintrc.json --deny-warnings --fix src && eslint src --max-warnings 0 --fix",
     "preview": "vite preview"
   },
   "dependencies": {
-    "@solid-primitives/resize-observer": "^2.1.5",
-    "bootstrap": "5.3.8",
+    "@popperjs/core": "^2.11.8",
+    "@solid-primitives/resize-observer": "^2.2.0",
+    "bootstrap": "^5.3.8",
     "common": "link:../common",
-    "solid-js": "^1.9.12",
+    "solid-js": "^1.9.17",
     "solid-styled-components": "^0.28.5"
   },
   "devDependencies": {
-    "ejs": "^3.1.10",
-    "eslint": "^10.12.0",
-    "eslint-plugin-prettier": "^5.5.5",
+    "@babel/core": "^8.0.9",
+    "@babel/eslint-parser": "^8.0.7",
+    "@eslint/js": "^10.0.1",
+    "ejs": "^7.0.2",
+    "eslint": "^10.13.0",
+    "eslint-plugin-prettier": "^5.5.7",
     "eslint-plugin-simple-import-sort": "^14.0.0",
     "eslint-plugin-solid": "^0.18.1",
-    "prettier": "^3.8.2",
-    "sass": "1.99.0",
+    "oxlint": "^1.90.0",
+    "prettier": "^3.9.10",
+    "sass": "^1.106.1",
     "typescript": "^7.0.2",
-    "typescript-eslint": "^8.58.1",
-    "vite": "^8.3.4",
+    "vite": "^8.3.5",
     "vite-plugin-ejs": "^2.0.0",
-    "vite-plugin-solid": "^2.11.12"
+    "vite-plugin-solid": "^2.11.14",
+    "vitest": "^5.0.5"
   }
 }

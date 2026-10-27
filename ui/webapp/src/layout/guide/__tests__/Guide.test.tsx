@@ -1,55 +1,56 @@
 import { render } from 'solid-js/web';
+import { afterEach, beforeEach, describe, expect, it, type MockedFunction, vi } from 'vitest';
 
 import Guide from '..';
 
-const mockNavigate = jest.fn();
-const mockSetGuideContent = jest.fn();
-const mockSetGuideToc = jest.fn();
+const mockNavigate = vi.fn();
+const mockSetGuideContent = vi.fn();
+const mockSetGuideToc = vi.fn();
 
-jest.mock('@solidjs/router', () => ({
+vi.mock('@solidjs/router', () => ({
   useLocation: () => ({ hash: '', search: '', state: {} }),
   useNavigate: () => mockNavigate,
 }));
-jest.mock('../../../data', () => ({
+vi.mock('../../../data', () => ({
   GUIDE_PATH: '/guide',
   SMALL_DEVICES_BREAKPOINTS: [],
 }));
-jest.mock('../../../utils/goToElement', () => ({ __esModule: true, default: jest.fn() }));
-jest.mock('../../../utils/guideData', () => ({ getGuideUrl: () => './data/guide.json' }));
-jest.mock('../../../utils/isElementInView', () => ({ __esModule: true, default: () => true }));
-jest.mock('../../../utils/normalizeId', () => ({
+vi.mock('../../../utils/goToElement', () => ({ __esModule: true, default: vi.fn() }));
+vi.mock('../../../utils/guideData', () => ({ getGuideUrl: () => './data/guide.json' }));
+vi.mock('../../../utils/isElementInView', () => ({ __esModule: true, default: () => true }));
+vi.mock('../../../utils/normalizeId', () => ({
   __esModule: true,
   default: ({ subtitle, title }: { subtitle?: string; title: string }) =>
     [title, subtitle].filter(Boolean).join('-').toLowerCase(),
 }));
-jest.mock('../../../utils/scrollToTop', () => ({ __esModule: true, default: jest.fn() }));
-jest.mock('../../common/ButtonToTopScroll', () => ({ __esModule: true, default: () => createElement('Top') }));
-jest.mock('../../common/Sidebar', () => ({ Sidebar: (props: { children: Node }) => <>{props.children}</> }));
-jest.mock('../../navigation/Footer', () => ({ __esModule: true, default: () => createElement('Footer') }));
-jest.mock('../../stores/guideFile', () => ({
+vi.mock('../../../utils/scrollToTop', () => ({ __esModule: true, default: vi.fn() }));
+vi.mock('../../common/ButtonToTopScroll', () => ({ __esModule: true, default: () => createElement('Top') }));
+vi.mock('../../common/Sidebar', () => ({ Sidebar: (props: { children: Node }) => <>{props.children}</> }));
+vi.mock('../../navigation/Footer', () => ({ __esModule: true, default: () => createElement('Footer') }));
+vi.mock('../../stores/guideFile', () => ({
   useGuideFileContent: () => () => undefined,
   useGuideTOC: () => () => [],
   useSetGuideFileContent: () => mockSetGuideContent,
   useSetGuideTOC: () => mockSetGuideToc,
 }));
-jest.mock('../../stores/mobileTOC', () => ({
+vi.mock('../../stores/mobileTOC', () => ({
   useMobileTOCStatus: () => () => false,
-  useSetMobileTOCStatus: () => jest.fn(),
+  useSetMobileTOCStatus: () => vi.fn(),
 }));
-jest.mock('../SubcategoryExtended', () => ({ __esModule: true, default: () => createElement('Extended') }));
-jest.mock('../ToC', () => ({ __esModule: true, default: () => createElement('Contents') }));
+vi.mock('../SubcategoryExtended', () => ({ __esModule: true, default: () => createElement('Extended') }));
+vi.mock('../ToC', () => ({ __esModule: true, default: () => createElement('Contents') }));
 
 describe('Guide', () => {
   const originalFetch = global.fetch;
   let container: HTMLDivElement;
   let dispose: (() => void) | undefined;
-  let fetchMock: jest.MockedFunction<typeof fetch>;
+  let fetchMock: MockedFunction<typeof fetch>;
 
   beforeEach(() => {
     container = document.createElement('div');
     document.body.appendChild(container);
     dispose = undefined;
-    fetchMock = jest.fn();
+    fetchMock = vi.fn();
     global.fetch = fetchMock;
     window.guide = undefined;
     mockNavigate.mockReset();
@@ -65,7 +66,7 @@ describe('Guide', () => {
 
   it('should recover from a failed guide request', async () => {
     fetchMock.mockResolvedValueOnce({ ok: false, status: 503 } as Response).mockResolvedValueOnce({
-      json: jest.fn().mockResolvedValue({
+      json: vi.fn().mockResolvedValue({
         categories: [{ category: 'Overview', content: '<p>Guide content</p>', subcategories: [] }],
       }),
       ok: true,

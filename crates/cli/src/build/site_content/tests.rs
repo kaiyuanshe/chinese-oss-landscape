@@ -269,7 +269,7 @@ async fn empty_catalog_builds_and_missing_logos_fail() {
     write_inputs(&root.0, &empty);
     super::super::build(&args(&root.0)).await.unwrap();
     let site: Value = serde_json::from_slice(&fs::read(root.0.join("dist/data/site.json")).unwrap()).unwrap();
-    assert!(site["items"].as_array().unwrap().is_empty());
+    assert_eq!(site["items"], serde_json::json!([]));
     for file in ["base.json", "full.json"] {
         let data: Value =
             serde_json::from_slice(&fs::read(root.0.join("dist/data").join(file)).unwrap()).unwrap();

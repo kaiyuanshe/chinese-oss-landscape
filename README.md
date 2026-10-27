@@ -82,7 +82,7 @@
 
 ## 本地开发与验证
 
-准备 Node.js 22.12+（推荐与 CI 一致使用 24）、Rust 1.96.1+、Yarn 1.22.22，以及系统所需的本地编译工具。版本依据分别为根 `package.json`、`Cargo.toml` 和构建工作流。
+准备 Node.js 26.12.1（与 CI 一致）、Rust 1.99.1+、Yarn Classic 1.22.22，以及系统所需的本地编译工具。版本依据分别为根 `package.json`、`Cargo.toml` 和构建工作流。
 
 在仓库根目录运行：
 
@@ -121,7 +121,7 @@ npm run build
 | 内容、配置、图片       | `npm run validate`、`npm run build`，预览分类、搜索、详情与原始链接                        |
 | 构建编排或站点元信息   | `npm run test:site`，并检查完整构建的 HTML、基础路径和图片                                 |
 | 内容契约与发布投影     | `cargo test --locked -p landscape2-core site_catalog`，检查真实目录和合成边界样例          |
-| 前端行为               | `yarn --cwd ui/webapp test --runInBand`、`yarn --cwd ui/webapp lint`，检查桌面和移动页面   |
+| 前端行为               | `yarn --cwd ui/webapp test --run`、`yarn --cwd ui/webapp lint`，检查桌面和移动页面         |
 | Rust、共享组件或工具链 | 相应包的测试与静态检查，加上完整 `npm run build`；以 `.github/workflows/ci.yml` 为 CI 入口 |
 
 ## 部署与回滚
