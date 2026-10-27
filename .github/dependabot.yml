@@ -14,7 +14,6 @@ updates:
         update-types: ["patch"]
     ignore:
       - dependency-name: "markdown"
-      - dependency-name: "usvg"
 
   - package-ecosystem: "docker"
     directory: "/crates/cli"

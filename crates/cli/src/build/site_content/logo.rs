@@ -8,7 +8,7 @@ use std::path::Path;
 
 use anyhow::{Context, Result, bail};
 use imagesize::ImageType;
-use usvg::{ImageHrefResolver, TreeParsing, roxmltree};
+use usvg::{ImageHrefResolver, roxmltree};
 
 const SVG_NS: &str = "http://www.w3.org/2000/svg";
 const XLINK_NS: &str = "http://www.w3.org/1999/xlink";
@@ -149,6 +149,7 @@ fn validate_svg(data: &[u8]) -> Result<()> {
         roxmltree::ParsingOptions {
             allow_dtd: false,
             nodes_limit: 100_000,
+            entity_resolver: None,
         },
     )
     .context("invalid SVG XML")?;
