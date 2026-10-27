@@ -12,17 +12,17 @@ jobs:
       labels: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@v7.0.1
       - name: Setup Node
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@v7.1.0
         with:
-          node-version: 24
+          node-version: 26.12.1
       - name: Install Yarn
         run: npm install --global yarn@1.22.22
       - name: Setup Rust
-        uses: dtolnay/rust-toolchain@master
+        uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master
         with:
-          toolchain: 1.96.1
+          toolchain: 1.99.1
           components: clippy, rustfmt
       - name: Run clippy
         run: cargo clippy --locked --all-targets --all-features -- --deny warnings
@@ -50,11 +50,11 @@ jobs:
       NODE_OPTIONS: --max_old_space_size=4096
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@v7.0.1
       - name: Setup Node
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@v7.1.0
         with:
-          node-version: 24
+          node-version: 26.12.1
       - name: Install Yarn
         run: npm install --global yarn@1.22.22
       - name: Install dependencies for all tested packages
@@ -81,11 +81,11 @@ jobs:
       NODE_OPTIONS: --max_old_space_size=4096
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@v7.0.1
       - name: Setup Node
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@v7.1.0
         with:
-          node-version: 24
+          node-version: 26.12.1
       - name: Install Yarn
         run: npm install --global yarn@1.22.22
       - name: Install dependencies
@@ -105,11 +105,11 @@ jobs:
       NODE_OPTIONS: --max_old_space_size=4096
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@v7.0.1
       - name: Setup Node
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@v7.1.0
         with:
-          node-version: 24
+          node-version: 26.12.1
       - name: Install Yarn
         run: npm install --global yarn@1.22.22
       - name: Install dependencies
@@ -129,11 +129,11 @@ jobs:
       NODE_OPTIONS: --max_old_space_size=4096
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@v7.0.1
       - name: Setup Node
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@v7.1.0
         with:
-          node-version: 24
+          node-version: 26.12.1
       - name: Install Yarn
         run: npm install --global yarn@1.22.22
       - name: Install dependencies
@@ -152,6 +152,6 @@ jobs:
       contents: read
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@v7.0.1
       - name: Build the CLI image without publishing
         run: docker build -f crates/cli/Dockerfile -t landscape2-ci .

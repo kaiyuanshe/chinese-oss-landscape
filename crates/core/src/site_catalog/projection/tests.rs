@@ -465,11 +465,11 @@ fn empty_public_catalog_produces_an_empty_valid_projection() {
         item.publication_status = PublicationStatus::Draft;
     }
     let projection = catalog.project().unwrap();
-    assert!(projection.metadata.items.is_empty());
-    assert!(projection.metadata.evidence.is_empty());
-    assert!(projection.metadata.taxonomy.categories.is_empty());
-    assert!(projection.metadata.taxonomy.tags.is_empty());
+    assert_eq!(projection.metadata.items, [] as [PublicSiteItem; 0]);
+    assert_eq!(projection.metadata.evidence, [] as [PublicEvidence; 0]);
+    assert_eq!(projection.metadata.taxonomy.categories, [] as [PublicCategory; 0]);
+    assert_eq!(projection.metadata.taxonomy.tags, [] as [PublicTag; 0]);
     assert!(projection.metadata.id_map.legacy_to_stable.is_empty());
-    assert!(projection.engine_data.items.is_empty());
+    assert_eq!(projection.engine_data.items, [] as [Item; 0]);
     assert_eq!(projection.legacy_yaml, "landscape: []\n");
 }

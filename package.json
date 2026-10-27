@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=22.12.0"
+    "node": ">=26.12.1"
   },
   "scripts": {
     "build": "node scripts/site.mjs build",
@@ -15,5 +15,6 @@
     "release:verify": "node scripts/release.mjs verify",
     "release:rehearse": "node scripts/release.mjs rehearse",
     "test:site": "node --test scripts/site-output.test.mjs scripts/site-brand.test.mjs scripts/site-assets.test.mjs"
-  }
+  },
+  "packageManager": "yarn@1.22.22"
 }
