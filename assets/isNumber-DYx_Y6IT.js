@@ -1,1 +1,0 @@
-import{$ as e,Zt as t,nt as n}from"./dist-5UeCcI4q.js";var r=t(((t,r)=>{var i=n(),a=e(),o=`[object Number]`;function s(e){return typeof e==`number`||a(e)&&i(e)==o}r.exports=s}));export{r as t};
