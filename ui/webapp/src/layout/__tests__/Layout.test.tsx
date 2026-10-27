@@ -1,40 +1,41 @@
 import { createSignal } from 'solid-js';
 import { render } from 'solid-js/web';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import Layout from '..';
 
 const [mockFullDataStatus, mockSetFullDataStatus] = createSignal<'error' | 'loading' | 'ready'>('loading');
 
-jest.mock('../common/itemModal', () => ({ __esModule: true, default: () => mockCreateElement('Item modal') }));
-jest.mock('../common/zoomModal', () => ({ __esModule: true, default: () => mockCreateElement('Zoom modal') }));
-jest.mock('../navigation/Header', () => ({ __esModule: true, default: () => mockCreateElement('Header') }));
-jest.mock('../navigation/MobileHeader', () => ({
+vi.mock('../common/itemModal', () => ({ __esModule: true, default: () => mockCreateElement('Item modal') }));
+vi.mock('../common/zoomModal', () => ({ __esModule: true, default: () => mockCreateElement('Zoom modal') }));
+vi.mock('../navigation/Header', () => ({ __esModule: true, default: () => mockCreateElement('Header') }));
+vi.mock('../navigation/MobileHeader', () => ({
   __esModule: true,
   default: () => mockCreateElement('Mobile header'),
 }));
-jest.mock('../stores/activeItem', () => ({ ActiveItemProvider: mockProvider }));
-jest.mock('../stores/financesData', () => ({ FinancesDataProvider: mockProvider }));
-jest.mock('../stores/fullData', () => ({
+vi.mock('../stores/activeItem', () => ({ ActiveItemProvider: mockProvider }));
+vi.mock('../stores/financesData', () => ({ FinancesDataProvider: mockProvider }));
+vi.mock('../stores/fullData', () => ({
   FullDataProvider: mockProvider,
   useFullDataStatus: () => mockFullDataStatus,
   useFullDataReady: () => mockFullDataStatus() === 'ready',
-  useRetryFullData: () => jest.fn(),
+  useRetryFullData: () => vi.fn(),
 }));
-jest.mock('../stores/locale', () => ({
+vi.mock('../stores/locale', () => ({
   LocaleProvider: mockProvider,
 }));
-jest.mock('../stores/siteLocalization', () => ({
+vi.mock('../stores/siteLocalization', () => ({
   SiteLocalizationProvider: mockProvider,
 }));
-jest.mock('../stores/gridWidth', () => ({ GridWidthProvider: mockProvider }));
-jest.mock('../stores/groupActive', () => ({ GroupActiveProvider: mockProvider }));
-jest.mock('../stores/guideFile', () => ({ GuideFileProvider: mockProvider }));
-jest.mock('../stores/mobileTOC', () => ({ MobileTOCProvider: mockProvider }));
-jest.mock('../stores/upcomingEventData', () => ({ EventsProvider: mockProvider }));
-jest.mock('../stores/viewMode', () => ({ ViewModeProvider: mockProvider }));
-jest.mock('../stores/visibleZoomSection', () => ({ VisibleZoomSectionProvider: mockProvider }));
-jest.mock('../stores/zoom', () => ({ ZoomProvider: mockProvider }));
-jest.mock('../upcomingEvents', () => ({ __esModule: true, default: () => mockCreateElement('Upcoming events') }));
+vi.mock('../stores/gridWidth', () => ({ GridWidthProvider: mockProvider }));
+vi.mock('../stores/groupActive', () => ({ GroupActiveProvider: mockProvider }));
+vi.mock('../stores/guideFile', () => ({ GuideFileProvider: mockProvider }));
+vi.mock('../stores/mobileTOC', () => ({ MobileTOCProvider: mockProvider }));
+vi.mock('../stores/upcomingEventData', () => ({ EventsProvider: mockProvider }));
+vi.mock('../stores/viewMode', () => ({ ViewModeProvider: mockProvider }));
+vi.mock('../stores/visibleZoomSection', () => ({ VisibleZoomSectionProvider: mockProvider }));
+vi.mock('../stores/zoom', () => ({ ZoomProvider: mockProvider }));
+vi.mock('../upcomingEvents', () => ({ __esModule: true, default: () => mockCreateElement('Upcoming events') }));
 
 describe('Layout', () => {
   let container: HTMLDivElement;

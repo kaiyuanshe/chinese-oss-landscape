@@ -1,6 +1,8 @@
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import getDownloadBlob from '../getDownloadBlob';
 
-const fetchMock = jest.fn();
+const fetchMock = vi.fn();
 
 describe('getDownloadBlob', () => {
   beforeAll(() => {
@@ -14,7 +16,7 @@ describe('getDownloadBlob', () => {
   it('should return the downloaded response as a blob', async () => {
     const expectedBlob = new Blob(['document'], { type: 'application/pdf' });
     fetchMock.mockResolvedValue({
-      blob: jest.fn().mockResolvedValue(expectedBlob),
+      blob: vi.fn().mockResolvedValue(expectedBlob),
       headers: new Headers({ 'content-type': 'application/pdf' }),
       ok: true,
     });
@@ -30,7 +32,7 @@ describe('getDownloadBlob', () => {
   });
 
   it('should convert a text response to a blob with the requested type', async () => {
-    const textMock = jest.fn().mockResolvedValue('name,category\nProject,Database');
+    const textMock = vi.fn().mockResolvedValue('name,category\nProject,Database');
     fetchMock.mockResolvedValue({
       headers: new Headers({ 'content-type': 'text/csv; charset=utf-8' }),
       ok: true,

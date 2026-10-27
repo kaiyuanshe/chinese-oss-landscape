@@ -1,8 +1,9 @@
 import { render } from 'solid-js/web';
+import { describe, expect, it, vi } from 'vitest';
 
 import { RepositoriesSection } from '../RepositoriesSection';
 
-jest.mock('solid-styled-components', () => ({ css: () => '' }));
+vi.mock('solid-styled-components', () => ({ css: () => '' }));
 
 describe('RepositoriesSection in the site profile', () => {
   it('preserves the original repository and license without loading external badges', () => {

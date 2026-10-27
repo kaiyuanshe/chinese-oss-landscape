@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'vitest';
+
 import prepareLink from './prepareLink';
 
 describe('prepareLink', () => {

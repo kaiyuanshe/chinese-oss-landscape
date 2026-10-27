@@ -1,39 +1,40 @@
 import { createSignal } from 'solid-js';
 import { render } from 'solid-js/web';
+import { afterEach, beforeEach, describe, expect, it, type MockedFunction, vi } from 'vitest';
 
 import type { Item } from '../../../../types';
 import itemsDataGetter from '../../../../utils/itemsDataGetter';
 import ItemModal from '..';
 
-const mockUpdateActiveItemId = jest.fn();
+const mockUpdateActiveItemId = vi.fn();
 const [mockVisibleItemId, mockSetVisibleItemId] = createSignal<string>();
 
-jest.mock('../../../../data', () => ({
+vi.mock('../../../../data', () => ({
   BASE_PATH: '',
   FOUNDATION: 'Foundation',
   HIDE_ORGANIZATION_SECTION_IN_PROJECTS: false,
   ITEM_VIEW: 'item-view',
   SMALL_DEVICES_BREAKPOINTS: [],
 }));
-jest.mock('../../../../utils/itemsDataGetter', () => ({
+vi.mock('../../../../utils/itemsDataGetter', () => ({
   __esModule: true,
   default: {
-    getItemById: jest.fn(),
-    getItemByName: jest.fn(),
+    getItemById: vi.fn(),
+    getItemByName: vi.fn(),
   },
 }));
-jest.mock('../../../stores/activeItem', () => ({
+vi.mock('../../../stores/activeItem', () => ({
   useActiveItemId: () => mockVisibleItemId,
   useUpdateActiveItemId: () => mockUpdateActiveItemId,
 }));
-jest.mock('../../../stores/fullData', () => ({
+vi.mock('../../../stores/fullData', () => ({
   useFullDataReady: () => () => true,
 }));
-jest.mock('../../../stores/upcomingEventData', () => ({
+vi.mock('../../../stores/upcomingEventData', () => ({
   useEventVisibleContent: () => () => undefined,
 }));
 
-const getItemByIdMock = itemsDataGetter.getItemById as unknown as jest.MockedFunction<
+const getItemByIdMock = itemsDataGetter.getItemById as unknown as MockedFunction<
   (itemId: string) => Promise<Item | undefined>
 >;
 

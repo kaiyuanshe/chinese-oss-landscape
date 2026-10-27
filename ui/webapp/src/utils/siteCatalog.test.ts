@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'vitest';
+
 import { buildSiteLocalization, getLocalizedItemContent, getSiteItemMetadata, getSiteStableId } from './siteCatalog';
 
 describe('site catalog localization', () => {
