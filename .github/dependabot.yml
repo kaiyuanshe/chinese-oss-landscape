@@ -15,13 +15,6 @@ updates:
     ignore:
       - dependency-name: "markdown"
       - dependency-name: "usvg"
-      - dependency-name: "rand"
-        versions: [">=0.9"]
-      # octorust 0.10 uses this client/middleware pair.
-      - dependency-name: "reqwest"
-        versions: [">=0.13"]
-      - dependency-name: "reqwest-middleware"
-        versions: [">=0.5"]
 
   - package-ecosystem: "docker"
     directory: "/crates/cli"

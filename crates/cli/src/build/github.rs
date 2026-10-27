@@ -14,11 +14,11 @@ use futures::stream::{self, StreamExt};
 use landscape2_core::data::{Commit, Contributors, GithubData, Release, RepositoryGithubData};
 #[cfg(test)]
 use mockall::automock;
-use octorust::auth::Credentials;
-use octorust::types::{FullRepository, ParticipationStats};
 use regex::Regex;
 use reqwest::header::{self, HeaderMap, HeaderValue};
+use serde::{Deserialize, de::DeserializeOwned};
 use tracing::{debug, instrument, warn};
+use url::Url;
 
 use super::{LandscapeData, cache::Cache};
 
@@ -149,7 +149,7 @@ async fn collect_repository_data(gh: Object<DynGH>, repo_url: &str) -> Result<Re
             count: contributors_count,
             url: format!("https://github.com/{owner}/{repo}/graphs/contributors"),
         },
-        description: gh_repo.description,
+        description: gh_repo.description.unwrap_or_default(),
         first_commit,
         languages,
         latest_commit,
@@ -203,23 +203,16 @@ trait GH {
 
 /// GH implementation backed by the GitHub API.
 struct GHApi {
-    gh_client: octorust::Client,
     http_client: reqwest::Client,
+    api_url: Url,
 }
 
 impl GHApi {
     /// Create a new GHApi instance.
     fn new(token: &str) -> Result<Self> {
-        // Setup octorust GitHub API client
         let user_agent = format!("{}/{}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
-        let gh_client = octorust::Client::custom(
-            user_agent.clone(),
-            Credentials::Token(token.to_string()),
-            reqwest_middleware::ClientBuilder::new(reqwest::Client::builder().build()?).build(),
-        );
-
-        // Setup HTTP client ready to make requests to the GitHub API
-        // (for some operations that cannot be done with the octorust client)
+        // Use the same HTTP client for every GitHub endpoint, so the API adapter
+        // does not pin a second, incompatible reqwest and middleware stack.
         let mut headers = HeaderMap::new();
         headers.insert(
             header::ACCEPT,
@@ -237,9 +230,23 @@ impl GHApi {
             reqwest::Client::builder().user_agent(user_agent).default_headers(headers).build()?;
 
         Ok(Self {
-            gh_client,
             http_client,
+            api_url: Url::parse(GITHUB_API_URL)?,
         })
+    }
+
+    fn repository_url(&self, owner: &str, repo: &str, path: &[&str]) -> Url {
+        let mut url = self.api_url.clone();
+        url.path_segments_mut()
+            .expect("GitHub API URL supports path segments")
+            .pop_if_empty()
+            .extend(["repos", owner, repo])
+            .extend(path);
+        url
+    }
+
+    async fn get_json<T: DeserializeOwned>(&self, url: Url) -> Result<T> {
+        Ok(self.http_client.get(url).send().await?.error_for_status()?.json().await?)
     }
 }
 
@@ -248,76 +255,78 @@ impl GH for GHApi {
     /// [GH::get_contributors_count]
     #[instrument(skip(self), err)]
     async fn get_contributors_count(&self, owner: &str, repo: &str) -> Result<usize> {
-        let url = format!("{GITHUB_API_URL}/repos/{owner}/{repo}/contributors?per_page=1&anon=true");
-        let response = self.http_client.head(url).send().await?;
+        let url = self.repository_url(owner, repo, &["contributors"]);
+        let response = self
+            .http_client
+            .head(url)
+            .query(&[("per_page", "1"), ("anon", "true")])
+            .send()
+            .await?
+            .error_for_status()?;
         let count = get_last_page(response.headers())?.unwrap_or(1);
         Ok(count)
     }
 
     /// [GH::get_first_commit]
-    #[allow(clippy::cast_possible_wrap)]
     #[instrument(skip(self), err)]
     async fn get_first_commit(&self, owner: &str, repo: &str, ref_: &str) -> Result<Option<Commit>> {
         // Get last commits page
-        let url = format!("{GITHUB_API_URL}/repos/{owner}/{repo}/commits?sha={ref_}&per_page=1");
-        let response = self.http_client.head(url).send().await?;
+        let mut url = self.repository_url(owner, repo, &["commits"]);
+        url.query_pairs_mut().extend_pairs([("sha", ref_), ("per_page", "1")]);
+        let response = self.http_client.head(url.clone()).send().await?.error_for_status()?;
         let last_page = get_last_page(response.headers())?.unwrap_or(1);
 
         // Get first repository commit and return it if found
-        if let Some(commit) = self
-            .gh_client
-            .repos()
-            .list_commits(owner, repo, ref_, "", "", None, None, 1, last_page as i64)
-            .await?
-            .body
-            .pop()
-        {
-            return Ok(Some(new_commit_from(commit)));
-        }
-        Ok(None)
+        url.query_pairs_mut().append_pair("page", &last_page.to_string());
+        let mut commits: Vec<ApiCommit> = self.get_json(url).await?;
+        Ok(commits.pop().map(new_commit_from))
     }
 
     /// [GH::get_languages]
     #[instrument(skip(self), err)]
     async fn get_languages(&self, owner: &str, repo: &str) -> Result<Option<BTreeMap<String, i64>>> {
-        let url = format!("{GITHUB_API_URL}/repos/{owner}/{repo}/languages");
-        let languages: BTreeMap<String, i64> = self.http_client.get(url).send().await?.json().await?;
-        Ok(Some(languages))
+        Ok(Some(
+            self.get_json(self.repository_url(owner, repo, &["languages"])).await?,
+        ))
     }
 
     /// [GH::get_latest_commit]
     #[instrument(skip(self), err)]
     async fn get_latest_commit(&self, owner: &str, repo: &str, ref_: &str) -> Result<Commit> {
-        let response = self.gh_client.repos().get_commit(owner, repo, 1, 1, ref_).await?;
-        Ok(new_commit_from(response.body))
+        let mut url = self.repository_url(owner, repo, &["commits", ref_]);
+        url.query_pairs_mut().extend_pairs([("page", "1"), ("per_page", "1")]);
+        let commit = self.get_json(url).await?;
+        Ok(new_commit_from(commit))
     }
 
     /// [GH::get_latest_release]
     #[instrument(skip(self), err)]
     async fn get_latest_release(&self, owner: &str, repo: &str) -> Result<Option<Release>> {
-        match self.gh_client.repos().get_latest_release(owner, repo).await {
-            Ok(response) => Ok(Some(new_release_from(response.body))),
-            Err(err) => {
-                if err.to_string().to_lowercase().contains("not found") {
-                    return Ok(None);
-                }
-                Err(err.into())
-            }
+        let response = self
+            .http_client
+            .get(self.repository_url(owner, repo, &["releases", "latest"]))
+            .send()
+            .await?;
+        if response.status() == reqwest::StatusCode::NOT_FOUND {
+            return Ok(None);
         }
+        let release: ApiRelease = response.error_for_status()?.json().await?;
+        Ok(Some(Release {
+            ts: release.published_at,
+            url: release.html_url,
+        }))
     }
 
     /// [GH::get_participation_stats]
     #[instrument(skip(self), err)]
     async fn get_participation_stats(&self, owner: &str, repo: &str) -> Result<ParticipationStats> {
-        let response = self.gh_client.repos().get_participation_stats(owner, repo).await?;
-        Ok(response.body)
+        self.get_json(self.repository_url(owner, repo, &["stats", "participation"])).await
     }
 
     /// [GH::get_repository]
     #[instrument(skip(self), err)]
     async fn get_repository(&self, owner: &str, repo: &str) -> Result<FullRepository> {
-        let response = self.gh_client.repos().get(owner, repo).await?;
-        Ok(response.body)
+        self.get_json(self.repository_url(owner, repo, &[])).await
     }
 }
 
@@ -346,22 +355,207 @@ fn get_owner_and_repo(repo_url: &str) -> Result<(String, String)> {
     Ok((c["owner"].to_string(), c["repo"].to_string()))
 }
 
-/// Create a new commit instance from the octorust commit data provided.
-fn new_commit_from(value: octorust::types::CommitDataType) -> Commit {
-    let mut commit = Commit {
-        url: value.html_url,
-        ts: None,
-    };
-    if let Some(author) = value.commit.author {
-        commit.ts = Some(DateTime::parse_from_rfc3339(&author.date).expect("date to be valid").into());
-    }
-    commit
+/// Fields used from GitHub's repository response.
+#[derive(Debug, Deserialize)]
+struct FullRepository {
+    default_branch: String,
+    description: Option<String>,
+    license: Option<ApiLicense>,
+    stargazers_count: i64,
+    #[serde(default)]
+    topics: Vec<String>,
+    html_url: String,
 }
 
-/// Create a new release instance from the octorust release data provided.
-fn new_release_from(value: octorust::types::Release) -> Release {
-    Release {
-        ts: value.published_at,
+#[derive(Debug, Deserialize)]
+struct ApiLicense {
+    name: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct ParticipationStats {
+    #[serde(default)]
+    all: Vec<i64>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ApiCommit {
+    html_url: String,
+    commit: ApiCommitDetails,
+}
+
+#[derive(Debug, Deserialize)]
+struct ApiCommitDetails {
+    author: Option<ApiCommitAuthor>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ApiCommitAuthor {
+    date: Option<DateTime<Utc>>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ApiRelease {
+    published_at: Option<DateTime<Utc>>,
+    html_url: String,
+}
+
+/// Create a new commit instance from the GitHub commit data provided.
+fn new_commit_from(value: ApiCommit) -> Commit {
+    Commit {
         url: value.html_url,
+        ts: value.commit.author.and_then(|author| author.date),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use mockito::{Matcher, Server};
+
+    use super::*;
+
+    fn client(server: &Server) -> GHApi {
+        let mut client = GHApi::new("test-token").unwrap();
+        client.api_url = Url::parse(&server.url()).unwrap();
+        client
+    }
+
+    #[tokio::test]
+    async fn github_requests_preserve_authentication_and_decode_public_metadata() {
+        let mut server = Server::new_async().await;
+        let repository = server
+            .mock("GET", "/repos/owner/repo")
+            .match_header("authorization", "Bearer test-token")
+            .match_header("accept", "application/vnd.github+json")
+            .match_header("x-github-api-version", "2022-11-28")
+            .with_status(302)
+            .with_header("location", &format!("{}/repos/owner/redirected", server.url()))
+            .create_async()
+            .await;
+        let redirected = server
+            .mock("GET", "/repos/owner/redirected")
+            .match_header("authorization", "Bearer test-token")
+            .with_status(200)
+            .with_body(r#"{"default_branch":"main","description":null,"license":null,"stargazers_count":12,"html_url":"https://github.com/owner/repo"}"#)
+            .create_async()
+            .await;
+        let languages = server
+            .mock("GET", "/repos/owner/repo/languages")
+            .with_status(200)
+            .with_body(r#"{"Rust":42}"#)
+            .create_async()
+            .await;
+        let stats = server
+            .mock("GET", "/repos/owner/repo/stats/participation")
+            .with_status(200)
+            .with_body(r#"{"all":[1,2,3],"owner":[1,0,1]}"#)
+            .create_async()
+            .await;
+        let gh = client(&server);
+        let metadata = gh.get_repository("owner", "repo").await.unwrap();
+        assert!(metadata.description.is_none());
+        assert_eq!(metadata.topics, [] as [String; 0]);
+        assert_eq!(metadata.stargazers_count, 12);
+        assert_eq!(
+            gh.get_languages("owner", "repo").await.unwrap().unwrap()["Rust"],
+            42
+        );
+        assert_eq!(
+            gh.get_participation_stats("owner", "repo").await.unwrap().all,
+            vec![1, 2, 3]
+        );
+        repository.assert_async().await;
+        redirected.assert_async().await;
+        languages.assert_async().await;
+        stats.assert_async().await;
+    }
+
+    #[tokio::test]
+    async fn first_commit_follows_pagination_and_encodes_branch_queries() {
+        let mut server = Server::new_async().await;
+        let head = server
+            .mock("HEAD", "/repos/owner/repo/commits")
+            .match_query(Matcher::AllOf(vec![
+                Matcher::UrlEncoded("sha".into(), "feature/a&b".into()),
+                Matcher::UrlEncoded("per_page".into(), "1".into()),
+            ]))
+            .with_status(200)
+            .with_header(
+                "link",
+                &format!("<{}/repos/owner/repo/commits?page=7>; rel=\"last\"", server.url()),
+            )
+            .create_async()
+            .await;
+        let first = server
+            .mock("GET", "/repos/owner/repo/commits")
+            .match_query(Matcher::AllOf(vec![
+                Matcher::UrlEncoded("sha".into(), "feature/a&b".into()),
+                Matcher::UrlEncoded("per_page".into(), "1".into()),
+                Matcher::UrlEncoded("page".into(), "7".into()),
+            ]))
+            .with_status(200)
+            .with_body(r#"[{"html_url":"https://github.com/owner/repo/commit/first","commit":{"author":{"date":"2024-01-02T03:04:05Z"}}}]"#)
+            .create_async()
+            .await;
+        let first_commit =
+            client(&server).get_first_commit("owner", "repo", "feature/a&b").await.unwrap().unwrap();
+        assert_eq!(first_commit.url, "https://github.com/owner/repo/commit/first");
+        assert_eq!(first_commit.ts.unwrap().to_rfc3339(), "2024-01-02T03:04:05+00:00");
+        head.assert_async().await;
+        first.assert_async().await;
+    }
+
+    #[tokio::test]
+    async fn latest_commit_encodes_refs_and_handles_missing_author() {
+        let mut server = Server::new_async().await;
+        let commit = server
+            .mock("GET", "/repos/owner/repo/commits/feature%2Fa%3Fb")
+            .match_query(Matcher::AllOf(vec![
+                Matcher::UrlEncoded("page".into(), "1".into()),
+                Matcher::UrlEncoded("per_page".into(), "1".into()),
+            ]))
+            .with_status(200)
+            .with_body(
+                r#"{"html_url":"https://github.com/owner/repo/commit/latest","commit":{"author":null}}"#,
+            )
+            .create_async()
+            .await;
+        let latest = client(&server).get_latest_commit("owner", "repo", "feature/a?b").await.unwrap();
+        assert_eq!(latest.url, "https://github.com/owner/repo/commit/latest");
+        assert!(latest.ts.is_none());
+        commit.assert_async().await;
+    }
+
+    #[tokio::test]
+    async fn absent_releases_are_distinguished_from_rate_limits() {
+        let mut server = Server::new_async().await;
+        let absent = server
+            .mock("GET", "/repos/owner/absent/releases/latest")
+            .with_status(404)
+            .create_async()
+            .await;
+        let limited = server
+            .mock("GET", "/repos/owner/limited/releases/latest")
+            .with_status(403)
+            .with_header("x-ratelimit-remaining", "0")
+            .with_body(r#"{"message":"API rate limit exceeded"}"#)
+            .expect(1)
+            .create_async()
+            .await;
+        let published = server
+            .mock("GET", "/repos/owner/published/releases/latest")
+            .with_status(200)
+            .with_body(r#"{"html_url":"https://github.com/owner/published/releases/tag/v1","published_at":"2024-01-02T03:04:05Z"}"#)
+            .create_async()
+            .await;
+        let gh = client(&server);
+        assert!(gh.get_latest_release("owner", "absent").await.unwrap().is_none());
+        assert!(gh.get_latest_release("owner", "limited").await.is_err());
+        let release = gh.get_latest_release("owner", "published").await.unwrap().unwrap();
+        assert_eq!(release.url, "https://github.com/owner/published/releases/tag/v1");
+        assert_eq!(release.ts.unwrap().to_rfc3339(), "2024-01-02T03:04:05+00:00");
+        absent.assert_async().await;
+        limited.assert_async().await;
+        published.assert_async().await;
     }
 }
