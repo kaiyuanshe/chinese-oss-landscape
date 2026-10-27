@@ -1,8 +1,9 @@
 import { prettifyNumber } from 'common';
 import isUndefined from 'lodash/isUndefined';
 import moment from 'moment';
-import { SolidApexCharts } from 'solid-apexcharts';
 import { createSignal, onMount, Show } from 'solid-js';
+
+import { SolidApexCharts } from './SolidApexCharts';
 
 interface Props {
   name: string;

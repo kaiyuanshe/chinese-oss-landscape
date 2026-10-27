@@ -1,10 +1,10 @@
 import groupBy from 'lodash/groupBy';
 import isNumber from 'lodash/isNumber';
 import moment from 'moment';
-import { SolidApexCharts } from 'solid-apexcharts';
 import { Show } from 'solid-js';
 
 import rgba2hex from '../../utils/rgba2hex';
+import { SolidApexCharts } from './SolidApexCharts';
 
 interface Props {
   name?: string;
