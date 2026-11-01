@@ -1,5 +1,5 @@
 # Prepare the same Node and Yarn versions used by CI.
-FROM node:26.12.1-alpine3.24 AS node
+FROM node:26.13.0-alpine3.24 AS node
 RUN npm install --global --prefix /usr/local yarn@1.22.22
 
 # Build CLI tool
