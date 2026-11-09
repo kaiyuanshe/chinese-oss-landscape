@@ -45,24 +45,37 @@
       <link rel="stylesheet" crossorigin href="./assets/Footer-Cwkw75hb.css">
       <link rel="stylesheet" crossorigin href="./assets/index-yCPrvMC6.css">
     </head>
-    <body>
-        
-        
-        
-        <div id="landscape"></div>
-        
-        
-    </body>
-<!-- === 小 O 智能互动版引导条幅（复制到 body 开头） === -->
-<div style="background: linear-gradient(90deg, #0284c7, #2563eb); color: #ffffff; padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 13px; box-shadow: 0 2px 10px rgba(0,0,0,0.25); position: relative; z-index: 9999;">
-  <div style="display: flex; align-items: center; gap: 8px;">
-    <span style="font-size: 16px;">🤖</span>
-    <span><strong>全新体验：</strong> 中国开源地图智能助理「小 O」已上线，支持对话提问与引力星盘同步联动！</span>
-  </div>
-  <a href="./index.html" style="background: #ffffff; color: #0284c7; padding: 5px 14px; border-radius: 20px; font-weight: 600; text-decoration: none; font-size: 12px; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.15);">
-    <span>体验小 O AI 智能互动版</span>
-    <span>➔</span>
+  <body>
+
+  <div id="landscape"></div>
+
+  <!-- === 右上角直达小 O 智能互动版按钮 === -->
+  <a href="./ai.html" style="
+    position: fixed;
+    top: 14px;
+    right: 14px;
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, #0284c7, #2563eb);
+    color: #ffffff;
+    padding: 7px 16px;
+    border-radius: 9999px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    box-shadow: 0 4px 15px rgba(2, 132, 199, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(8px);
+    transition: transform 0.2s ease;
+  " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+    <span style="font-size: 15px;">🤖</span>
+    <span>小 O 智能助理</span>
+    <span style="font-size: 11px; opacity: 0.85;">(引力星盘)</span>
+    <span style="font-size: 12px; margin-left: 2px;">➔</span>
   </a>
-</div>
-<!-- === 条幅结束 === -->
+
+</body>
 </html>
